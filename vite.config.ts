@@ -74,8 +74,8 @@ export default defineConfig({
     sourcemap: false,
   },
   server: {
-    port: 3000,
-    open: true,
+    port: 8080,
+    open: false,
     proxy: {
       '/v1': {
         target: 'https://code4care-backend-production.up.railway.app',
