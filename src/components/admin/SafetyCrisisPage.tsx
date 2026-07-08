@@ -79,14 +79,15 @@ export function SafetyCrisisPage({ session }: SafetyCrisisPageProps) {
     return () => { mounted = false; };
   }, [period, session.accessToken]);
 
-  const crisisTotal = safety?.incidents?.total ?? getNumber(analytics?.safety ?? {}, 'crisis_interventions');
+  const inc = safety?.incidents ?? {};
+  const crisisTotal = getNumber(inc, 'total') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
   const panicTotal = getNumber(analytics?.safety ?? {}, 'panic_exits_total');
-  const interventions = getNumber(analytics?.safety ?? {}, 'crisis_interventions');
-  const escalatedHuman = getNumber(analytics?.safety ?? {}, 'risks_escalated_to_human');
-  const followedUp = getNumber(analytics?.safety ?? {}, 'concerned_users_followed_up');
-  const selfHarm = getNumber(analytics?.safety ?? {}, 'self_harm_mentions');
-  const suicidal = getNumber(analytics?.safety ?? {}, 'suicidal_ideation_mentions');
-  const abuse = getNumber(analytics?.safety ?? {}, 'abuse_mentions');
+  const interventions = getNumber(inc, 'crisis_total') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
+  const escalatedHuman = getNumber(inc, 'risks_escalated_to_human') || getNumber(analytics?.safety ?? {}, 'risks_escalated_to_human');
+  const followedUp = getNumber(inc, 'concerned_users_followed_up') || getNumber(analytics?.safety ?? {}, 'concerned_users_followed_up');
+  const selfHarm = getNumber(inc, 'self_harm_mentions') || getNumber(analytics?.safety ?? {}, 'self_harm_mentions');
+  const suicidal = getNumber(inc, 'suicidal_ideation_mentions') || getNumber(analytics?.safety ?? {}, 'suicidal_ideation_mentions');
+  const abuse = getNumber(inc, 'abuse_mentions') || getNumber(analytics?.safety ?? {}, 'abuse_mentions');
 
   const crisisTypeData = useMemo(() => {
     const sev = safety?.severity_distribution ?? {};
