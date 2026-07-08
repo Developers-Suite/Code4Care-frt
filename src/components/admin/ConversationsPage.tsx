@@ -1,17 +1,19 @@
-import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, AlertCircle, ChevronLeft, ChevronRight, X, Bot, User, ShieldAlert } from 'lucide-react';
 import { ExportButton } from './ExportButton';
 import {
   StaffAccessService,
   StaffSession,
   AdminConversationListItem,
+  AdminConversationDetail,
+  AdminConversationMessage,
 } from '@/services/staffAccessService';
 import { RealAnalyticsService } from '@/services/realAnalyticsService';
 import { getNumber } from '@/utils/analyticsUtils';
@@ -35,6 +37,174 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
+function formatDateTime(iso: string) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// ── Conversation detail panel ────────────────────────────────────────────────
+
+interface ConversationDetailPanelProps {
+  conv: AdminConversationListItem;
+  accessToken: string;
+  onClose: () => void;
+}
+
+function ChatBubble({ msg }: { msg: AdminConversationMessage }) {
+  const isUser = msg.sender === 'user';
+  const isConsultant = msg.sender === 'consultant';
+
+  return (
+    <div className={`flex gap-2 ${isUser ? 'flex-row' : 'flex-row-reverse'}`}>
+      {/* Avatar */}
+      <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5
+        ${isUser ? 'bg-gray-400' : isConsultant ? 'bg-amber-500' : 'bg-[#006d77]'}`}>
+        {isUser ? <User className="w-3.5 h-3.5" /> : isConsultant ? 'A' : <Bot className="w-3.5 h-3.5" />}
+      </div>
+
+      <div className={`max-w-[80%] ${isUser ? 'items-start' : 'items-end'} flex flex-col gap-0.5`}>
+        {/* Sender label */}
+        <span className="text-[10px] text-gray-400 font-medium px-1">
+          {isUser ? 'User' : isConsultant ? 'Agent' : 'Bot'} · {formatDateTime(msg.created_at)}
+        </span>
+
+        {/* Bubble */}
+        <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed
+          ${isUser
+            ? 'bg-gray-100 text-gray-800 rounded-tl-sm'
+            : isConsultant
+              ? 'bg-amber-50 text-amber-900 border border-amber-200 rounded-tr-sm'
+              : 'bg-[#006d77] text-white rounded-tr-sm'
+          }`}>
+          {msg.content}
+        </div>
+
+        {/* Safety flags */}
+        {msg.safety_flags && msg.safety_flags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {msg.safety_flags.map((flag) => (
+              <span key={flag} className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded-full">
+                <ShieldAlert className="w-2.5 h-2.5" />{flag.replace(/_/g, ' ')}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ConversationDetailPanel({ conv, accessToken, onClose }: ConversationDetailPanelProps) {
+  const [detail, setDetail] = useState<AdminConversationDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setDetail(null);
+    StaffAccessService.getConversationDetail(conv.id, accessToken)
+      .then((d) => { setDetail(d); setLoading(false); })
+      .catch((e) => { setError(String(e)); setLoading(false); });
+  }, [conv.id, accessToken]);
+
+  useEffect(() => {
+    if (detail) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [detail]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+        className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between p-4 border-b border-gray-100 flex-shrink-0">
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900 text-sm truncate">
+              {conv.user_nickname ?? 'Anonymous'}
+            </p>
+            <p className="text-xs text-gray-400 font-mono mt-0.5">…{conv.session_id.slice(-12)}</p>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {conv.platform && (
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                  conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' :
+                  conv.platform === 'telegram' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  {conv.platform === 'whatsapp' ? 'WhatsApp' : conv.platform === 'telegram' ? 'Telegram' : 'Web'}
+                </span>
+              )}
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase">
+                {conv.language ?? 'en'}
+              </span>
+              {conv.ended_at ? (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">Ended</span>
+              ) : (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
+              )}
+              {conv.is_escalated && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Escalated</span>
+              )}
+              {(conv.crisis_types ?? []).map((ct) => (
+                <span key={ct} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 capitalize">
+                  {ct.replace(/_/g, ' ')}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">
+              Started {formatDateTime(conv.created_at)} · {conv.message_count} messages
+            </p>
+          </div>
+          <button onClick={onClose} className="flex-shrink-0 ml-3 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {loading && (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className={`flex gap-2 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+                  <div className="w-7 h-7 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+                  <div className={`h-10 rounded-2xl bg-gray-100 animate-pulse ${i % 2 === 0 ? 'w-48' : 'w-56'}`} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="text-center py-12 text-sm text-red-500">{error}</div>
+          )}
+
+          {detail && detail.messages.length === 0 && (
+            <div className="text-center py-12 text-sm text-gray-400">No messages in this conversation</div>
+          )}
+
+          {detail?.messages.map((msg) => (
+            <ChatBubble key={msg.id} msg={msg} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+
 interface ConversationsPageProps {
   session: StaffSession;
 }
@@ -48,6 +218,7 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
   const [crisisFilter, setCrisisFilter] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [convLoading, setConvLoading] = useState(true);
+  const [selectedConv, setSelectedConv] = useState<AdminConversationListItem | null>(null);
 
   const pageSize = 20;
 
@@ -97,6 +268,7 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
   const periodLabel = period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50/50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
 
@@ -214,7 +386,11 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
                   <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">No conversations found</td></tr>
                 ) : (
                   convs.map((conv) => (
-                    <tr key={conv.id} className="border-b border-[#E8ECFF] hover:bg-gray-50/50 transition-colors">
+                    <tr
+                      key={conv.id}
+                      className="border-b border-[#E8ECFF] hover:bg-blue-50/40 transition-colors cursor-pointer"
+                      onClick={() => setSelectedConv(conv)}
+                    >
                       <td className="px-4 py-3">
                         <p className="text-xs font-medium text-gray-900">{conv.user_nickname ?? 'Anonymous'}</p>
                         <p className="text-xs text-gray-400 font-mono">…{conv.session_id.slice(-8)}</p>
@@ -282,5 +458,18 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
         </Card>
       </div>
     </div>
+
+    {/* Chat detail slide-over */}
+    <AnimatePresence>
+      {selectedConv && (
+        <ConversationDetailPanel
+          key={selectedConv.id}
+          conv={selectedConv}
+          accessToken={session.accessToken}
+          onClose={() => setSelectedConv(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }
