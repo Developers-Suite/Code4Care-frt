@@ -37,7 +37,7 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-tight">
-                    Install Room 1221
+                    Install Lydia Contact Center
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     Add to your home screen for quick access

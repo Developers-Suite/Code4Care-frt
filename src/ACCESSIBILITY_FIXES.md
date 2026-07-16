@@ -214,7 +214,7 @@ Component.displayName = Primitive.displayName;  // For debugging
 ```tsx
 <DialogContent className="sm:max-w-md">
   <DialogHeader>
-    <DialogTitle>Welcome to Room 1221</DialogTitle>
+    <DialogTitle>Welcome to Lydia Contact Center</DialogTitle>
     <DialogDescription>
       A safe, anonymous space for SRHR support...
     </DialogDescription>
@@ -456,4 +456,4 @@ All dialog components now fully accessible and WCAG 2.1 Level AA compliant.
 ---
 
 *Last Updated: Current Session*  
-*Room 1221 - Fully Accessible Dialog Components*
+*Lydia Contact Center - Fully Accessible Dialog Components*

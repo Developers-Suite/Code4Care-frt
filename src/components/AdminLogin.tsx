@@ -42,7 +42,7 @@ export function AdminLogin({ onAdminLogin, onBack }: AdminLoginProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@room1221.org"
+                placeholder="admin@lydiacontactcenter.org"
                 className="pl-10 rounded-full"
               />
             </div>

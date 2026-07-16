@@ -1,4 +1,4 @@
-# Room 1221 - User Guide & Feature Overview
+# Lydia Contact Center - User Guide & Feature Overview
 
 ## 🎯 Quick Start
 
@@ -19,11 +19,11 @@
 
 ### Header Bar
 ```
-[☰ Menu] [🛡️ Room 1221] [🟢 Online] [🚨 Panic Exit]
+[☰ Menu] [🛡️ Lydia Contact Center] [🟢 Online] [🚨 Panic Exit]
 ```
 
 - **Menu Button (☰)**: Opens sidebar navigation
-- **Room 1221 Logo**: App branding with shield icon
+- **Lydia Contact Center Logo**: App branding with shield icon
 - **Online Status**: Shows connection status (🟢 Online / ⚪ Offline)
 - **Panic Exit**: Emergency button to quickly hide the app
 
@@ -99,7 +99,7 @@ Located in the sidebar, shows:
 **Emergency privacy feature:**
 - Tap the red "Quick Exit" button in header
 - App instantly switches to a safe screen (calculator)
-- Returns to chat when you tap "Return to Room 1221"
+- Returns to chat when you tap "Return to Lydia Contact Center"
 - Use when you need quick privacy
 
 ---
@@ -161,10 +161,10 @@ First-time users see suggested questions:
 Tap any suggestion to auto-fill the input.
 
 ### Typing Indicator
-When Room 1221 is composing a response:
+When Lydia Contact Center is composing a response:
 - Three animated dots appear
 - Located in a chat bubble
-- Shows "Room 1221 is thinking..."
+- Shows "Lydia Contact Center is thinking..."
 
 ### Chat Actions
 **Clear Chat:**
@@ -284,8 +284,8 @@ When Room 1221 is composing a response:
 **What happens:**
 1. Tap "Quick Exit" / "Fi hɔ ntɛm" / "Do go kaba"
 2. App switches to calculator screen
-3. Room 1221 is hidden from view
-4. Tap "Return to Room 1221" to come back
+3. Lydia Contact Center is hidden from view
+4. Tap "Return to Lydia Contact Center" to come back
 
 **Note:** Chat history is preserved but hidden
 
@@ -436,7 +436,7 @@ When Room 1221 is composing a response:
 - Visit nearest health facility
 - Use Clinic Finder for youth-friendly locations
 
-**Note:** Room 1221 provides information, not medical diagnosis or treatment.
+**Note:** Lydia Contact Center provides information, not medical diagnosis or treatment.
 
 ---
 
@@ -490,7 +490,7 @@ When Room 1221 is composing a response:
 
 ---
 
-**Remember:** Room 1221 is your safe, anonymous space for SRHR information. No question is too personal, and your privacy is always protected. 🛡️
+**Remember:** Lydia Contact Center is your safe, anonymous space for SRHR information. No question is too personal, and your privacy is always protected. 🛡️
 
 **Version:** 1.0.0  
 **Last Updated:** November 2024  

@@ -1,4 +1,4 @@
-# Room 1221 - Quick Reference Card
+# Lydia Contact Center - Quick Reference Card
 
 ## 🚀 Quick Start
 
@@ -60,15 +60,15 @@ npm run preview
 
 ```javascript
 // User Preferences
-'room1221_nickname'    → string | null
-'room1221_language'    → 'en' | 'twi' | 'ewe'
-'room1221_duration'    → '24h' | '7d' | '30d' | '90d'
-'room1221_analytics'   → 'true' | 'false'
+'lydiacontactcenter_nickname'    → string | null
+'lydiacontactcenter_language'    → 'en' | 'twi' | 'ewe'
+'lydiacontactcenter_duration'    → '24h' | '7d' | '30d' | '90d'
+'lydiacontactcenter_analytics'   → 'true' | 'false'
 
 // Session Data
-'room1221_chat_[id]'   → Message[]
-'room1221_sessions'    → ChatSession[]
-'room1221_panic_triggered' → timestamp
+'lydiacontactcenter_chat_[id]'   → Message[]
+'lydiacontactcenter_sessions'    → ChatSession[]
+'lydiacontactcenter_panic_triggered' → timestamp
 ```
 
 ---
@@ -178,7 +178,7 @@ const langCodes = {
 ```typescript
 // Check every minute for expired sessions
 setInterval(() => {
-  const sessions = JSON.parse(localStorage.getItem('room1221_sessions') || '{}');
+  const sessions = JSON.parse(localStorage.getItem('lydiacontactcenter_sessions') || '{}');
   const now = Date.now();
   const deleteAfter = getDurationInMs(sessionDuration);
   
@@ -188,14 +188,14 @@ setInterval(() => {
     }
   });
   
-  localStorage.setItem('room1221_sessions', JSON.stringify(sessions));
+  localStorage.setItem('lydiacontactcenter_sessions', JSON.stringify(sessions));
 }, 60000);
 ```
 
 ### Clear Chat
 ```typescript
 const handleClearChat = () => {
-  localStorage.removeItem(`room1221_chat_${sessionId}`);
+  localStorage.removeItem(`lydiacontactcenter_chat_${sessionId}`);
   setSessionId(Date.now().toString());
   toast.success('Chat cleared');
 };
@@ -205,7 +205,7 @@ const handleClearChat = () => {
 ```typescript
 const handlePanic = () => {
   setShowPanicScreen(true);
-  localStorage.setItem('room1221_panic_triggered', Date.now().toString());
+  localStorage.setItem('lydiacontactcenter_panic_triggered', Date.now().toString());
 };
 ```
 
@@ -241,8 +241,8 @@ recognition.start();
 
 ```json
 {
-  "name": "Room 1221 - Smart, Safe & Discreet SRHR Support",
-  "short_name": "Room 1221",
+  "name": "Lydia Contact Center - Smart, Safe & Discreet SRHR Support",
+  "short_name": "Lydia Contact Center",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F9FB",
@@ -418,10 +418,10 @@ trackEvent('section_viewed', { section: currentSection });
 ### Enable Debug Mode
 ```typescript
 // Add to localStorage
-localStorage.setItem('room1221_debug', 'true');
+localStorage.setItem('lydiacontactcenter_debug', 'true');
 
 // Check in code
-const DEBUG = localStorage.getItem('room1221_debug') === 'true';
+const DEBUG = localStorage.getItem('lydiacontactcenter_debug') === 'true';
 
 if (DEBUG) {
   console.log('State:', { messages, sessionId, language });
@@ -432,7 +432,7 @@ if (DEBUG) {
 ```javascript
 // In browser console
 Object.keys(localStorage)
-  .filter(key => key.startsWith('room1221'))
+  .filter(key => key.startsWith('lydiacontactcenter'))
   .forEach(key => {
     console.log(key, localStorage.getItem(key));
   });
@@ -442,7 +442,7 @@ Object.keys(localStorage)
 ```javascript
 // In browser console
 Object.keys(localStorage)
-  .filter(key => key.startsWith('room1221'))
+  .filter(key => key.startsWith('lydiacontactcenter'))
   .forEach(key => localStorage.removeItem(key));
 location.reload();
 ```
@@ -489,7 +489,7 @@ npm run deploy
 # .env (if needed in future)
 VITE_API_URL=https://api.example.com
 VITE_ANALYTICS_ID=your-analytics-id
-VITE_APP_NAME=Room 1221
+VITE_APP_NAME=Lydia Contact Center
 ```
 
 ```typescript
@@ -595,4 +595,4 @@ try {
 
 **Quick Reference Version 1.0.0**  
 **Last Updated:** November 2024  
-**Room 1221** 🛡️
+**Lydia Contact Center** 🛡️

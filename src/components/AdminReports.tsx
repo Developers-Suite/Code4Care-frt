@@ -336,7 +336,7 @@ export function AdminReports({ selectedLanguage, accessToken }: AdminReportsProp
 
   const handleExportJson = () => {
     downloadFile(
-      `room1221-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.json`,
+      `lydiacontactcenter-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.json`,
       JSON.stringify(buildExportPayload(), null, 2),
       'application/json;charset=utf-8'
     );
@@ -344,7 +344,7 @@ export function AdminReports({ selectedLanguage, accessToken }: AdminReportsProp
 
   const handleExportCsv = () => {
     downloadFile(
-      `room1221-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.csv`,
+      `lydiacontactcenter-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.csv`,
       toCsv(tableRows),
       'text/csv;charset=utf-8'
     );
@@ -356,7 +356,7 @@ export function AdminReports({ selectedLanguage, accessToken }: AdminReportsProp
       return;
     }
 
-    const filename = `room1221-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.pdf`;
+    const filename = `lydiacontactcenter-${reportType}-report-${reportRangeLabel.replace(/\s+/g, '').replace(/-/g, 'to')}.pdf`;
     generateReportFromAnalytics(
       analyticsData,
       reportType,

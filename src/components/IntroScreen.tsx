@@ -10,7 +10,7 @@ interface IntroScreenProps {
 export function IntroScreen({ onStart, selectedLanguage, onSkip }: IntroScreenProps) {
   const content = {
     en: {
-      title: "Welcome to Room 1221",
+      title: "Welcome to Lydia Contact Center",
       subtitle: "A safe space for your health questions",
       description: "Get confidential, judgment-free information about sexual and reproductive health. Your privacy is our priority.",
       features: [
@@ -23,7 +23,7 @@ export function IntroScreen({ onStart, selectedLanguage, onSkip }: IntroScreenPr
       footer: "This service is free and confidential"
     },
     twi: {
-      title: "Akwaaba wɔ Room 1221",
+      title: "Akwaaba wɔ Lydia Contact Center",
       subtitle: "Baabi a w'ahobammɔ wɔ hɔ ma wo akwahosan nsɛm",
       description: "Nya nsɛm a wɔmmu w'ani wɔ akwahosan ne awoɔ ho. Yɛhwɛ wo kokoamsɛm yie.",
       features: [
@@ -36,7 +36,7 @@ export function IntroScreen({ onStart, selectedLanguage, onSkip }: IntroScreenPr
       footer: "Saa dwumadie yi yɛ kwa na ɛyɛ kokoam"
     },
     ewe: {
-      title: "Woezɔ ɖe Room 1221",
+      title: "Woezɔ ɖe Lydia Contact Center",
       subtitle: "Teƒe si ŋutifafa le hena wò lãmesɛ biabia",
       description: "Xɔ nyatakakawo ɖe atsu kple agbenɔnɔ lãmesɛ ŋuti. Míekpɔa wò ɣaɣlawo dzi.",
       features: [

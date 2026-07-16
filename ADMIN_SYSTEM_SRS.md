@@ -1,13 +1,13 @@
-# Room 1221 Admin System Software Requirements Specification
+# Lydia Contact Center Admin System Software Requirements Specification
 
 ## 1. Document Control
-- **Product**: Room 1221 Admin System
+- **Product**: Lydia Contact Center Admin System
 - **Version**: 1.0
 - **Status**: Draft SRS aligned to the current shipped admin implementation
 - **Audience**: Product owners, developers, QA, operations, and administrators
 
 ## 2. Purpose
-The Room 1221 admin system provides a separate, secure administrative interface for monitoring platform activity, managing users and staff access, reviewing safety incidents, checking system health, and exporting reports.
+The Lydia Contact Center admin system provides a separate, secure administrative interface for monitoring platform activity, managing users and staff access, reviewing safety incidents, checking system health, and exporting reports.
 
 This SRS defines the functional and non-functional requirements for the current admin system as implemented in the codebase.
 

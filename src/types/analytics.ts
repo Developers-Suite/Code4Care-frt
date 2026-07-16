@@ -1,5 +1,5 @@
 /**
- * Analytics and data types for Room 1221 admin dashboard
+ * Analytics and data types for Lydia Contact Center admin dashboard
  * Supports informed decision-making based on user behavior and engagement
  */
 

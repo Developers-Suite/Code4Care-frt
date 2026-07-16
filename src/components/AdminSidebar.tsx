@@ -69,7 +69,7 @@ export function AdminSidebar({
               <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-base leading-tight text-gray-900">Room 1221</h2>
+              <h2 className="font-bold text-base leading-tight text-gray-900">Lydia Contact Center</h2>
               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Admin Panel</p>
             </div>
           </div>

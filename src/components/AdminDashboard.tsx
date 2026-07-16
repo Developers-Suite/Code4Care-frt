@@ -41,7 +41,7 @@ export function AdminDashboard({ selectedLanguage }: AdminDashboardProps) {
   const content = {
     en: {
       title: "Admin Dashboard",
-      subtitle: "Room 1221 Analytics & Monitoring",
+      subtitle: "Lydia Contact Center Analytics & Monitoring",
       totalEngagements: "Total Engagements",
       activeChats: "Active Chats",
       avgResponseTime: "Avg Response Time",
@@ -58,7 +58,7 @@ export function AdminDashboard({ selectedLanguage }: AdminDashboardProps) {
     },
     twi: {
       title: "Adwumayɛfo Beae",
-      subtitle: "Room 1221 Nsɛm ne Hwɛsoɔ",
+      subtitle: "Lydia Contact Center Nsɛm ne Hwɛsoɔ",
       totalEngagements: "Nkɔmmɔbɔ Nyinaa",
       activeChats: "Nkɔmmɔbɔ a ɛrekɔ so",
       avgResponseTime: "Mmuae Bere",
@@ -75,7 +75,7 @@ export function AdminDashboard({ selectedLanguage }: AdminDashboardProps) {
     },
     ewe: {
       title: "Dɔdzikpɔla ƒe Nɔƒe",
-      subtitle: "Room 1221 Nyatakakawo & Kpɔkplɔ",
+      subtitle: "Lydia Contact Center Nyatakakawo & Kpɔkplɔ",
       totalEngagements: "Takpekpewo Katã",
       activeChats: "Nuƒoƒo siwo le edzi yim",
       avgResponseTime: "Ŋuɖoɖo ƒe Ɣeyiɣi",

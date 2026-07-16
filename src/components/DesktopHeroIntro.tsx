@@ -22,7 +22,7 @@ export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
       >
         <img
           src={heroImage}
-          alt="Room 1221 Welcome"
+          alt="Lydia Contact Center Welcome"
           // object-cover and absolute inset-0 ensure it fills the 50% grid cell
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -53,7 +53,7 @@ export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF1F1] text-[#BE322D] font-bold text-xs uppercase tracking-widest border border-[#F4D6D5]">
                 <ShieldCheck className="w-4 h-4" />
-                Welcome to Room 1221
+                Welcome to Lydia Contact Center
               </span>
             </motion.div>
 

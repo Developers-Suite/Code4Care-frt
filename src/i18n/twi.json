@@ -8,7 +8,7 @@
     "error": "Mfomsoɔ",
     "loading": "Ɛreyɛ...",
     "privacyFirst": "Kokoam Di Kan",
-    "privacyNotice": "Wo kokoam ho hia. Room 1221 nkora wo nsɛm koraa.",
+    "privacyNotice": "Wo kokoam ho hia. Lydia Contact Center nkora wo nsɛm koraa.",
     "followUpKey": "Ɔdi-Akyi Safoa",
     "setNickname": "Fa Din Kakra Si Hɔ",
     "changeNickname": "Sesa Din Kakra",
@@ -33,7 +33,7 @@
     "statusGuest": "Woreka nkɔmmɔ a wonnim wo",
     "statusLoggedIn": "Wokɔ mu sɛ",
     "initialMessage": "Akwaaba! Mewɔ ha sɛ meboa wo wɔ nsɛm a ɛfa nna ne awo ho akwahosan ho. Biribiara a yɛbɛka no yɛ kokoam. Dɛn na wopɛ sɛ wuhu?",
-    "consultantMessage": "Akwaaba! Meyɛ Room 1221 ɔfotufoɔ. Mewɔ ha sɛ mema wo mmoa ne akwankyerɛ wɔ nna ne awo ho akwahosan ho. Wo nkɔmmɔbɔ yɛ kokoam koraa. Mɛtumi aboa wo dɛn?",
+    "consultantMessage": "Akwaaba! Meyɛ Lydia Contact Center ɔfotufoɔ. Mewɔ ha sɛ mema wo mmoa ne akwankyerɛ wɔ nna ne awo ho akwahosan ho. Wo nkɔmmɔbɔ yɛ kokoam koraa. Mɛtumi aboa wo dɛn?",
     "quickReplies": {
        "contraception": "Ka contraception ho asɛm kyerɛ me",
        "sti": "STI yɛ dɛn?",
@@ -55,7 +55,7 @@
   },
   "onboarding": {
     "page1": {
-      "title": "Akwaaba kɔ Room 1221",
+      "title": "Akwaaba kɔ Lydia Contact Center",
       "subtitle": "Wo Ahobammɔ Beaeɛ ma SRHR Mmoa",
       "features": {
         "anonymous": { "title": "Ahobammɔ 100%", "desc": "Yɛnnboaboa wo nsɛm. Wo ahobammɔ ho hia yɛn paa." },
@@ -75,7 +75,7 @@
     }
   },
   "nickname": {
-    "title": "Akwaaba kɔ Room 1221",
+    "title": "Akwaaba kɔ Lydia Contact Center",
     "desc": "Ahobammɔ beaeɛ ma SRHR mmoa. Paw din kakra na yɛne wo nkasa yie.",
     "label": "Wo Din (Optional)",
     "placeholder": "Kyerɛw wo din ha",

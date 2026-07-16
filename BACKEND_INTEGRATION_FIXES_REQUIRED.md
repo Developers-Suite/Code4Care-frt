@@ -2,7 +2,7 @@
 
 **Date:** May 10, 2026  
 **Status:** Critical - Blocking frontend analytics and chat history features  
-**Tested Against:** Production API (code4care-backend-production.up.railway.app)
+**Tested Against:** Production API (api.lydiacallcenter.org)
 
 ---
 
@@ -27,7 +27,7 @@ POST `/v1/chat` accepts messages and returns valid bot responses, but GET `/v1/c
 
 **Request:**
 ```bash
-curl -X POST "https://code4care-backend-production.up.railway.app/v1/chat" \
+curl -X POST "https://api.lydiacallcenter.org/v1/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "session_id": "msg-test-1778396886",
@@ -50,7 +50,7 @@ curl -X POST "https://code4care-backend-production.up.railway.app/v1/chat" \
 
 **Then retrieving session history:**
 ```bash
-curl "https://code4care-backend-production.up.railway.app/v1/chat/session/msg-test-1778396886"
+curl "https://api.lydiacallcenter.org/v1/chat/session/msg-test-1778396886"
 ```
 
 **Response (BROKEN - messages missing):**
@@ -112,7 +112,7 @@ curl "https://code4care-backend-production.up.railway.app/v1/chat/session/msg-te
 ### Expected Response After Fix
 
 ```bash
-curl "https://code4care-backend-production.up.railway.app/v1/chat/session/msg-test-1778396886"
+curl "https://api.lydiacallcenter.org/v1/chat/session/msg-test-1778396886"
 ```
 
 Should return:
@@ -251,7 +251,7 @@ Frontend sends `metadata` with chat events containing safety summary fields, but
 ### Expected Response After Fix
 
 ```bash
-curl "https://code4care-backend-production.up.railway.app/v1/analytics/summary?period=week" \
+curl "https://api.lydiacallcenter.org/v1/analytics/summary?period=week" \
   -H "accept: application/json"
 ```
 
@@ -281,7 +281,7 @@ Should return (in `safetyMetrics`):
 ### Test Case (FAILED)
 
 ```bash
-curl "https://code4care-backend-production.up.railway.app/analytics/safety?period=week" \
+curl "https://api.lydiacallcenter.org/analytics/safety?period=week" \
   -H "accept: application/json"
 ```
 

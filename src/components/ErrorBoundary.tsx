@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md w-full h-[100dvh] sm:min-h-[680px] sm:h-auto bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl p-5 sm:p-8 flex flex-col">
             <div className="text-center mb-6">
               <p className="text-sm font-semibold tracking-wide uppercase text-blue-500 mb-3">
-                Room 1221
+                Lydia Contact Center
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                 Something went wrong

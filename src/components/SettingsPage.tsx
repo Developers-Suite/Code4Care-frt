@@ -74,7 +74,7 @@ export function SettingsPage({ onClearChat, onLogout, onResetPWADismissal }: Set
   };
 
   const handleSaveNames = () => {
-    const safeBotName = draftBotName.trim() || "Room 1221";
+    const safeBotName = draftBotName.trim() || "Lydia Contact Center";
     const safeNickname = draftNickname.trim();
 
     setBotName(safeBotName);
@@ -250,7 +250,7 @@ export function SettingsPage({ onClearChat, onLogout, onResetPWADismissal }: Set
               {t("settings.pwaTitle", "Install App")}
             </CardTitle>
             <CardDescription>
-              {t("settings.pwaDesc", "Re-enable the installation prompt to add Room 1221 to your home screen.")}
+              {t("settings.pwaDesc", "Re-enable the installation prompt to add Lydia Contact Center to your home screen.")}
             </CardDescription>
           </CardHeader>
           <CardContent>

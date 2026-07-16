@@ -33,7 +33,7 @@
 		"statusGuest": "Tattaunawa ba tare da suna ba",
 		"statusLoggedIn": "An shiga da suna",
 		"initialMessage": "Sannu! Ina nan don taimaka maka da duk wani tambaya game da lafiyar jima'i da haihuwa. Duk abin da muka tattauna yana sirri ne. Me kake so ka sani?",
-		"consultantMessage": "Sannu! Ni mai ba da shawara ne na Room 1221. Ina nan don bayar da tallafi da shiriya kan lafiyar jima'i da haihuwa. Tattaunawarmu cikakkiyar sirri ce. Ta yaya zan taimake ka yau?",
+		"consultantMessage": "Sannu! Ni mai ba da shawara ne na Lydia Contact Center. Ina nan don bayar da tallafi da shiriya kan lafiyar jima'i da haihuwa. Tattaunawarmu cikakkiyar sirri ce. Ta yaya zan taimake ka yau?",
 		"quickReplies": {
 			"contraception": "Ka gaya mani game da hanyoyin kariya",
 			"sti": "Menene STI?",
@@ -70,7 +70,7 @@
 	},
 	"onboarding": {
 		"page1": {
-			"title": "Barka da zuwa Room 1221",
+			"title": "Barka da zuwa Lydia Contact Center",
 			"subtitle": "Wurin ka mai aminci don tallafin SRHR",
 			"features": {
 				"anonymous": { "title": "100% ba tare da suna ba", "desc": "Ba a tattara bayanan kai tsaye ba. Sirrinka shi ne fifiko." },
@@ -135,7 +135,7 @@
 		}
 	},
 	"nickname": {
-		"title": "Barka da zuwa Room 1221",
+		"title": "Barka da zuwa Lydia Contact Center",
 		"desc": "Wuri mai aminci, ba tare da suna ba, don tallafin SRHR. Saita suna don keɓance kwarewarka, ko ka yi hira ba tare da suna ba.",
 		"label": "Suna (na zaɓi)",
 		"placeholder": "Shigar da sunanka",

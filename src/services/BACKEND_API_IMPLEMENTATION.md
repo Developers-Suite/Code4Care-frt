@@ -2,7 +2,7 @@
 
 **Implementation Date:** May 4, 2026  
 **Status:** ✅ Complete  
-**Backend URL:** https://code4care-backend-production.up.railway.app
+**Backend URL:** https://api.lydiacallcenter.org
 
 ---
 
@@ -245,9 +245,9 @@ Contains detailed examples for:
 
 ```env
 # Backend API URLs
-VITE_API_BASE_URL=https://code4care-backend-production.up.railway.app
-VITE_ADMIN_API_BASE_URL=https://code4care-backend-production.up.railway.app
-VITE_CHAT_API_BASE_URL=https://code4care-backend-production.up.railway.app
+VITE_API_BASE_URL=https://api.lydiacallcenter.org
+VITE_ADMIN_API_BASE_URL=https://api.lydiacallcenter.org
+VITE_CHAT_API_BASE_URL=https://api.lydiacallcenter.org
 VITE_CHAT_API_ENDPOINT=/v1/chat
 
 # Optional bootstrap token for initial setup

@@ -1,4 +1,4 @@
-# Room 1221 - Testing Guide for Recent Updates
+# Lydia Contact Center - Testing Guide for Recent Updates
 
 ## Quick Testing Checklist
 
@@ -16,7 +16,7 @@
 
 **Visual Checks**:
 - ✅ Sidebar width: 280px
-- ✅ Blue gradient header with Room 1221 logo
+- ✅ Blue gradient header with Lydia Contact Center logo
 - ✅ All menu items visible with icons
 - ✅ Active item has blue gradient background
 - ✅ Close button (X) visible in top-right of sidebar
@@ -312,4 +312,4 @@ ________________________________
 
 ---
 
-*Room 1221 - Safe, Smart, Discreet SRHR for Youth*
+*Lydia Contact Center - Safe, Smart, Discreet SRHR for Youth*

@@ -243,9 +243,9 @@ export interface AdminUpdateReportRequest {
   resolution_notes?: string;
 }
 
-const STAFF_ACCOUNTS_KEY = 'room1221_staff_accounts';
-const SUPPORT_REQUESTS_KEY = 'room1221_support_requests';
-const SESSION_KEY = 'room1221_staff_session';
+const STAFF_ACCOUNTS_KEY = 'lydiacontactcenter_staff_accounts';
+const SUPPORT_REQUESTS_KEY = 'lydiacontactcenter_support_requests';
+const SESSION_KEY = 'lydiacontactcenter_staff_session';
 const ADMIN_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
 const ADMIN_LOGIN_PATH = '/admin/login';
 const ADMIN_ME_PATH = '/admin/me';
@@ -281,7 +281,7 @@ const defaultStaffAccounts: StaffAccount[] = [
     role: 'admin',
     status: 'active',
     availability: 'available',
-    email: 'admin@room1221.org',
+    email: 'admin@lydiacontactcenter.org',
     phone: '+233 30 200 0001',
     joinDate: '2025-01-01',
     trained: true,
@@ -294,7 +294,7 @@ const defaultStaffAccounts: StaffAccount[] = [
     role: 'consultant',
     status: 'active',
     availability: 'available',
-    email: 'sarah@room1221.org',
+    email: 'sarah@lydiacontactcenter.org',
     phone: '+233 24 123 4567',
     joinDate: '2025-01-15',
     trained: true,
@@ -307,7 +307,7 @@ const defaultStaffAccounts: StaffAccount[] = [
     role: 'supervisor',
     status: 'active',
     availability: 'busy',
-    email: 'david@room1221.org',
+    email: 'david@lydiacontactcenter.org',
     phone: '+233 55 234 5678',
     joinDate: '2024-12-01',
     trained: true,

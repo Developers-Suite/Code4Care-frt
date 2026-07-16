@@ -884,7 +884,7 @@ export function AdminUserManagement({ selectedLanguage, session }: AdminUserMana
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@room1221.org" className="bg-gray-50 border-[#E8ECFF] text-gray-900" />
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@lydiacontactcenter.org" className="bg-gray-50 border-[#E8ECFF] text-gray-900" />
               </div>
 
               <div>

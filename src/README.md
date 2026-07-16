@@ -1,10 +1,10 @@
-# Room 1221 — Smart, Safe, and Discreet SRHR Chatbot
+# Lydia Contact Center — Smart, Safe, and Discreet SRHR Chatbot
 
 A Progressive Web App (PWA) providing anonymous, youth-friendly Sexual and Reproductive Health Rights (SRHR) support for youth in Ghana.
 
 ## 🎯 Mission
 
-Room 1221 is a privacy-first, anonymous chatbot platform designed to provide accurate, judgment-free SRHR information to young people in Ghana. Our goal is to break down barriers to accessing critical health information through:
+Lydia Contact Center is a privacy-first, anonymous chatbot platform designed to provide accurate, judgment-free SRHR information to young people in Ghana. Our goal is to break down barriers to accessing critical health information through:
 
 - **Anonymous Access**: No personal data collection, ever
 - **Multi-Language Support**: English, Twi, and Ewe
@@ -19,7 +19,7 @@ Room 1221 is a privacy-first, anonymous chatbot platform designed to provide acc
 - **Voice Input**: Speech-to-text support in multiple languages
 - **Multi-Language**: Full support for English, Twi, and Ewe
 - **Auto-Delete**: Configurable chat history retention (24h, 7d, 30d, 90d)
-- **Typing Indicators**: Real-time "Room 1221 is thinking..." feedback
+- **Typing Indicators**: Real-time "Lydia Contact Center is thinking..." feedback
 
 ### Educational Modules
 
@@ -113,7 +113,7 @@ The app is PWA-ready and can be:
 ## 📱 User Flow
 
 ### First-Time User
-1. Welcome modal explains Room 1221's purpose
+1. Welcome modal explains Lydia Contact Center's purpose
 2. Option to set anonymous nickname or skip
 3. Privacy notice displayed
 4. Chat begins with AI greeting
@@ -211,7 +211,7 @@ We collect minimal, anonymous data to improve the service:
 
 ## 🙏 Acknowledgments
 
-Room 1221 is designed to support youth reproductive health in Ghana. We acknowledge:
+Lydia Contact Center is designed to support youth reproductive health in Ghana. We acknowledge:
 - Ghana Health Service guidelines
 - WHO SRHR frameworks
 - Youth advocacy organizations
@@ -219,7 +219,7 @@ Room 1221 is designed to support youth reproductive health in Ghana. We acknowle
 
 ## ⚠️ Disclaimer
 
-Room 1221 provides health information, not medical advice. For emergencies or specific medical concerns, please:
+Lydia Contact Center provides health information, not medical advice. For emergencies or specific medical concerns, please:
 - Contact emergency services (193 in Ghana)
 - Visit a healthcare facility
 - Use the Clinic Finder to locate youth-friendly services
@@ -230,6 +230,6 @@ This project is for educational and health promotion purposes.
 
 ---
 
-**Room 1221**: Smart, Safe, and Discreet SRHR Support for Ghana's Youth 🇬🇭
+**Lydia Contact Center**: Smart, Safe, and Discreet SRHR Support for Ghana's Youth 🇬🇭
 
 Built with ❤️ for youth empowerment and health education

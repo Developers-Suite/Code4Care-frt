@@ -1,4 +1,4 @@
-# Room 1221 - Changelog
+# Lydia Contact Center - Changelog
 
 ## Version 1.0.0 - Complete Redesign (November 2024)
 
@@ -18,7 +18,7 @@
 #### ✅ Header Area
 - **SIMPLIFIED**: Clean header with only essential elements
 - **ELEMENTS**:
-  - Left: Menu button (☰) + Room 1221 logo with shield
+  - Left: Menu button (☰) + Lydia Contact Center logo with shield
   - Center: Online status indicator (🟢 Online)
   - Right: Panic Exit button (red coral)
 - **REMOVED**: All navigation tabs and distractions
@@ -26,7 +26,7 @@
 
 #### ✅ Chat Area
 - **MAINTAINED**: Existing conversation bubble layout
-- **ADDED**: Typing indicator animation ("Room 1221 is thinking...")
+- **ADDED**: Typing indicator animation ("Lydia Contact Center is thinking...")
 - **ADDED**: Voice input with microphone icon (browser speech-to-text)
 - **ADDED**: Clear Chat button in sidebar
 - **ADDED**: Panic Exit button in header
@@ -63,7 +63,7 @@ Comprehensive sidebar with all features:
 
 **Privacy Notice:**
 - Shield icon with message
-- "Room 1221 never stores personal data"
+- "Lydia Contact Center never stores personal data"
 - Color-coded info box
 
 **Analytics Opt-in:**
@@ -86,13 +86,13 @@ Comprehensive sidebar with all features:
 - **LOCAL ONLY**: IndexedDB / LocalStorage implementation
 - **NO SERVER**: All data stays on device
 - **SESSION DATA**:
-  - `room1221_nickname` - Optional user nickname
-  - `room1221_language` - Language preference (en/twi/ewe)
-  - `room1221_duration` - Auto-delete period
-  - `room1221_chat_[sessionId]` - Individual conversations
-  - `room1221_sessions` - Session metadata
-  - `room1221_analytics` - Analytics consent
-  - `room1221_panic_triggered` - Panic exit timestamp
+  - `lydiacontactcenter_nickname` - Optional user nickname
+  - `lydiacontactcenter_language` - Language preference (en/twi/ewe)
+  - `lydiacontactcenter_duration` - Auto-delete period
+  - `lydiacontactcenter_chat_[sessionId]` - Individual conversations
+  - `lydiacontactcenter_sessions` - Session metadata
+  - `lydiacontactcenter_analytics` - Analytics consent
+  - `lydiacontactcenter_panic_triggered` - Panic exit timestamp
 
 #### ✅ Auto-Deletion System
 - **CONFIGURABLE PERIODS**:
@@ -108,7 +108,7 @@ Comprehensive sidebar with all features:
 #### ✅ Panic Exit Feature
 - **INSTANT ACTIVATION**: Single tap to hide
 - **SAFE SCREEN**: Switches to calculator view
-- **EASY RETURN**: "Return to Room 1221" button
+- **EASY RETURN**: "Return to Lydia Contact Center" button
 - **HISTORY PRESERVED**: Chat saved but hidden
 - **USE CASES**: Emergency privacy, unexpected visitors
 
@@ -275,8 +275,8 @@ Coral:            #ff7b6e  /* Panic, alerts */
 
 #### ✅ Progressive Web App
 **Manifest:**
-- App name: "Room 1221"
-- Short name: "Room 1221"
+- App name: "Lydia Contact Center"
+- Short name: "Lydia Contact Center"
 - Description: SRHR support
 - Theme color: #00C27A
 - Background: #F8F9FB
@@ -502,5 +502,5 @@ All configurable values:
 
 ---
 
-**Room 1221** - Smart, Safe, and Discreet SRHR Support 🛡️  
+**Lydia Contact Center** - Smart, Safe, and Discreet SRHR Support 🛡️  
 Built with ❤️ for Ghana's Youth 🇬🇭

@@ -1,11 +1,11 @@
-# Room 1221 - Master Feature Specification
+# Lydia Contact Center - Master Feature Specification
 
-This document serves as the single source of truth for the Room 1221 PWA, consolidating all feature specifications, implementation details, and system architecture.
+This document serves as the single source of truth for the Lydia Contact Center PWA, consolidating all feature specifications, implementation details, and system architecture.
 
 ---
 
 ## 1. System Overview & Core Identity
-**Room 1221** is a specialized, privacy-first Progressive Web App (PWA) designed to provide Sexual and Reproductive Health and Rights (SRHR) information to Ghanaian youth. It operates entirely on the client-side to ensure maximum privacy and anonymity.
+**Lydia Contact Center** is a specialized, privacy-first Progressive Web App (PWA) designed to provide Sexual and Reproductive Health and Rights (SRHR) information to Ghanaian youth. It operates entirely on the client-side to ensure maximum privacy and anonymity.
 
 - **Target Audience:** Youth in Ghana.
 - **Platform:** Mobile-first PWA (iOS/Android/Desktop).
@@ -39,7 +39,7 @@ The central hub of the application.
   - **Voice Input 🎤**: Web Speech API integration supporting English and localized accents (Ghanaian English).
   - **Quick Replies**: Contextual suggestion chips for rapid interaction.
 - **Bot Persona**:
-  - **Customizable Name**: Users can rename "Room 1221" to "Kofi", "Ama", etc.
+  - **Customizable Name**: Users can rename "Lydia Contact Center" to "Kofi", "Ama", etc.
   - **Typing Indicators**: Animated dots for realistic latency.
 
 ### 3.2. Consultant Mode

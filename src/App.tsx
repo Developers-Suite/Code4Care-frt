@@ -88,7 +88,7 @@ function AppContent() {
     UserEngagementService.logNonBlocking(
       UserEngagementService.captureDemographics({
         session_id: sessionId,
-        bot_name: 'Room 1221',
+        bot_name: 'Lydia Contact Center',
         age_range: ageRange,
         gender_identity: genderIdentity,
         region,
@@ -134,7 +134,7 @@ function AppContent() {
 
     sessionStartedAtRef.current = Date.now();
     try {
-      safeStorage.setItem('room1221_session_started_at', String(sessionStartedAtRef.current));
+      safeStorage.setItem('lydiacontactcenter_session_started_at', String(sessionStartedAtRef.current));
     } catch {}
     sessionEndedRef.current = false;
     sessionAnalyticsRecordedRef.current = false;
@@ -170,7 +170,7 @@ function AppContent() {
     sessionAnalyticsRecordedRef.current = true;
 
     const durationSeconds = Math.max(0, Math.round((Date.now() - sessionStartedAtRef.current) / 1000));
-    const chatStorageKey = `room1221_chat_${sessionId}`;
+    const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
     const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
 
     let messagesExchanged = 0;
@@ -181,7 +181,7 @@ function AppContent() {
       messagesExchanged = 0;
     }
 
-    const panicTriggered = safeStorage.getItem('room1221_panic_triggered') === 'true';
+    const panicTriggered = safeStorage.getItem('lydiacontactcenter_panic_triggered') === 'true';
 
     void RealAnalyticsService.recordSessionAnalytics({
       session_id: sessionId,
@@ -217,19 +217,19 @@ function AppContent() {
         });
       } catch {}
     }
-    localStorage.removeItem(`room1221_chat_${sessionId}`);
+    localStorage.removeItem(`lydiacontactcenter_chat_${sessionId}`);
     setClearChatTrigger(prev => prev + 1);
     setShowClearDialog(false);
     toast.success(t('chat.clearChatMsg', 'Chat history cleared'));
   };
 
   const handlePanicClick = () => {
-    safeStorage.setItem('room1221_panic_triggered', 'true');
+    safeStorage.setItem('lydiacontactcenter_panic_triggered', 'true');
     setShowPanicScreen(true);
     // Post an immediate analytics snapshot so panic events are recorded instantly
     try {
       const panicTriggered = true;
-      const chatStorageKey = `room1221_chat_${sessionId}`;
+      const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
       const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
       let messagesExchanged = 0;
       try {
@@ -237,7 +237,7 @@ function AppContent() {
         messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
       } catch {}
 
-      const startTs = Number(safeStorage.getItem('room1221_session_started_at')) || Date.now();
+      const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || Date.now();
       const durationSeconds = Math.max(0, Math.round((Date.now() - startTs) / 1000));
 
       void RealAnalyticsService.recordSessionAnalytics({
@@ -353,7 +353,7 @@ function AppContent() {
           setHasSeenOnboarding(true);
           try {
             sessionStartedAtRef.current = Date.now();
-            safeStorage.setItem('room1221_session_started_at', String(sessionStartedAtRef.current));
+            safeStorage.setItem('lydiacontactcenter_session_started_at', String(sessionStartedAtRef.current));
           } catch {}
 
           UserEngagementService.logNonBlocking(
@@ -382,7 +382,7 @@ function AppContent() {
           // Post an immediate session analytics snapshot for onboarding completion
           try {
             if (analyticsOptIn) {
-              const chatStorageKey = `room1221_chat_${sessionId}`;
+              const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
               const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
               let messagesExchanged = 0;
               try {
@@ -390,7 +390,7 @@ function AppContent() {
                 messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
               } catch {}
 
-              const startTs = Number(safeStorage.getItem('room1221_session_started_at')) || sessionStartedAtRef.current || Date.now();
+              const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || sessionStartedAtRef.current || Date.now();
 
               void RealAnalyticsService.recordSessionAnalytics({
                 session_id: sessionId,
@@ -404,14 +404,14 @@ function AppContent() {
                 duration_seconds: 0,
                 messages_exchanged: messagesExchanged,
                 topics_discussed: [],
-                panic_button_used: safeStorage.getItem('room1221_panic_triggered') === 'true',
+                panic_button_used: safeStorage.getItem('lydiacontactcenter_panic_triggered') === 'true',
                 crisis_support_accessed: false,
                 story_modules_started: 0,
                 story_modules_completed: 0,
                 pharmacy_searches: 0,
                 satisfaction_rating: undefined,
                 would_return: true,
-                safety_flags: safeStorage.getItem('room1221_panic_triggered') === 'true' ? ['panic-button'] : [],
+                safety_flags: safeStorage.getItem('lydiacontactcenter_panic_triggered') === 'true' ? ['panic-button'] : [],
               });
             }
           } catch (err) {

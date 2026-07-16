@@ -64,7 +64,7 @@ export function ChatInterface({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const STORAGE_KEY = `room1221_chat_${sessionId}`;
+  const STORAGE_KEY = `lydiacontactcenter_chat_${sessionId}`;
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | undefined>(undefined);
@@ -398,7 +398,7 @@ export function ChatInterface({
       // Post an incremental analytics snapshot so messages are recorded instantly
       try {
         if (analyticsOptIn) {
-          const chatStorageKey = `room1221_chat_${sessionId}`;
+          const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
           const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
           let messagesExchanged = 0;
           try {
@@ -406,7 +406,7 @@ export function ChatInterface({
             messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
           } catch {}
 
-          const startTs = Number(safeStorage.getItem('room1221_session_started_at')) || Date.now();
+          const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || Date.now();
           const durationSeconds = Math.max(0, Math.round((Date.now() - startTs) / 1000));
 
           void RealAnalyticsService.recordSessionAnalytics({
@@ -421,14 +421,14 @@ export function ChatInterface({
             duration_seconds: durationSeconds,
             messages_exchanged: messagesExchanged,
             topics_discussed: [],
-            panic_button_used: safeStorage.getItem('room1221_panic_triggered') === 'true',
+            panic_button_used: safeStorage.getItem('lydiacontactcenter_panic_triggered') === 'true',
             crisis_support_accessed: false,
             story_modules_started: 0,
             story_modules_completed: 0,
             pharmacy_searches: 0,
             satisfaction_rating: undefined,
             would_return: true,
-            safety_flags: safeStorage.getItem('room1221_panic_triggered') === 'true' ? ['panic-button'] : [],
+            safety_flags: safeStorage.getItem('lydiacontactcenter_panic_triggered') === 'true' ? ['panic-button'] : [],
           });
         }
       } catch (err) {
@@ -643,7 +643,7 @@ export function ChatInterface({
                           variant="outline"
                           size="sm"
                           onClick={() => { handleSend(option); }}
-                          className="rounded-xl border-blue-100 text-blue-600 bg-white hover:bg-blue-50 text-xs py-1 h-9"
+                          className="rounded-xl border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
                         >
                           {option}
                         </Button>
@@ -659,7 +659,7 @@ export function ChatInterface({
                           variant="outline"
                           size="sm"
                           onClick={() => { handleSend(suggestion); }}
-                          className="rounded-xl border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs py-1 h-9"
+                          className="rounded-xl border-emerald-600 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
                         >
                           {suggestion}
                         </Button>
@@ -729,13 +729,13 @@ export function ChatInterface({
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder={t('chat.placeholder')}
-              className="h-11 sm:h-12 w-full rounded-full pl-4 sm:pl-5 pr-4 bg-white border border-slate-100 shadow-sm focus:bg-white focus:border-blue-400 transition-all text-sm font-medium"
+              className="h-11 sm:h-12 w-full rounded-full pl-4 sm:pl-5 pr-4 bg-white border border-slate-300 shadow-sm focus:bg-white focus:border-blue-500 transition-all text-sm font-medium placeholder:text-slate-500 placeholder:opacity-100 focus:placeholder:text-slate-400"
             />
           </div>
 
           <button
             onClick={() => { if(!recognitionRef.current) return; isListening ? recognitionRef.current.stop() : (recognitionRef.current.start(), setIsListening(true)); }}
-            className={`p-2 rounded-full transition-colors flex items-center justify-center flex-shrink-0 ${isListening ? 'bg-red-100 text-red-600' : 'text-slate-400 hover:text-blue-600'}`}
+            className={`p-2 rounded-full transition-colors flex items-center justify-center flex-shrink-0 ${isListening ? 'bg-red-100 text-red-600' : 'text-slate-500 hover:text-blue-600'}`}
             aria-label="Toggle voice input"
           >
             <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
@@ -744,9 +744,9 @@ export function ChatInterface({
           <Button
             onClick={() => { handleSend(); }}
             disabled={!inputValue.trim()}
-            className="h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
+            className="h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-blue-600 hover:bg-white text-white hover:text-blue-600 border border-blue-600 hover:border-blue-600 shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
           >
-            <Send className="w-5 h-5 text-white" />
+            <Send className="w-5 h-5 text-current" />
           </Button>
         </div>
         

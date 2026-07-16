@@ -1,4 +1,4 @@
-# Room 1221 - Implementation Guide
+# Lydia Contact Center - Implementation Guide
 
 ## ✅ Completed Features
 
@@ -146,14 +146,14 @@ Secondary Blue:  #e6f4f5 (Soft accents, highlights)
 ### LocalStorage Schema
 ```typescript
 // User Data
-'room1221_nickname' → string
-'room1221_language' → 'en' | 'twi' | 'ewe'
-'room1221_duration' → '24h' | '7d' | '30d' | '90d'
+'lydiacontactcenter_nickname' → string
+'lydiacontactcenter_language' → 'en' | 'twi' | 'ewe'
+'lydiacontactcenter_duration' → '24h' | '7d' | '30d' | '90d'
 
 // Session Data
-'room1221_chat_[sessionId]' → Message[]
-'room1221_sessions' → ChatSession[]
-'room1221_panic_triggered' → timestamp
+'lydiacontactcenter_chat_[sessionId]' → Message[]
+'lydiacontactcenter_sessions' → ChatSession[]
+'lydiacontactcenter_panic_triggered' → timestamp
 ```
 
 ### Voice Input Implementation
@@ -373,7 +373,7 @@ No environment variables needed for Phase 1 (frontend-only).
 
 ### Language Not Switching
 - Clear browser cache
-- Check localStorage for 'room1221_language'
+- Check localStorage for 'lydiacontactcenter_language'
 - Verify translation files are complete
 - Reload page
 

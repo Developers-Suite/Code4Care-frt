@@ -43,7 +43,7 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
             <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[#BE322D] to-[#F16365] flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <p className="text-xs font-semibold tracking-wide uppercase text-[#BE322D] mb-1">Room 1221</p>
+            <p className="text-xs font-semibold tracking-wide uppercase text-[#BE322D] mb-1">Lydia Contact Center</p>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Staff Dashboard Login</h1>
             <p className="text-gray-500 text-sm">Secure access for Admin and Support Consultant accounts.</p>
           </div>

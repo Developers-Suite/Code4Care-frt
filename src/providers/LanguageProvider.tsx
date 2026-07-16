@@ -8,7 +8,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Sync i18next language with our localStorage key
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
-      safeStorage.setItem('room1221_language', lng);
+      safeStorage.setItem('lydiacontactcenter_language', lng);
     };
 
     i18n.on('languageChanged', handleLanguageChange);

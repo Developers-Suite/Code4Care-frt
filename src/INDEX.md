@@ -1,12 +1,12 @@
-# Room 1221 - Complete Documentation Index
+# Lydia Contact Center - Complete Documentation Index
 
-Welcome to **Room 1221** - A Smart, Safe, and Discreet SRHR (Sexual and Reproductive Health Rights) chatbot platform for youth in Ghana.
+Welcome to **Lydia Contact Center** - A Smart, Safe, and Discreet SRHR (Sexual and Reproductive Health Rights) chatbot platform for youth in Ghana.
 
 ---
 
 ## 📖 Documentation Overview
 
-This project includes comprehensive documentation to help you understand, use, and deploy Room 1221. Choose the document that best fits your needs:
+This project includes comprehensive documentation to help you understand, use, and deploy Lydia Contact Center. Choose the document that best fits your needs:
 
 ---
 
@@ -14,7 +14,7 @@ This project includes comprehensive documentation to help you understand, use, a
 
 ### 1. **README.md** - Start Here! 📌
 **Purpose:** Project overview and mission  
-**Best for:** Understanding what Room 1221 is and why it exists  
+**Best for:** Understanding what Lydia Contact Center is and why it exists  
 **Contents:**
 - Project mission and goals
 - Key features overview
@@ -60,7 +60,7 @@ This project includes comprehensive documentation to help you understand, use, a
 
 ### 3. **USAGE_GUIDE.md** - User Manual 📱
 **Purpose:** Complete user guide for end users  
-**Best for:** Understanding how to use Room 1221  
+**Best for:** Understanding how to use Lydia Contact Center  
 **Contents:**
 - Quick start guide
 - Interface walkthrough
@@ -74,7 +74,7 @@ This project includes comprehensive documentation to help you understand, use, a
 - Troubleshooting tips
 
 **Read this if you're:**
-- A new user of Room 1221
+- A new user of Lydia Contact Center
 - Training others to use the app
 - Writing user documentation
 - Creating help materials
@@ -164,7 +164,7 @@ This project includes comprehensive documentation to help you understand, use, a
 2. Read **FEATURES_SUMMARY.md** to see what's included
 3. Check **CHANGELOG.md** for version history
 
-#### **Use Room 1221**
+#### **Use Lydia Contact Center**
 1. Read **USAGE_GUIDE.md** from start to finish
 2. Refer back to specific sections as needed
 3. Use troubleshooting section for issues
@@ -212,7 +212,7 @@ README.md (overview)
     ↓
 USAGE_GUIDE.md (how to use)
     ↓
-Start using Room 1221!
+Start using Lydia Contact Center!
 ```
 
 ### For Developers
@@ -382,7 +382,7 @@ IMPLEMENTATION.md (technical overview)
 
 ## 🎯 Next Steps
 
-### New to Room 1221?
+### New to Lydia Contact Center?
 1. Read **README.md** to understand the mission
 2. Review **FEATURES_SUMMARY.md** to see capabilities
 3. Read **USAGE_GUIDE.md** to learn how to use it
@@ -406,7 +406,7 @@ IMPLEMENTATION.md (technical overview)
 
 ## 📞 Contact & Support
 
-**Project:** Room 1221  
+**Project:** Lydia Contact Center  
 **Purpose:** SRHR Education for Ghana's Youth  
 **Type:** Progressive Web App  
 **License:** Health Education Purpose  
@@ -419,7 +419,7 @@ IMPLEMENTATION.md (technical overview)
 
 ## 🙏 Acknowledgments
 
-Room 1221 is built to support youth reproductive health in Ghana.
+Lydia Contact Center is built to support youth reproductive health in Ghana.
 
 **Recognition:**
 - Ghana Health Service guidelines
@@ -440,7 +440,7 @@ Room 1221 is built to support youth reproductive health in Ghana.
 - Anonymous by default
 
 ### Medical Disclaimer
-Room 1221 provides **health information**, not medical advice.
+Lydia Contact Center provides **health information**, not medical advice.
 
 For emergencies:
 - Call 193 (Ghana emergency services)
@@ -464,11 +464,11 @@ For emergencies:
 
 ---
 
-**Room 1221** - Smart, Safe, and Discreet SRHR Support 🛡️  
+**Lydia Contact Center** - Smart, Safe, and Discreet SRHR Support 🛡️  
 Built with ❤️ for Ghana's Youth 🇬🇭
 
 ---
 
 **Document Index Version 1.0.0**  
 **Last Updated:** November 2024  
-**Maintained by:** Room 1221 Development Team
+**Maintained by:** Lydia Contact Center Development Team

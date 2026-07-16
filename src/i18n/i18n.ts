@@ -15,7 +15,7 @@ const resources = {
 
 // Simple manual detection to avoid external dependency
 const getInitialLanguage = () => {
-  const saved = localStorage.getItem('room1221_language');
+  const saved = localStorage.getItem('lydiacontactcenter_language');
   if (saved === 'ga') return 'ha';
   if (saved) return saved;
   return 'en';

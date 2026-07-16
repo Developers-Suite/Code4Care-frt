@@ -18,7 +18,7 @@ export function NotFoundPage() {
       >
         <div className="text-center mb-6">
           <p className="text-sm font-semibold tracking-wide uppercase text-[#BE322D] mb-3">
-            {t("common.appName", "Room 1221")}
+            {t("common.appName", "Lydia Contact Center")}
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
             {t("notFound.title", "Page not found")}

@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['chatbot.jpg', 'chat2.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Room 1221 - Smart, Safe and Discreet SRHR Support',
-        short_name: 'Room 1221',
+        name: 'Lydia Contact Center - Smart, Safe and Discreet SRHR Support',
+        short_name: 'Lydia Contact Center',
         description: 'A safe, anonymous space for sexual and reproductive health support for youth in Ghana.',
         start_url: '/',
         scope: '/',
@@ -78,33 +78,33 @@ export default defineConfig({
     open: false,
     proxy: {
       '/v1': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
       },
       '/admin': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
       },
       '/support-requests': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
       },
       '/api/admin': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
       },
       '/api/chat': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
         rewrite: () => '/v1/chat',
       },
       '/admin/login': {
-        target: 'https://code4care-backend-production.up.railway.app',
+        target: 'https://api.lydiacallcenter.org',
         changeOrigin: true,
         secure: true,
       },

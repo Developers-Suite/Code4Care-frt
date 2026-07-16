@@ -36,7 +36,7 @@ export function AdminReportScheduler({ accessToken }: AdminReportSchedulerProps)
       frequency: 'monthly',
       nextRunDate: '2025-02-01T09:00:00Z',
       format: 'pdf',
-      recipients: ['admin@code4care.org'],
+      recipients: ['admin@lydiacallcenter.org'],
       enabled: true,
     },
     {
@@ -47,7 +47,7 @@ export function AdminReportScheduler({ accessToken }: AdminReportSchedulerProps)
       nextRunDate: '2025-01-13T09:00:00Z',
       lastRunDate: '2025-01-06T09:00:00Z',
       format: 'excel',
-      recipients: ['safety@code4care.org'],
+      recipients: ['safety@lydiacallcenter.org'],
       enabled: true,
     },
   ]);

@@ -3,23 +3,23 @@
   "rewrites": [
     {
       "source": "/v1/(.*)",
-      "destination": "https://code4care-backend-production.up.railway.app/v1/$1"
+      "destination": "https://api.lydiacallcenter.org/v1/$1"
     },
     {
       "source": "/admin/(.*)",
-      "destination": "https://code4care-backend-production.up.railway.app/admin/$1"
+      "destination": "https://api.lydiacallcenter.org/admin/$1"
     },
     {
       "source": "/support-requests/(.*)",
-      "destination": "https://code4care-backend-production.up.railway.app/support-requests/$1"
+      "destination": "https://api.lydiacallcenter.org/support-requests/$1"
     },
     {
       "source": "/api/admin/(.*)",
-      "destination": "https://code4care-backend-production.up.railway.app/api/admin/$1"
+      "destination": "https://api.lydiacallcenter.org/api/admin/$1"
     },
     {
       "source": "/api/chat",
-      "destination": "https://code4care-backend-production.up.railway.app/v1/chat"
+      "destination": "https://api.lydiacallcenter.org/v1/chat"
     },
     {
       "source": "/(.*)",

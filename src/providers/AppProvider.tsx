@@ -33,18 +33,18 @@ interface AppContextType extends AppState {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [nickname, setNickname] = useState<string | undefined>(() => safeStorage.getItem('room1221_nickname') || undefined);
-  const [botName, setBotName] = useState<string>(() => safeStorage.getItem('room1221_botname') || 'Room 1221');
-  const [ageRange, setAgeRange] = useState<string>(() => safeStorage.getItem('room1221_age_range') || '15-19');
-  const [genderIdentity, setGenderIdentity] = useState<string>(() => safeStorage.getItem('room1221_gender_identity') || 'prefer-not-say');
-  const [region, setRegion] = useState<string>(() => safeStorage.getItem('room1221_region') || 'greater-accra');
-  const [sessionDuration, setSessionDuration] = useState<string>(() => safeStorage.getItem('room1221_duration') || '24h');
+  const [nickname, setNickname] = useState<string | undefined>(() => safeStorage.getItem('lydiacontactcenter_nickname') || undefined);
+  const [botName, setBotName] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_botname') || 'Lydia Contact Center');
+  const [ageRange, setAgeRange] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_age_range') || '15-19');
+  const [genderIdentity, setGenderIdentity] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_gender_identity') || 'prefer-not-say');
+  const [region, setRegion] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_region') || 'greater-accra');
+  const [sessionDuration, setSessionDuration] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_duration') || '24h');
   const [analyticsOptIn, setAnalyticsOptIn] = useState<boolean>(() => {
     try {
-      const stored = safeStorage.getItem('room1221_analytics');
+      const stored = safeStorage.getItem('lydiacontactcenter_analytics');
       if (stored === null) {
         // default to enabled and persist
-        safeStorage.setItem('room1221_analytics', 'true');
+        safeStorage.setItem('lydiacontactcenter_analytics', 'true');
         return true;
       }
       return stored !== 'false';
@@ -52,8 +52,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return true;
     }
   });
-  const [sessionId, setSessionId] = useState<string>(() => safeStorage.getItem('room1221_session_id') || crypto.randomUUID());
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(() => safeStorage.getItem('room1221_onboarding_complete') === 'true');
+  const [sessionId, setSessionId] = useState<string>(() => safeStorage.getItem('lydiacontactcenter_session_id') || crypto.randomUUID());
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(() => safeStorage.getItem('lydiacontactcenter_onboarding_complete') === 'true');
   const [consultantMode, setConsultantMode] = useState<boolean>(false);
 
   // Initialize API client on app load
@@ -80,7 +80,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // On first visit localStorage hasn't been populated yet — fall back to
     // the initial state value so the backend receives the same UUID that
     // onboarding will use, preventing a demographics/conversation split.
-    const current = safeStorage.getItem('room1221_session_id') || sessionId;
+    const current = safeStorage.getItem('lydiacontactcenter_session_id') || sessionId;
 
     fetch(new URL('/v1/session/init', base).toString(), {
       method: 'POST',
@@ -102,59 +102,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Persistence effects
   useEffect(() => {
-    if (nickname) safeStorage.setItem('room1221_nickname', nickname);
-    else safeStorage.removeItem('room1221_nickname');
+    if (nickname) safeStorage.setItem('lydiacontactcenter_nickname', nickname);
+    else safeStorage.removeItem('lydiacontactcenter_nickname');
   }, [nickname]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_botname', botName);
+    safeStorage.setItem('lydiacontactcenter_botname', botName);
   }, [botName]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_age_range', ageRange);
+    safeStorage.setItem('lydiacontactcenter_age_range', ageRange);
   }, [ageRange]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_gender_identity', genderIdentity);
+    safeStorage.setItem('lydiacontactcenter_gender_identity', genderIdentity);
   }, [genderIdentity]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_region', region);
+    safeStorage.setItem('lydiacontactcenter_region', region);
   }, [region]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_duration', sessionDuration);
+    safeStorage.setItem('lydiacontactcenter_duration', sessionDuration);
   }, [sessionDuration]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_analytics', analyticsOptIn.toString());
+    safeStorage.setItem('lydiacontactcenter_analytics', analyticsOptIn.toString());
   }, [analyticsOptIn]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_onboarding_complete', hasSeenOnboarding.toString());
+    safeStorage.setItem('lydiacontactcenter_onboarding_complete', hasSeenOnboarding.toString());
   }, [hasSeenOnboarding]);
 
   useEffect(() => {
-    safeStorage.setItem('room1221_session_id', sessionId);
+    safeStorage.setItem('lydiacontactcenter_session_id', sessionId);
   }, [sessionId]);
 
   const resetAll = () => {
     logger.info('Resetting all app state...');
-    safeStorage.removeItem('room1221_nickname');
-    safeStorage.removeItem('room1221_botname');
-    safeStorage.removeItem('room1221_language');
-    safeStorage.removeItem('room1221_age_range');
-    safeStorage.removeItem('room1221_gender_identity');
-    safeStorage.removeItem('room1221_region');
-    safeStorage.removeItem('room1221_duration');
-    safeStorage.removeItem('room1221_analytics');
-    safeStorage.removeItem('room1221_sessions');
-    safeStorage.removeItem('room1221_panic_triggered');
-    safeStorage.removeItem('room1221_onboarding_complete');
-    safeStorage.removeItem('room1221_session_id');
+    safeStorage.removeItem('lydiacontactcenter_nickname');
+    safeStorage.removeItem('lydiacontactcenter_botname');
+    safeStorage.removeItem('lydiacontactcenter_language');
+    safeStorage.removeItem('lydiacontactcenter_age_range');
+    safeStorage.removeItem('lydiacontactcenter_gender_identity');
+    safeStorage.removeItem('lydiacontactcenter_region');
+    safeStorage.removeItem('lydiacontactcenter_duration');
+    safeStorage.removeItem('lydiacontactcenter_analytics');
+    safeStorage.removeItem('lydiacontactcenter_sessions');
+    safeStorage.removeItem('lydiacontactcenter_panic_triggered');
+    safeStorage.removeItem('lydiacontactcenter_onboarding_complete');
+    safeStorage.removeItem('lydiacontactcenter_session_id');
     
     setNickname(undefined);
-    setBotName('Room 1221');
+    setBotName('Lydia Contact Center');
     setAgeRange('15-19');
     setGenderIdentity('prefer-not-say');
     setRegion('greater-accra');

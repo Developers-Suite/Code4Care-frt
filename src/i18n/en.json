@@ -33,7 +33,7 @@
     "statusGuest": "Anonymous chat",
     "statusLoggedIn": "Logged in as",
     "initialMessage": "Hi! I'm here to help you with any questions about sexual and reproductive health. Everything we discuss is private and confidential. What would you like to know?",
-    "consultantMessage": "Hi! I'm a Room 1221 consultant. I'm here to provide personalized support and guidance on sexual and reproductive health matters. Your conversation is completely private and confidential. How can I help you today?",
+    "consultantMessage": "Hi! I'm a Lydia Contact Center consultant. I'm here to provide personalized support and guidance on sexual and reproductive health matters. Your conversation is completely private and confidential. How can I help you today?",
     "quickReplies": {
        "contraception": "Tell me about contraception",
        "sti": "What are STIs?",
@@ -62,7 +62,7 @@
   },
   "onboarding": {
     "page1": {
-      "title": "Welcome to Room 1221",
+      "title": "Welcome to Lydia Contact Center",
       "subtitle": "Your Safe Space for SRHR Support",
       "features": {
         "anonymous": { "title": "100% Anonymous", "desc": "No personal data collected. Your privacy is our priority." },
@@ -127,7 +127,7 @@
     }
   },
   "nickname": {
-    "title": "Welcome to Room 1221",
+    "title": "Welcome to Lydia Contact Center",
     "desc": "A safe, anonymous space for SRHR support. Set a nickname to personalize your experience, or chat anonymously.",
     "label": "Nickname (optional)",
     "placeholder": "Enter your nickname",

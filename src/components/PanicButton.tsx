@@ -15,7 +15,7 @@ export function PanicButton({ onPanic, selectedLanguage }: PanicButtonProps) {
   };
 
   const handlePanic = () => {
-    safeStorage.setItem('room1221_panic_triggered', 'true');
+    safeStorage.setItem('lydiacontactcenter_panic_triggered', 'true');
     onPanic();
   };
 

@@ -63,7 +63,7 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
 
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold leading-tight">
-                      Install Room 1221
+                      Install Lydia Contact Center
                     </h2>
                     <p className="text-sm text-white/85 mt-1">
                       Add to your device for faster access
