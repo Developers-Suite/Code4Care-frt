@@ -228,39 +228,42 @@ function AppContent() {
     setShowPanicScreen(true);
     // Post an immediate analytics snapshot so panic events are recorded instantly
     try {
-      const panicTriggered = true;
-      const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
-      const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
-      let messagesExchanged = 0;
-      try {
-        const storedMessages = storedMessagesRaw ? JSON.parse(storedMessagesRaw) : [];
-        messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
-      } catch {}
+      if (!sessionAnalyticsRecordedRef.current) {
+        sessionAnalyticsRecordedRef.current = true;
+        const panicTriggered = true;
+        const chatStorageKey = `lydiacontactcenter_chat_${sessionId}`;
+        const storedMessagesRaw = safeStorage.getItem(chatStorageKey, '[]');
+        let messagesExchanged = 0;
+        try {
+          const storedMessages = storedMessagesRaw ? JSON.parse(storedMessagesRaw) : [];
+          messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
+        } catch {}
 
-      const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || Date.now();
-      const durationSeconds = Math.max(0, Math.round((Date.now() - startTs) / 1000));
+        const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || Date.now();
+        const durationSeconds = Math.max(0, Math.round((Date.now() - startTs) / 1000));
 
-      void RealAnalyticsService.recordSessionAnalytics({
-        session_id: sessionId,
-        user_id: nickname || undefined,
-        age_range: ageRange,
-        gender_identity: genderIdentity,
-        region,
-        language: (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0],
-        start_time: new Date(startTs).toISOString(),
-        end_time: new Date().toISOString(),
-        duration_seconds: durationSeconds,
-        messages_exchanged: messagesExchanged,
-        topics_discussed: [],
-        panic_button_used: panicTriggered,
-        crisis_support_accessed: false,
-        story_modules_started: 0,
-        story_modules_completed: 0,
-        pharmacy_searches: 0,
-        satisfaction_rating: undefined,
-        would_return: true,
-        safety_flags: panicTriggered ? ['panic-button'] : [],
-      });
+        void RealAnalyticsService.recordSessionAnalytics({
+          session_id: sessionId,
+          user_id: nickname || undefined,
+          age_range: ageRange,
+          gender_identity: genderIdentity,
+          region,
+          language: (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0],
+          start_time: new Date(startTs).toISOString(),
+          end_time: new Date().toISOString(),
+          duration_seconds: durationSeconds,
+          messages_exchanged: messagesExchanged,
+          topics_discussed: [],
+          panic_button_used: panicTriggered,
+          crisis_support_accessed: false,
+          story_modules_started: 0,
+          story_modules_completed: 0,
+          pharmacy_searches: 0,
+          satisfaction_rating: undefined,
+          would_return: true,
+          safety_flags: panicTriggered ? ['panic-button'] : [],
+        });
+      }
     } catch (e) {
       // swallow analytics errors
     }

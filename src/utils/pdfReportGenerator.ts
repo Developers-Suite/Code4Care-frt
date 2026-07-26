@@ -99,7 +99,7 @@ export function generatePDFReport(reportData: PDFReportData, filename: string): 
     doc.setTextColor(50, 50, 50);
     
     const lines = doc.splitTextToSize(section.content, contentWidth);
-    lines.forEach((line) => {
+    lines.forEach((line: string) => {
       doc.text(line, margin + 5, yPosition);
       yPosition += 5;
 

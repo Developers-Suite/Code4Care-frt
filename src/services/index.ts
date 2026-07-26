@@ -187,9 +187,9 @@ export type {
 export { SafetyService } from './safetyService';
 export type {
   PanicEventRequest,
-  PanicEventResponse,
+  PanicEventResponse as SafetyPanicEventResponse,
   CrisisEventRequest,
-  CrisisEventResponse,
+  CrisisEventResponse as SafetyCrisisEventResponse,
 } from './safetyService';
 
 // Follow-up Service
