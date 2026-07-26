@@ -14,19 +14,24 @@ export function PanicScreen({ onExit, sessionId }: PanicScreenProps) {
   const [display, setDisplay] = useState("0");
   const activationTimeRef = useRef<number>(Date.now());
 
-  // Log panic activation when component mounts
+  // Guard against double-firing in React Strict Mode (double-invoke) or re-renders
+  const panicLoggedRef = useRef(false);
+
+  // Log panic activation exactly once when component mounts
   useEffect(() => {
-    if (sessionId) {
-      SafetyService.logPanicEvent({
-        session_id: sessionId,
-        action: 'initiated',
-        time_active_seconds: 0,
-      }).catch((error) => {
-        logger.error('Failed to log panic activation', error);
-        // Don't block the panic screen if logging fails
-      });
-    }
-  }, [sessionId]);
+    if (!sessionId || panicLoggedRef.current) return;
+    panicLoggedRef.current = true;
+
+    SafetyService.logPanicEvent({
+      session_id: sessionId,
+      action: 'initiated',
+      time_active_seconds: 0,
+    }).catch((error) => {
+      logger.error('Failed to log panic activation', error);
+      // Don't block the panic screen if logging fails
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps: only run once on mount, not on sessionId change
 
   const handleNumber = (num: string) => {
     setDisplay(prev => prev === "0" ? num : prev + num);
