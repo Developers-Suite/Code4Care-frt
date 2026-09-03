@@ -1,7 +1,8 @@
 export interface DKTProduct {
   id: string;
   name: string;
-  category: string;
+  category: "emergencyPills" | "dailyPills" | "iud" | "injectables" | "implants" | "abortionKits" | "condoms" | "sexGels" | string;
+  gender: "male" | "female" | "both";
   description: string;
   uses: string[];
   whereToGet: string[];
@@ -87,578 +88,293 @@ export const dktSupportLines: DKTSupportLine[] = [
 ];
 
 export const dktProducts: DKTProduct[] = [
-  // Condoms
+  // --- EMERGENCY PILLS (Female) ---
   {
-    id: "dkt-prudence-male",
-    name: "Prudence Male Condoms",
-    category: "condoms",
-    description: "Quality latex condoms for pregnancy prevention and STI protection.",
-    uses: ["Pregnancy prevention", "STI protection", "Safe sex"],
-    whereToGet: [
-      "Pharmacies nationwide",
-      "Health centers",
-      "DKT partner clinics",
-      "Online retailers",
-      "Supermarkets"
-    ],
-    priceRange: "GH₵ 2-5 per box (3 pack)",
-    availability: "Widely available year-round"
+    id: "lydia-postpil-1",
+    name: "Lydia Postpil (1 Pill)",
+    category: "emergencyPills",
+    gender: "female",
+    description: "Single-dose emergency contraceptive pill for rapid post-unprotected sex protection.",
+    uses: ["Emergency pregnancy prevention", "Unprotected intercourse protection", "Contraceptive failure backup"],
+    whereToGet: ["Pharmacies nationwide", "DKT partner clinics", "Health centers"],
+    priceRange: "GH₵ 10-20",
+    availability: "Widely available"
   },
   {
-    id: "dkt-trustex-lubricated",
-    name: "Trustex Lubricated Condoms",
-    category: "condoms",
-    description: "Pre-lubricated latex condoms for enhanced comfort and reduced friction.",
-    uses: ["Pregnancy prevention", "STI protection", "Enhanced comfort"],
-    whereToGet: [
-      "Major pharmacies",
-      "Health facilities",
-      "DKT offices",
-      "Online platforms",
-      "Retail shops"
-    ],
-    priceRange: "GH₵ 3-6 per box (3 pack)",
-    availability: "Readily available"
-  },
-  {
-    id: "dkt-extended-condoms",
-    name: "Extended Comfort Condoms",
-    category: "condoms",
-    description: "Extra-strength condoms for extended protection and sensitivity.",
-    uses: ["Extended protection", "Pregnancy prevention", "STI protection"],
-    whereToGet: [
-      "Pharmacies",
-      "Health centers",
-      "DKT distribution points",
-      "Online retailers"
-    ],
-    priceRange: "GH₵ 4-7 per box (3 pack)",
-    availability: "Available in major cities"
-  },
-  {
-    id: "dkt-female-condoms",
-    name: "FC2 Female Condoms",
-    category: "condoms",
-    description: "Female-controlled contraceptive for protection and empowerment.",
-    uses: ["Pregnancy prevention", "STI protection", "Woman-controlled contraception"],
-    whereToGet: [
-      "Specialized pharmacies",
-      "Family planning clinics",
-      "DKT partner facilities",
-      "Women's health centers"
-    ],
-    priceRange: "GH₵ 15-25 per unit",
-    availability: "Available in select locations"
+    id: "lydia-postpil-2",
+    name: "Lydia Postpil (2 Pills)",
+    category: "emergencyPills",
+    gender: "female",
+    description: "Double-dose emergency contraceptive pill for post-unprotected intercourse prevention.",
+    uses: ["Emergency pregnancy prevention", "Flexible dosing backup", "Contraceptive failure protection"],
+    whereToGet: ["Pharmacies nationwide", "DKT partner clinics", "Health centers"],
+    priceRange: "GH₵ 10-20",
+    availability: "Widely available"
   },
 
-  // Emergency Contraception
+  // --- DAILY CONTRACEPTIVE PILLS (Female) ---
   {
-    id: "dkt-postinor",
-    name: "Postinor-2 (Emergency Contraception)",
-    category: "emergencyContraception",
-    description: "Levonorgestrel-based emergency contraception, effective within 72 hours.",
-    uses: ["Unprotected intercourse", "Contraceptive failure", "Sexual assault"],
-    whereToGet: [
-      "Pharmacies nationwide",
-      "Health centers",
-      "Emergency rooms",
-      "DKT clinics",
-      "Online pharmacies"
-    ],
-    priceRange: "GH₵ 12-20",
-    availability: "Available 24/7 at major pharmacies"
-  },
-  {
-    id: "dkt-ella",
-    name: "ella (Ulipristal Acetate EC)",
-    category: "emergencyContraception",
-    description: "Second-generation EC effective up to 120 hours (5 days) after intercourse.",
-    uses: ["Late unprotected intercourse", "Extended protection window"],
-    whereToGet: [
-      "Premium pharmacies",
-      "Private clinics",
-      "Teaching hospitals",
-      "Online medical platforms"
-    ],
-    priceRange: "GH₵ 80-120",
-    availability: "Limited availability in major cities"
-  },
-
-  // Regular Contraceptives
-  {
-    id: "dkt-pills-combined",
-    name: "Combined Oral Contraceptive Pills",
-    category: "contraceptives",
-    description: "Daily hormonal pills containing estrogen and progestin.",
-    uses: ["Pregnancy prevention", "Hormonal regulation", "Cycle control"],
-    whereToGet: [
-      "Pharmacies countrywide",
-      "Family planning clinics",
-      "Health centers",
-      "DKT outlets",
-      "Private hospitals"
-    ],
-    priceRange: "GH₵ 8-18 per month",
+    id: "lydia-daily-pills",
+    name: "Lydia Daily Contraceptive Pills",
+    category: "dailyPills",
+    gender: "female",
+    description: "Regular daily oral contraceptive pills with added iron for menstrual health.",
+    uses: ["Daily pregnancy prevention", "Cycle regulation", "Iron supplementation"],
+    whereToGet: ["Pharmacies countrywide", "Family planning clinics", "DKT outlets"],
+    priceRange: "GH₵ 8-18 per pack",
     availability: "Continuously available"
   },
+
+  // --- INTRAUTERINE CONTRACEPTIVE DEVICES (IUCD/IUD) (Female) ---
   {
-    id: "dkt-pills-progestin",
-    name: "Progestin-Only Pills (POP)",
-    category: "contraceptives",
-    description: "Mini-pill containing only progestin, safer for breastfeeding mothers.",
-    uses: ["Pregnancy prevention", "Breastfeeding-safe", "Hormonal regulation"],
-    whereToGet: [
-      "Health facilities",
-      "Family planning centers",
-      "Pharmacies",
-      "Maternity clinics",
-      "DKT distribution points"
-    ],
-    priceRange: "GH₵ 6-12 per month",
-    availability: "Available in health centers and pharmacies"
+    id: "lydia-safeload-iud",
+    name: "Lydia Safeload IUD",
+    category: "iud",
+    gender: "female",
+    description: "A small, non-hormonal, flexible T-shape intrauterine contraceptive device.",
+    uses: ["Long-term non-hormonal contraception", "Up to 10-year pregnancy prevention", "Reversible birth control"],
+    whereToGet: ["Family planning clinics", "Hospitals", "DKT partner facilities"],
+    priceRange: "GH₵ 30-60",
+    availability: "Available at trained clinics"
   },
   {
-    id: "dkt-injectables",
-    name: "Injectable Contraceptives (Depo-Provera)",
-    category: "contraceptives",
-    description: "Long-acting hormonal injection, 3 months of protection per dose.",
-    uses: ["Long-term pregnancy prevention", "Minimal maintenance"],
-    whereToGet: [
-      "Health centers",
-      "Family planning clinics",
-      "Hospitals",
-      "Private clinics",
-      "DKT service points"
-    ],
+    id: "lydia-sleek-iud",
+    name: "Lydia Sleek IUD",
+    category: "iud",
+    gender: "female",
+    description: "A small, non-hormonal, flexible U-shape intrauterine contraceptive device designed for enhanced placement comfort.",
+    uses: ["Long-term non-hormonal contraception", "Comfort-focused design", "Reversible birth control"],
+    whereToGet: ["Family planning clinics", "Hospitals", "DKT partner facilities"],
+    priceRange: "GH₵ 30-60",
+    availability: "Available at trained clinics"
+  },
+
+  // --- CONTRACEPTIVE INJECTABLES (Female) ---
+  {
+    id: "lydia-fem-3-injections",
+    name: "Lydia FEM 3 Injections",
+    category: "injectables",
+    gender: "female",
+    description: "3-month hormonal contraceptive injection providing long-acting protection.",
+    uses: ["3-month pregnancy prevention", "Discreet birth control", "Minimal maintenance contraception"],
+    whereToGet: ["Health centers", "Family planning clinics", "DKT service points"],
     priceRange: "GH₵ 15-30 per injection",
     availability: "Available at health facilities"
   },
 
-  // Lubricants
+  // --- IMPLANTS (Female) ---
   {
-    id: "dkt-lubricant-water",
-    name: "Water-Based Lubricant",
-    category: "lubricants",
-    description: "Condom-compatible lubricant for comfort and reduced friction.",
-    uses: ["Enhanced comfort", "Condom compatibility", "Reduced irritation"],
-    whereToGet: [
-      "Pharmacies",
-      "Health stores",
-      "Online retailers",
-      "DKT outlets"
-    ],
-    priceRange: "GH₵ 8-15",
-    availability: "Readily available"
-  },
-  {
-    id: "dkt-lubricant-silicone",
-    name: "Silicone-Based Lubricant",
-    category: "lubricants",
-    description: "Long-lasting lubricant, water-resistant and longer-acting.",
-    uses: ["Extended lubrication", "Water-resistant", "Long-lasting comfort"],
-    whereToGet: [
-      "Premium pharmacies",
-      "Health centers",
-      "Specialty shops",
-      "Online platforms"
-    ],
-    priceRange: "GH₵ 12-20",
-    availability: "Available in select locations"
+    id: "levoplant",
+    name: "Levoplant",
+    category: "implants",
+    gender: "female",
+    description: "Double-rod contraceptive implant providing up to 3 years of continuous reversible protection.",
+    uses: ["Long-acting reversible contraception", "3-year pregnancy prevention", "Low maintenance birth control"],
+    whereToGet: ["Implant-trained clinics", "Hospitals", "DKT partner facilities"],
+    priceRange: "GH₵ 120-250",
+    availability: "Available at trained service points"
   },
 
-  // Test Kits
+  // --- MEDICAL ABORTION PILLS & KITS (Female) ---
   {
-    id: "dkt-hiv-test",
-    name: "HIV Test Kit (Rapid)",
-    category: "testKits",
-    description: "Quick HIV screening test with results in 15-20 minutes.",
-    uses: ["HIV screening", "Regular testing", "Post-exposure testing"],
-    whereToGet: [
-      "Health centers",
-      "Testing clinics",
-      "Hospitals",
-      "Pharmacies",
-      "Community health points"
-    ],
-    priceRange: "GH₵ 5-10",
-    availability: "Available nationwide"
+    id: "mafem",
+    name: "MaFem",
+    category: "abortionKits",
+    gender: "female",
+    description: "Misoprostol-only medication for safe uterine care and medical reproductive management.",
+    uses: ["Medical abortion care", "Obstetric and gynecological care"],
+    whereToGet: ["Licensed health facilities", "DKT partner clinics", "Pharmacies with prescription"],
+    priceRange: "GH₵ 25-50",
+    availability: "Available via licensed health providers"
   },
   {
-    id: "dkt-pregnancy-test",
-    name: "Pregnancy Test Kit (Home Use)",
-    category: "testKits",
-    description: "Early detection pregnancy test, accurate 99% when used correctly.",
-    uses: ["Pregnancy confirmation", "Early detection", "Home testing"],
-    whereToGet: [
-      "Pharmacies nationwide",
-      "Supermarkets",
-      "Health shops",
-      "Online retailers",
-      "Hospital gift shops"
-    ],
-    priceRange: "GH₵ 3-6",
+    id: "mm-combi-kit",
+    name: "MM Combi Kit",
+    category: "abortionKits",
+    gender: "female",
+    description: "Combined Misoprostol and Mifepristone medication kit for medical pregnancy termination.",
+    uses: ["Combined medical abortion", "Clinical reproductive care"],
+    whereToGet: ["Licensed health facilities", "Clinical procurement channels", "DKT partner providers"],
+    priceRange: "GH₵ 40-80",
+    availability: "Available through trained healthcare providers"
+  },
+  {
+    id: "miso-fem",
+    name: "Miso-Fem",
+    category: "abortionKits",
+    gender: "female",
+    description: "Misoprostol-only medication formulated for reproductive health procedures.",
+    uses: ["Medical abortion care", "Gynecological management"],
+    whereToGet: ["Licensed health facilities", "Pharmacies with prescription", "DKT clinics"],
+    priceRange: "GH₵ 25-50",
+    availability: "Available via licensed health providers"
+  },
+  {
+    id: "ipas-mva-kit",
+    name: "Ipas MVA Kit",
+    category: "abortionKits",
+    gender: "female",
+    description: "Manual Vacuum Aspiration (MVA) clinical kit for safe uterine evacuation procedures.",
+    uses: ["Clinical uterine evacuation", "Facility-based post-abortion care", "Reproductive healthcare"],
+    whereToGet: ["Hospitals", "Licensed clinics", "Clinical procurement channels"],
+    priceRange: "Facility procurement pricing",
+    availability: "For trained healthcare providers and facilities"
+  },
+
+  // --- CONDOMS (Male) ---
+  {
+    id: "fiesta-extra-thin",
+    name: "Fiesta Extra Thin Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Ultra-thin latex condoms engineered for maximum sensitivity and natural feeling.",
+    uses: ["Pregnancy prevention", "STI protection", "Enhanced sensitivity"],
+    whereToGet: ["Pharmacies nationwide", "Supermarkets", "DKT partner outlets", "Retail shops"],
+    priceRange: "GH₵ 3-7 per pack",
     availability: "Widely available"
   },
   {
-    id: "dkt-sti-test-kit",
-    name: "Basic STI Screening Kit",
-    category: "testKits",
-    description: "Home collection kit for STI testing through laboratory analysis.",
-    uses: ["STI screening", "Chlamydia detection", "Gonorrhea screening"],
-    whereToGet: [
-      "Health facilities",
-      "STI clinics",
-      "Private laboratories",
-      "Sexual health centers"
-    ],
-    priceRange: "GH₵ 25-50",
-    availability: "Available at diagnostic centers"
+    id: "fiesta-all-night",
+    name: "Fiesta All Night Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Condoms pre-treated with delay lubricant to help prolong intimacy.",
+    uses: ["Pregnancy prevention", "STI protection", "Extended endurance"],
+    whereToGet: ["Pharmacies", "Supermarkets", "Retail outlets", "DKT partner outlets"],
+    priceRange: "GH₵ 4-8 per pack",
+    availability: "Widely available"
+  },
+  {
+    id: "fiesta-dotted",
+    name: "Fiesta Dotted Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Textured condoms featuring raised dots for heightened stimulation.",
+    uses: ["Pregnancy prevention", "STI protection", "Textured stimulation"],
+    whereToGet: ["Pharmacies", "Supermarkets", "Retail outlets", "DKT partner outlets"],
+    priceRange: "GH₵ 3-7 per pack",
+    availability: "Widely available"
+  },
+  {
+    id: "fiesta-classic",
+    name: "Fiesta Classic Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Reliable smooth latex condoms for everyday safe sex protection.",
+    uses: ["Pregnancy prevention", "STI protection", "Everyday safe sex"],
+    whereToGet: ["Pharmacies nationwide", "Supermarkets", "Retail shops", "DKT outlets"],
+    priceRange: "GH₵ 2-6 per pack",
+    availability: "Widely available"
+  },
+  {
+    id: "fiesta-dumsor",
+    name: "Fiesta Dumsor Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Fun glow-in-the-dark condoms designed to light up intimate moments.",
+    uses: ["Pregnancy prevention", "STI protection", "Novelty and fun intimacy"],
+    whereToGet: ["Pharmacies", "Supermarkets", "DKT partner outlets", "Online platforms"],
+    priceRange: "GH₵ 4-8 per pack",
+    availability: "Available in major towns"
+  },
+  {
+    id: "fiesta-strawberry",
+    name: "Fiesta Strawberry Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Strawberry-flavored and scented lubricated condoms for oral and genital pleasure.",
+    uses: ["Pregnancy prevention", "STI protection", "Flavored intimacy"],
+    whereToGet: ["Pharmacies nationwide", "Supermarkets", "Retail shops"],
+    priceRange: "GH₵ 3-7 per pack",
+    availability: "Widely available"
+  },
+  {
+    id: "fiesta-fruity",
+    name: "Fiesta Fruity Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Tutti-Frutti multi-flavor condoms adding variety and scent to protection.",
+    uses: ["Pregnancy prevention", "STI protection", "Multi-flavor experience"],
+    whereToGet: ["Pharmacies", "Supermarkets", "DKT partner outlets"],
+    priceRange: "GH₵ 3-7 per pack",
+    availability: "Widely available"
+  },
+  {
+    id: "fiesta-party-pack",
+    name: "Fiesta Party Pack Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Assorted pack of various Fiesta condom styles for variety and convenience.",
+    uses: ["Pregnancy prevention", "STI protection", "Variety pack"],
+    whereToGet: ["Major pharmacies", "Supermarkets", "DKT distribution points"],
+    priceRange: "GH₵ 10-20 per pack",
+    availability: "Available in urban centers"
+  },
+  {
+    id: "fiesta-vibe",
+    name: "Fiesta Vibe Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Condom pack bundled with a vibrating ring for enhanced mutual pleasure.",
+    uses: ["Pregnancy prevention", "STI protection", "Mutual stimulation"],
+    whereToGet: ["Select pharmacies", "DKT partner facilities", "Online stores"],
+    priceRange: "GH₵ 15-25 per pack",
+    availability: "Available in select locations"
+  },
+  {
+    id: "kiss-classic",
+    name: "Kiss Classic Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Affordable and reliable classic lubricated latex condoms.",
+    uses: ["Pregnancy prevention", "STI protection", "Accessible safe sex"],
+    whereToGet: ["Pharmacies countrywide", "Community shops", "DKT outlets"],
+    priceRange: "GH₵ 2-5 per pack",
+    availability: "Widely available nationwide"
+  },
+  {
+    id: "kiss-strawberry",
+    name: "Kiss Strawberry Condom",
+    category: "condoms",
+    gender: "male",
+    description: "Strawberry-scented lubricated latex condoms for comfortable protection.",
+    uses: ["Pregnancy prevention", "STI protection", "Fragrant pleasure"],
+    whereToGet: ["Pharmacies countrywide", "Community shops", "Supermarkets"],
+    priceRange: "GH₵ 2-5 per pack",
+    availability: "Widely available"
   },
 
-  // Supplements & Support
+  // --- SEX GELS (Both/Couples) ---
   {
-    id: "dkt-folic-acid",
-    name: "Folic Acid Supplements",
-    category: "supplements",
-    description: "Vitamin B9 supplement for women planning pregnancy or menstruating.",
-    uses: ["Pregnancy support", "Menstrual health", "Red blood cell formation"],
-    whereToGet: [
-      "All pharmacies",
-      "Health stores",
-      "Supermarkets",
-      "Online retailers",
-      "Maternity clinics"
-    ],
-    priceRange: "GH₵ 4-8",
-    availability: "Always available"
-  },
-  {
-    id: "dkt-multivitamin",
-    name: "Women's Multivitamin",
-    category: "supplements",
-    description: "Complete micronutrient support designed for women's health.",
-    uses: ["General wellness", "Immune support", "Energy boost"],
-    whereToGet: [
-      "Pharmacies",
-      "Health food stores",
-      "Supermarkets",
-      "Wellness centers",
-      "Online platforms"
-    ],
+    id: "fiesta-strawberry-gel",
+    name: "Fiesta Strawberry Gel",
+    category: "sexGels",
+    gender: "both",
+    description: "Strawberry-scented, water-based intimacy lubricant for reduced friction and comfort.",
+    uses: ["Enhanced intimacy comfort", "Condom compatibility", "Reduced friction and dryness"],
+    whereToGet: ["Pharmacies nationwide", "Supermarkets", "DKT partner outlets"],
     priceRange: "GH₵ 15-30",
     availability: "Widely available"
   },
   {
-    id: "dkt-iron-supplement",
-    name: "Iron Supplements",
-    category: "supplements",
-    description: "Iron supplement for anemia prevention and menstrual health.",
-    uses: ["Anemia prevention", "Menstrual support", "Energy maintenance"],
-    whereToGet: [
-      "All pharmacies",
-      "Health centers",
-      "Supermarkets",
-      "Online retailers"
-    ],
-    priceRange: "GH₵ 5-12",
-    availability: "Readily available"
-  },
-
-  // Intimate Care
-  {
-    id: "dkt-intimate-wash",
-    name: "Intimate Hygiene Wash",
-    category: "intimateCare",
-    description: "pH-balanced intimate cleanser for comfortable daily use.",
-    uses: ["Feminine hygiene", "pH balance", "Protection against infections"],
-    whereToGet: [
-      "Pharmacies",
-      "Supermarkets",
-      "Health and beauty stores",
-      "Online retailers"
-    ],
-    priceRange: "GH₵ 10-20",
+    id: "kiss-strawberry-gel",
+    name: "Kiss Strawberry Gel",
+    category: "sexGels",
+    gender: "both",
+    description: "Strawberry-scented intimate sexual gel lubricant designed for smooth pleasure.",
+    uses: ["Enhanced intimacy comfort", "Lubrication", "Condom compatibility"],
+    whereToGet: ["Pharmacies nationwide", "Supermarkets", "Community health outlets"],
+    priceRange: "GH₵ 10-25",
     availability: "Widely available"
-  },
-  {
-    id: "dkt-menstrual-pads",
-    name: "Premium Menstrual Pads",
-    category: "intimateCare",
-    description: "High-absorbency pads with comfort and leak protection.",
-    uses: ["Menstrual protection", "Comfort", "Extended wear"],
-    whereToGet: [
-      "All supermarkets",
-      "Pharmacies",
-      "Health shops",
-      "Online retailers"
-    ],
-    priceRange: "GH₵ 8-15 per pack",
-    availability: "Continuously available"
-  },
-  {
-    id: "dkt-tampons",
-    name: "Tampons (Various Absorbencies)",
-    category: "intimateCare",
-    description: "Applicator or non-applicator tampons for convenience.",
-    uses: ["Menstrual protection", "Active lifestyle", "Discretion"],
-    whereToGet: [
-      "Pharmacies",
-      "Supermarkets",
-      "Women's health shops",
-      "Online platforms"
-    ],
-    priceRange: "GH₵ 12-20 per pack",
-    availability: "Available in urban areas"
-  },
-
-  // Pain Relief
-  {
-    id: "dkt-ibuprofen",
-    name: "Ibuprofen (Menstrual Pain Relief)",
-    category: "painRelief",
-    description: "Anti-inflammatory pain reliever for menstrual cramps.",
-    uses: ["Menstrual pain", "Cramp relief", "Inflammation reduction"],
-    whereToGet: [
-      "All pharmacies",
-      "Supermarkets",
-      "Health stores",
-      "Online retailers"
-    ],
-    priceRange: "GH₵ 0.50-2 per tablet",
-    availability: "Readily available"
-  },
-  {
-    id: "dkt-paracetamol",
-    name: "Paracetamol (Pain & Fever Relief)",
-    category: "painRelief",
-    description: "General pain reliever and fever reducer.",
-    uses: ["Pain relief", "Fever management", "General discomfort"],
-    whereToGet: [
-      "All pharmacies",
-      "Supermarkets",
-      "Retail shops",
-      "Online platforms"
-    ],
-    priceRange: "GH₵ 0.30-1.50 per tablet",
-    availability: "Always available"
-  },
-
-  // Ghana MD Booklet-mapped DKT products
-  {
-    id: "dkt-postpil",
-    name: "Postpil",
-    category: "emergencyContraception",
-    description: "Emergency contraceptive pill listed in DKT Ghana booklet line-up.",
-    uses: ["Emergency pregnancy prevention", "Post-unprotected intercourse"],
-    whereToGet: ["DKT partner pharmacies", "Family planning clinics", "DKT support referral"],
-    priceRange: "GH₵ 10-20",
-    availability: "Available in major urban pharmacies"
-  },
-  {
-    id: "dkt-sayana-press",
-    name: "Sayana Press",
-    category: "contraceptives",
-    description: "Injectable contraceptive option listed in DKT Ghana booklet.",
-    uses: ["Long-acting contraception", "Quarterly pregnancy prevention"],
-    whereToGet: ["Family planning clinics", "DKT partner facilities", "Referral clinics"],
-    priceRange: "GH₵ 20-40 per dose",
-    availability: "Available through trained providers"
-  },
-  {
-    id: "dkt-norigynon",
-    name: "Norigynon",
-    category: "contraceptives",
-    description: "Injectable hormonal contraceptive listed in DKT Ghana booklet.",
-    uses: ["Pregnancy prevention", "Routine injectable contraception"],
-    whereToGet: ["Clinics", "Hospitals", "DKT partner providers"],
-    priceRange: "GH₵ 15-35 per dose",
-    availability: "Provider-dependent availability"
-  },
-  {
-    id: "dkt-daphne",
-    name: "Daphne",
-    category: "contraceptives",
-    description: "Oral contraceptive brand listed in DKT Ghana booklet.",
-    uses: ["Daily pregnancy prevention", "Cycle control"],
-    whereToGet: ["Pharmacies", "Family planning outlets", "DKT support referral"],
-    priceRange: "GH₵ 8-20 per cycle",
-    availability: "Widely available"
-  },
-  {
-    id: "dkt-ocp",
-    name: "OCP",
-    category: "contraceptives",
-    description: "Oral contraceptive pills listed in DKT Ghana booklet portfolio.",
-    uses: ["Pregnancy prevention", "Hormonal regulation"],
-    whereToGet: ["Pharmacies", "Clinics", "DKT partner outlets"],
-    priceRange: "GH₵ 8-18 per month",
-    availability: "Available nationwide"
-  },
-  {
-    id: "dkt-implanon",
-    name: "Implanon",
-    category: "contraceptives",
-    description: "Single-rod implant contraceptive listed in DKT Ghana booklet.",
-    uses: ["Long-term contraception", "Reversible implant method"],
-    whereToGet: ["Implant-trained clinics", "Hospitals", "DKT referral points"],
-    priceRange: "GH₵ 120-300",
-    availability: "Available at trained service points"
-  },
-  {
-    id: "dkt-levoplant",
-    name: "Levoplant",
-    category: "contraceptives",
-    description: "Two-rod contraceptive implant listed in DKT Ghana booklet.",
-    uses: ["Long-term contraception", "Reversible implant method"],
-    whereToGet: ["Implant-trained providers", "DKT partner clinics"],
-    priceRange: "GH₵ 120-300",
-    availability: "Available in partner clinics"
-  },
-  {
-    id: "dkt-kiss-classic",
-    name: "Kiss Classic Condoms",
-    category: "condoms",
-    description: "Classic Kiss condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 2-6 per pack",
-    availability: "Widely available"
-  },
-  {
-    id: "dkt-prudence-all-night",
-    name: "Prudence All Night",
-    category: "condoms",
-    description: "All Night condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Extended comfort"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in major cities"
-  },
-  {
-    id: "dkt-prudence-classic",
-    name: "Prudence Classic",
-    category: "condoms",
-    description: "Classic condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 2-6 per pack",
-    availability: "Widely available"
-  },
-  {
-    id: "dkt-prudence-dotted",
-    name: "Prudence Dotted",
-    category: "condoms",
-    description: "Dotted condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Textured experience"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in urban outlets"
-  },
-  {
-    id: "dkt-prudence-extra-thin",
-    name: "Prudence Extra Thin",
-    category: "condoms",
-    description: "Extra Thin condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Increased sensitivity"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in select and major outlets"
-  },
-  {
-    id: "dkt-prudence-fruity",
-    name: "Prudence Fruity",
-    category: "condoms",
-    description: "Flavored condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Flavor-enhanced use"],
-    whereToGet: ["Pharmacies", "Supermarkets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in urban and peri-urban outlets"
-  },
-  {
-    id: "dkt-prudence-strawberry",
-    name: "Prudence Strawberry",
-    category: "condoms",
-    description: "Strawberry condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Flavor-enhanced use"],
-    whereToGet: ["Pharmacies", "Supermarkets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in urban and peri-urban outlets"
-  },
-  {
-    id: "dkt-prudence-sleek",
-    name: "Prudence Sleek",
-    category: "condoms",
-    description: "Sleek condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Comfort-enhanced use"],
-    whereToGet: ["Pharmacies", "Retail outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in major urban outlets"
-  },
-  {
-    id: "dkt-kiss-strawberry",
-    name: "Kiss Strawberry Condoms",
-    category: "condoms",
-    description: "Flavored Kiss condom variant listed in DKT Ghana booklet.",
-    uses: ["STI prevention", "Pregnancy prevention", "Flavor-enhanced use"],
-    whereToGet: ["Pharmacies", "Supermarkets", "DKT partner outlets"],
-    priceRange: "GH₵ 3-7 per pack",
-    availability: "Available in urban and peri-urban outlets"
-  },
-  {
-    id: "dkt-kiss-gel",
-    name: "Kiss Gel",
-    category: "lubricants",
-    description: "Lubricant line listed in DKT Ghana booklet.",
-    uses: ["Comfort enhancement", "Reduced friction", "Condom-compatible use"],
-    whereToGet: ["Pharmacies", "Health shops", "DKT partner outlets"],
-    priceRange: "GH₵ 8-20",
-    availability: "Available in selected pharmacies"
-  },
-  {
-    id: "dkt-lydia-safeload",
-    name: "Lydia Safeload",
-    category: "condoms",
-    description: "Female condom line listed in DKT Ghana booklet.",
-    uses: ["Female-controlled contraception", "STI prevention", "Pregnancy prevention"],
-    whereToGet: ["Family planning clinics", "Selected pharmacies", "DKT support referral"],
-    priceRange: "GH₵ 15-30 per unit",
-    availability: "Available in select service points"
-  },
-  {
-    id: "dkt-mafem",
-    name: "MaFem",
-    category: "intimateCare",
-    description: "Women-focused product line listed in DKT Ghana booklet.",
-    uses: ["Women's health support", "Personal care"],
-    whereToGet: ["Pharmacies", "Women's health outlets", "DKT partner outlets"],
-    priceRange: "GH₵ 10-35",
-    availability: "Availability varies by outlet"
-  },
-  {
-    id: "dkt-mva-kit",
-    name: "MVA Kit",
-    category: "clinicalKits",
-    description: "Manual vacuum aspiration kit listed in DKT Ghana booklet for clinical use.",
-    uses: ["Clinical uterine evacuation procedures", "Facility-based reproductive care"],
-    whereToGet: ["Hospitals", "Licensed clinics", "Provider procurement channels"],
-    priceRange: "Facility procurement pricing",
-    availability: "For trained providers and facilities"
-  },
-  {
-    id: "dkt-mm-combit-kit",
-    name: "MM Combit Kit",
-    category: "clinicalKits",
-    description: "Clinical reproductive health kit listed in DKT Ghana booklet.",
-    uses: ["Facility reproductive care", "Provider-managed protocols"],
-    whereToGet: ["Licensed health facilities", "Clinical procurement channels"],
-    priceRange: "Facility procurement pricing",
-    availability: "For trained providers and facilities"
   }
 ];
 
-export function getDKTProducts(category?: string): DKTProduct[] {
-  if (!category) return dktProducts;
-  return dktProducts.filter(product => product.category === category);
+export function getDKTProducts(category?: string, gender?: string): DKTProduct[] {
+  return dktProducts.filter(product => {
+    const matchesCategory = !category || category === "all" || product.category === category;
+    const matchesGender = !gender || gender === "all" || product.gender === gender || product.gender === "both";
+    return matchesCategory && matchesGender;
+  });
 }
 
 export function getDKTCategories(): string[] {
