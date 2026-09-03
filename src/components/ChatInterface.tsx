@@ -189,7 +189,7 @@ export function ChatInterface({
           timestamp: new Date(msg.timestamp)
         }));
 
-        const retainedMessages = applyRetentionPolicy(hydratedMessages);
+        const retainedMessages = rebuildMessagesForLanguage(applyRetentionPolicy(hydratedMessages));
 
         if (retainedMessages.length > 0) {
           setMessages(retainedMessages);

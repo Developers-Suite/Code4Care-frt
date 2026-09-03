@@ -295,7 +295,7 @@ export class ChatbotSession {
 
   private handleGreeting(): string {
     const responses = {
-      en: "Hello! I'm here to help you with any questions about sexual and reproductive health. Our chat is private and confidential.\n\nWhat would you like to talk about today?",
+      en: "Hey bestie! I'm here for all your sexual and reproductive health questions, no judgment, no awkward vibes. This chat is private and confidential.\n\nWhat's on your mind today?",
       twi: "Akwaaba! Mewɔ ha sɛ meboa wo wɔ nsɛm a ɛfa nna ne awo ho akwahosan ho. Nea yɛka nyinaa yɛ kokoam.\n\nDɛn na wopɛ sɛ yɛka ho asɛm nnɛ?",
       ewe: "Alo! Mele afisia be makpe ɖe ŋuwò tso lãmesɛ ŋuti. Nu sia nu si míaƒo nu tso eŋu la nye ɣaɣla.\n\nNane pɔtee aɖe li si ŋuti nèdi be yeanya?"
     };
@@ -305,20 +305,20 @@ export class ChatbotSession {
 
   private handleUrgent(): string {
     const res = (ghanaResources as any)[this.language] || ghanaResources.en;
-    return `This sounds urgent. Please contact professional help immediately:\n\nEmergency: ${res.emergency}\nDOVVSU: ${res.dovvsu}\nPPAG: ${res.ppag}\n\nYou are not alone. Please reach out right now.`;
+    return `Hey bestie, this sounds urgent, so let's get you real support right now. Please contact professional help immediately:\n\nEmergency: ${res.emergency}\nDOVVSU: ${res.dovvsu}\nPPAG: ${res.ppag}\n\nYou are not alone, okay? Please reach out now.`;
   }
 
   private handleOffTopic(): string {
-    return "I'm specifically trained to help with sexual and reproductive health (SRH) topics like puberty, periods, contraception, and relationships. What SRH question can I help you with?";
+    return "Hey bestie, I’m mainly here for sexual and reproductive health (SRH) questions, like puberty, periods, contraception, and relationships. No stress if you’re not sure where to start. What’s on your mind?";
   }
 
   private askClarification(): string {
-    return "I want to be as helpful as possible. Could you tell me a bit more about what you're asking? For example, are you interested in puberty, periods, or contraception?";
+    return "I’ve got you, bestie. Could you share a little more about what you mean? You can ask about puberty, periods, contraception, relationships, or anything SRH-related.";
   }
 
   private generateTopicResponse(topic: string): string {
     // We'll restore the full content logic later, this is a placeholder during refactor
-    return `I'm happy to help with questions about ${topic}. (Content logic for ${this.language} is currently being mapped to the new session engine)`;
+    return `Absolutely, bestie. Let’s talk about ${topic} in a clear, judgment-free way. I’m still building out the detailed guidance for this topic, but you can ask me anything and we’ll take it one step at a time.`;
   }
 
   private generateFollowUp(): string {
@@ -330,7 +330,7 @@ export class ChatbotSession {
     const genderLine = this.getGenderToneLine();
 
     if (!ageLine && !genderLine) {
-      return "I will tailor explanations to your needs and keep things clear, safe, and non-judgmental.";
+      return "I’ll keep things clear, safe, and judgment-free, bestie.";
     }
 
     return [ageLine, genderLine].filter(Boolean).join(" ");
@@ -339,19 +339,19 @@ export class ChatbotSession {
   private getDemographicFollowUpPrompt(): string {
     const ageRange = this.demographics?.ageRange;
     if (ageRange === '10-14' || ageRange === '15-19') {
-      return "Does that help? I can also explain this in simple, step-by-step language for teens if you want.";
+      return "Does that make sense, bestie? I can break it down step by step too, no pressure.";
     }
 
-    return "Does that help? Is there anything else you'd like to know?";
+    return "Does that help, bestie? What else would you like to know?";
   }
 
   private getAgeToneLine(): string {
     const ageRange = this.demographics?.ageRange;
     if (ageRange === '10-14' || ageRange === '15-19') {
-      return "I will keep feedback youth-friendly and practical.";
+      return "I’ll keep things youth-friendly, practical, and easy to follow.";
     }
     if (ageRange === '20-24' || ageRange === '25+') {
-      return "I will keep feedback practical, clear, and action-focused.";
+      return "I’ll keep things practical, clear, and focused on what helps you.";
     }
     return "";
   }
@@ -359,20 +359,20 @@ export class ChatbotSession {
   private getGenderToneLine(): string {
     const gender = this.demographics?.genderIdentity;
     if (gender === 'female') {
-      return "I will include guidance relevant to women's SRH concerns when useful.";
+      return "I’ll include guidance relevant to women’s SRH concerns when useful.";
     }
     if (gender === 'male') {
-      return "I will include guidance relevant to men's SRH concerns when useful.";
+      return "I’ll include guidance relevant to men’s SRH concerns when useful.";
     }
     if (gender === 'non-binary') {
-      return "I will use inclusive language and avoid gender assumptions in guidance.";
+      return "I’ll keep my language inclusive and avoid gender assumptions, always.";
     }
     return "";
   }
 
   private getErrorResponse(): string {
     const responses = {
-      en: "I'm sorry, I'm having a technical moment. Could you try asking that again?",
+      en: "Oops, bestie, I hit a tiny technical wobble. Try that again and I’ll do my best to help.",
       twi: "Mesrɛ wo, mewɔ mfomsoɔ ketewa bi. Wobɛtumi abisa wo nsɛm no bio?",
       ewe: "Meɖe kuku, vodada sue aɖe dzɔ. Àte ŋu abia wò nyabiase la akea?"
     };
