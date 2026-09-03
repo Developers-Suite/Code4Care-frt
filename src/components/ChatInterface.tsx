@@ -346,11 +346,14 @@ export function ChatInterface({
         'Failed to log outgoing chat event',
       );
 
-      const response = await requestChatCompletion({
-        message: outgoingMessage,
-        language: languageCode,
-        session_id: sessionId,
-      });
+      const response = await requestChatCompletion(
+        {
+          message: outgoingMessage,
+          language: languageCode,
+          session_id: sessionId,
+        },
+        { ageRange, genderIdentity, region }
+      );
 
       // Sync to the backend-assigned session UUID so all messages land in the same conversation
       if (response.session_id && response.session_id !== sessionId) {

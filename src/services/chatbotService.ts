@@ -1,5 +1,6 @@
 // Clean, Natural Conversational AI Chatbot for SRH - Ghana
 import { logger } from "@/utils/logger";
+import { executeFrontendRagFallback } from "./frontendRagService";
 
 export interface ChatMessage {
   id: string;
@@ -48,8 +49,8 @@ export interface ChatApiResponse {
 }
 
 const CHAT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
-
 const CHAT_ENDPOINT = '/v1/chat';
+const BACKEND_TIMEOUT_MS = Number(import.meta.env.VITE_CHAT_TIMEOUT_MS) || 8000;
 
 function buildChatUrl(path: string) {
   if (!CHAT_API_BASE_URL) {
@@ -89,15 +90,26 @@ function normalizeChatResponse(payload: unknown, defaultLanguage: string): ChatA
   };
 }
 
-async function postChatCompletion(payload: ChatApiRequest, endpoint: string) {
-  return fetch(buildChatUrl(endpoint), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+async function postChatCompletion(payload: ChatApiRequest, endpoint: string, timeoutMs: number = BACKEND_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(buildChatUrl(endpoint), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -134,23 +146,31 @@ async function readErrorMessage(response: Response): Promise<string> {
   return bodyText || response.statusText || 'Chat API request failed';
 }
 
-export async function requestChatCompletion(payload: ChatApiRequest): Promise<ChatApiResponse> {
+export async function requestChatCompletion(
+  payload: ChatApiRequest,
+  demographics?: UserDemographics
+): Promise<ChatApiResponse> {
   try {
+    logger.info('Sending chat request to backend...');
     const response = await postChatCompletion(payload, CHAT_ENDPOINT);
 
     if (!response.ok) {
       const errorMessage = await readErrorMessage(response);
-      throw new Error(`Chat API request failed (${response.status}) at ${CHAT_ENDPOINT}: ${errorMessage}`);
+      throw new Error(`Backend Chat API failed (${response.status}): ${errorMessage}`);
     }
 
     const data = await response.json();
-    return normalizeChatResponse(data, payload.language);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
+    const normalized = normalizeChatResponse(data, payload.language);
+
+    if (!normalized.answer || !normalized.answer.trim()) {
+      throw new Error('Backend returned empty answer completion');
     }
 
-    throw new Error('Chat API request failed');
+    return normalized;
+  } catch (error) {
+    logger.warn('Backend Chat API failed or timed out. Initiating frontend RAG fallback...', error);
+    // Multi-tier Fallback Execution (Option A -> Option B)
+    return await executeFrontendRagFallback(payload, demographics);
   }
 }
 
@@ -317,7 +337,6 @@ export class ChatbotSession {
   }
 
   private generateTopicResponse(topic: string): string {
-    // We'll restore the full content logic later, this is a placeholder during refactor
     return `Absolutely, bestie. Let’s talk about ${topic} in a clear, judgment-free way. I’m still building out the detailed guidance for this topic, but you can ask me anything and we’ll take it one step at a time.`;
   }
 
