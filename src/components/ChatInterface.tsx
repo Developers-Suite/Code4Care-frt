@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "./ui/dialog";
 import { useApp } from "@/providers/AppProvider";
-import { ChatCitation, requestChatCompletion } from "@/services/chatbotService";
+import { ChatCitation, createChatSession, requestChatCompletion } from "@/services/chatbotService";
 import { FeedbackService } from "@/services/feedbackService";
 import { ReportService } from "@/services/reportService";
 import { SuggestionsService } from "@/services/suggestionsService";
@@ -64,6 +64,7 @@ export function ChatInterface({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const localChatSessionRef = useRef<ReturnType<typeof createChatSession> | null>(null);
   const STORAGE_KEY = `lydiacontactcenter_chat_${sessionId}`;
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -300,13 +301,37 @@ export function ChatInterface({
         return count + (patterns.some((pattern) => normalized.includes(pattern)) ? 1 : 0);
       }, 0);
 
+    const languageCode = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
+    if (!localChatSessionRef.current) {
+      localChatSessionRef.current = createChatSession(languageCode, { ageRange, genderIdentity, region });
+    }
+
+    const addLocalFallbackResponse = (reason: unknown) => {
+      logger.warn('Using local chatbot fallback:', reason);
+      const fallbackText = localChatSessionRef.current?.getResponse(outgoingMessage, consultantMode).trim();
+      const answerText = [
+        fallbackText || 'I am temporarily unable to connect to the knowledge service.',
+        'You can speak to a consultant directly or call 1221 if you need help urgently.',
+      ].join('\n\n');
+
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        text: answerText,
+        sender: 'bot',
+        timestamp: new Date(),
+        mode: consultantMode ? 'consultant' : 'chatbot',
+        citations: [],
+        languageDetected: languageCode,
+        responseTimeMs: 0,
+      }]);
+    };
+
     const userMsg: Message = { id: Date.now().toString(), text: outgoingMessage, sender: 'user', timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInputValue("");
     setIsTyping(true);
 
     try {
-      const languageCode = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
       UserEngagementService.logNonBlocking(
         UserEngagementService.logChatEvent({
           session_id: sessionId,
@@ -389,10 +414,11 @@ export function ChatInterface({
           'Failed to log bot response chat event',
         );
       } else {
-        logger.warn('Chat API returned an empty answer.', response);
+        addLocalFallbackResponse('Chat API returned an empty answer.');
       }
     } catch (error) {
       logger.error('Chat API failed:', error);
+      addLocalFallbackResponse(error);
     } finally {
       setIsTyping(false);
       // Post an incremental analytics snapshot so messages are recorded instantly

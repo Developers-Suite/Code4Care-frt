@@ -193,27 +193,6 @@
 			},
 			{
 				"id": 2,
-				"type": "Lafiyar kwakwalwa",
-				"contact": "Hukumar Lafiyar Kwakwalwa",
-				"phone": "050-911-4396",
-				"description": "Shawara da goyon bayan gaggawar lafiyar kwakwalwa."
-			},
-			{
-				"id": 3,
-				"type": "Bayanan SRH",
-				"contact": "Layin Matasan PPAG",
-				"phone": "0302-219-038",
-				"description": "Shawara mai dacewa da matasa, tura wurare, da bayanin ayyuka."
-			},
-			{
-				"id": 4,
-				"type": "Tsarin Iyali",
-				"contact": "MSI Reproductive Choices Ghana",
-				"phone": "0302-234-040",
-				"description": "Shiriya kan kariya da ayyukan lafiyar haihuwa."
-			},
-			{
-				"id": 5,
 				"type": "Samar da kayayyaki / Tsarin Iyali",
 				"contact": "Teburin Tallafin DKT Ghana",
 				"phone": "0302-772-799",

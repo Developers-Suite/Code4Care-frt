@@ -185,27 +185,6 @@
       },
       {
         "id": 2,
-        "type": "Mental Health",
-        "contact": "Mental Health Authority",
-        "phone": "050-911-4396",
-        "description": "Counseling and crisis support."
-      },
-      {
-        "id": 3,
-        "type": "SRH Information",
-        "contact": "PPAG Youth Line",
-        "phone": "0302-219-038",
-        "description": "Youth-friendly SRH counseling, referrals, and service information."
-      },
-      {
-        "id": 4,
-        "type": "Family Planning",
-        "contact": "MSI Reproductive Choices Ghana",
-        "phone": "0302-234-040",
-        "description": "Contraception and reproductive health service guidance."
-      },
-      {
-        "id": 5,
         "type": "Product Access / Family Planning",
         "contact": "DKT Ghana Support Desk",
         "phone": "0302-772-799",
