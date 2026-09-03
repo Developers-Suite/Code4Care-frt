@@ -21,20 +21,12 @@ export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
         className="relative h-[50vh] md:h-full w-full overflow-hidden"
       >
         <img
-          src={heroImage}
+          src="/introscreen/medium-shot-woman-holding-phone.jpg"
           alt="Lydia Contact Center Welcome"
           // object-cover and absolute inset-0 ensure it fills the 50% grid cell
           className="absolute inset-0 w-full h-full object-cover"
         />
         
-        {/* THE OVERLAY LAYER */}
-        {/* We use a gradient from the brand color (red) that transitions 
-            from subtle on the left to slightly darker on the right 
-            to help bleed into the content side. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#BE322D]/20 via-[#BE322D]/50 to-[#BE322D]/80 mix-blend-multiply" />
-        
-        {/* Optional second light gradient overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </motion.div>
 
       {/* RIGHT COLUMN: Content */}
@@ -51,10 +43,7 @@ export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFF1F1] text-[#BE322D] font-bold text-xs uppercase tracking-widest border border-[#F4D6D5]">
-                <ShieldCheck className="w-4 h-4" />
-                Welcome to Lydia Contact Center
-              </span>
+              
             </motion.div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#241515] leading-[1.1]">
