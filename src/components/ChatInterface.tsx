@@ -309,10 +309,7 @@ export function ChatInterface({
     const addLocalFallbackResponse = (reason: unknown) => {
       logger.warn('Using local chatbot fallback:', reason);
       const fallbackText = localChatSessionRef.current?.getResponse(outgoingMessage, consultantMode).trim();
-      const answerText = [
-        fallbackText || 'I am temporarily unable to connect to the knowledge service.',
-        'You can speak to a consultant directly or call 1221 if you need help urgently.',
-      ].join('\n\n');
+      const answerText = fallbackText || 'Hey bestie, I’m here with you. Tell me a little more about what’s going on and we’ll work through it together.';
 
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),

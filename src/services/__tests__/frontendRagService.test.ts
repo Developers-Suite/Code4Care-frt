@@ -10,8 +10,8 @@ describe('Frontend RAG Fallback Service', () => {
   it('retrieves relevant RAG context for contraception and Ghana clinics', () => {
     const rag = retrieveRagContext('Where can I get condoms and emergency contraceptive pills in Ghana?');
     expect(rag.topics.map(t => t.id)).toContain('contraception');
-    expect(rag.contextText).toContain('PPAG');
-    expect(rag.contextText).toContain('Marie Stopes');
+    expect(rag.contextText).toContain('Lydia Contact Center');
+    expect(rag.contextText).toContain('1221');
   });
 
   it('generates a Gen Z styled in-browser local RAG response with emojis', () => {
@@ -37,6 +37,24 @@ describe('Frontend RAG Fallback Service', () => {
     expect(res.answer).toContain('DOVVSU');
     expect(res.answer).toContain('055-1000-900');
     expect(res.safety_flags.length).toBeGreaterThan(0);
+  });
+
+  it('understands a short follow-up from the previous fallback turn', () => {
+    const res = generateLocalBrowserRagResponse(
+      {
+        message: 'yes',
+        language: 'en',
+        session_id: 'follow-up-123'
+      },
+      undefined,
+      [
+        'User: What do you think about using a condom?',
+        'Lydia: Condoms are a solid choice. Want me to walk you through how to use one?'
+      ]
+    );
+
+    expect(res.answer).toContain('check the expiry date');
+    expect(res.answer).toContain('use two together');
   });
 
   it('falls back seamlessly when backend API fails or times out', async () => {

@@ -90,6 +90,13 @@ function normalizeChatResponse(payload: unknown, defaultLanguage: string): ChatA
   };
 }
 
+function isBackendBusyResponse(answer: string): boolean {
+  const normalizedAnswer = answer.toLowerCase().replace(/\s+/g, ' ').trim();
+
+  return normalizedAnswer.includes('currently busy') &&
+    (normalizedAnswer.includes('try again shortly') || normalizedAnswer.includes('wait a moment'));
+}
+
 async function postChatCompletion(payload: ChatApiRequest, endpoint: string, timeoutMs: number = BACKEND_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -164,6 +171,10 @@ export async function requestChatCompletion(
 
     if (!normalized.answer || !normalized.answer.trim()) {
       throw new Error('Backend returned empty answer completion');
+    }
+
+    if (isBackendBusyResponse(normalized.answer)) {
+      throw new Error('Backend returned a busy placeholder instead of an answer');
     }
 
     return normalized;
@@ -391,7 +402,7 @@ export class ChatbotSession {
 
   private getErrorResponse(): string {
     const responses = {
-      en: "Oops, bestie, I hit a tiny technical wobble. Try that again and I’ll do my best to help.",
+      en: "Hey bestie, I’m still with you. Tell me a little more about what’s going on and we’ll work through it together.",
       twi: "Mesrɛ wo, mewɔ mfomsoɔ ketewa bi. Wobɛtumi abisa wo nsɛm no bio?",
       ewe: "Meɖe kuku, vodada sue aɖe dzɔ. Àte ŋu abia wò nyabiase la akea?"
     };
