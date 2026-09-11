@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { HeadphonesIcon, Clock, CheckCircle, AlertTriangle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { HeadphonesIcon, Headphones, Clock, CheckCircle, AlertTriangle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from './ExportButton';
 import {
@@ -19,12 +19,12 @@ function Skeleton({ className = '' }: { className?: string }) {
 }
 
 function formatDate(iso: string) {
-  if (!iso) return '—';
+  if (!iso) return '';
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 function formatDateFull(iso: string) {
-  if (!iso) return '—';
+  if (!iso) return '';
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -235,12 +235,12 @@ export function SupportPage({ session }: SupportPageProps) {
                   headers: ['ID', 'Session', 'Nickname', 'Status', 'Urgency', 'Created', 'Assigned To'],
                   rows: requests.map((r) => [
                     r.id.slice(-8),
-                    r.session_id ? `…${r.session_id.slice(-8)}` : '—',
-                    r.user_nickname ?? '—',
+                    r.session_id ? `…${r.session_id.slice(-8)}` : '',
+                    r.user_nickname ?? 'Anonymous',
                     r.status,
                     r.urgency,
                     new Date(r.created_at).toLocaleString('en-GB'),
-                    r.assigned_staff?.name ?? r.assigned_staff?.id?.slice(-8) ?? '—',
+                    r.assigned_staff?.name ?? r.assigned_staff?.id?.slice(-8) ?? 'Unassigned',
                   ]),
                 }}
               />
@@ -290,26 +290,51 @@ export function SupportPage({ session }: SupportPageProps) {
                   ))
                 ) : requests.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">No support requests found</td></tr>
-                ) : requests.map((req) => (
-                  <tr key={req.id} className="border-b border-[#E8ECFF] hover:bg-gray-50/50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{req.user_nickname ?? '—'}</div>
-                      <div className="text-xs text-gray-400">{req.age_range} · {req.gender_identity}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-xs font-medium text-gray-700 capitalize">{req.reason?.replace(/_/g, ' ')}</div>
-                      <div className="text-xs text-gray-400 capitalize">{req.status}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={`text-xs ${URGENCY_BADGE[req.urgency] ?? ''}`}>{req.urgency}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={`text-xs ${STATUS_BADGE[req.status] ?? ''}`}>{req.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{req.assigned_staff?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{formatDate(req.created_at)}</td>
-                  </tr>
-                ))}
+                ) : requests.map((req) => {
+                  const isWaitingTakeover = req.status === 'waiting';
+                  return (
+                    <tr
+                      key={req.id}
+                      className={`border-b transition-colors ${
+                        isWaitingTakeover
+                          ? 'bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500 border-b-rose-100'
+                          : 'border-[#E8ECFF] hover:bg-gray-50/50'
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-900">{req.user_nickname ?? 'Anonymous'}</span>
+                          {isWaitingTakeover && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
+                              <Headphones className="w-3 h-3 text-rose-600" />
+                              Takeover Needed
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400">{req.age_range} · {req.gender_identity}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-xs font-medium text-gray-700 capitalize">{req.reason?.replace(/_/g, ' ')}</div>
+                        <div className="text-xs text-gray-400 capitalize">{req.status}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={`text-xs ${URGENCY_BADGE[req.urgency] ?? ''}`}>{req.urgency}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isWaitingTakeover ? (
+                          <Badge className="text-xs bg-rose-600 text-white font-bold border-none hover:bg-rose-700 flex items-center gap-1 shadow-sm animate-pulse">
+                            <Headphones className="w-3 h-3" />
+                            Waiting Takeover
+                          </Badge>
+                        ) : (
+                          <Badge className={`text-xs ${STATUS_BADGE[req.status] ?? ''}`}>{req.status}</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{req.assigned_staff?.name ?? 'Unassigned'}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{formatDate(req.created_at)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

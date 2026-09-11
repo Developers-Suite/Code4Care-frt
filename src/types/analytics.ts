@@ -128,7 +128,7 @@ export interface ContentGap {
 // Overall Dashboard Summary
 export interface AnalyticsSummary {
   generatedAt: string;
-  period: 'today' | 'week' | 'month';
+  period: 'today' | 'week' | 'month' | 'year' | 'all';
   demographics: DemographicMetrics;
   topics: TopicEngagement[];
   safety: SafetyMetrics;
@@ -157,7 +157,7 @@ export interface DashboardFilters {
   ageRange?: AgeRange | 'all';
   gender?: GenderIdentity | 'all';
   language?: Language | 'all';
-  dateRange: 'today' | 'week' | 'month' | 'year' | 'custom';
+  dateRange: 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
   customDateStart?: string;
   customDateEnd?: string;
 }

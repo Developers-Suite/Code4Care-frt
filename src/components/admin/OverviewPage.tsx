@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'motion/react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -17,7 +17,7 @@ import { StaffAccessService, StaffSession, AdminDashboardStats } from '@/service
 import { getNumber } from '@/utils/analyticsUtils';
 import { logger } from '@/utils/logger';
 
-type Period = 'today' | 'week' | 'month';
+type Period = 'today' | 'week' | 'month' | 'year' | 'all';
 
 const PLATFORM_COLORS = ['#006d77', '#BE322D', '#F59E0B'];
 const LANG_COLORS = ['#1d4ed8', '#0ea5e9', '#22c55e', '#f59e0b', '#ef4444'];
@@ -82,25 +82,32 @@ export function OverviewPage({ session }: OverviewPageProps) {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-
-    Promise.all([
-      RealAnalyticsService.getAnalyticsSummary({ period }, session.accessToken)
-        .then((d) => RealAnalyticsService.normalizeAnalyticsSummary(d))
-        .catch((e) => { logger.error('analytics summary', e); return null; }),
-      StaffAccessService.getDashboardStats(session.accessToken)
-        .catch((e) => { logger.error('dashboard stats', e); return null; }),
-    ]).then(([a, s]) => {
-      if (!mounted) return;
-      setAnalytics(a);
-      setStats(s);
-      setLoading(false);
-    });
-
-    return () => { mounted = false; };
+  const fetchOverview = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const [a, s] = await Promise.all([
+        RealAnalyticsService.getAnalyticsSummary({ period }, session.accessToken)
+          .then((d) => RealAnalyticsService.normalizeAnalyticsSummary(d))
+          .catch((e) => { logger.error('analytics summary polling', e); return null; }),
+        StaffAccessService.getDashboardStats(session.accessToken)
+          .catch((e) => { logger.error('dashboard stats polling', e); return null; }),
+      ]);
+      if (a) setAnalytics(a);
+      if (s) setStats(s);
+    } finally {
+      if (isInitial) setLoading(false);
+    }
   }, [period, session.accessToken]);
+
+  // Real-time auto refresh (every 8s)
+  useEffect(() => {
+    void fetchOverview(true);
+    const interval = setInterval(() => {
+      void fetchOverview(false);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [fetchOverview]);
 
   const trends = useMemo(() => (analytics?.trends ?? []).slice(0, 14), [analytics]);
 
@@ -124,7 +131,11 @@ export function OverviewPage({ session }: OverviewPageProps) {
   const crisisTotal = getNumber(analytics?.safety ?? {}, 'crisis_interventions');
   const panicTotal = getNumber(analytics?.safety ?? {}, 'panic_exits_total');
 
-  const periodLabel = period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
+  const periodLabel =
+    period === 'today' ? 'Today' :
+    period === 'week' ? 'This Week' :
+    period === 'month' ? 'This Month' :
+    period === 'year' ? 'This Year' : 'All Time';
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6">
@@ -159,15 +170,21 @@ export function OverviewPage({ session }: OverviewPageProps) {
                 }}
               />
               <div className="flex gap-1 bg-white border border-[#E8ECFF] rounded-lg p-1">
-                {(['today', 'week', 'month'] as Period[]).map((p) => (
+                {([
+                  { id: 'today', label: 'Today' },
+                  { id: 'week', label: 'Week' },
+                  { id: 'month', label: 'Month' },
+                  { id: 'year', label: 'Year' },
+                  { id: 'all', label: 'All Time' },
+                ] as const).map(({ id, label }) => (
                   <button
-                    key={p}
-                    onClick={() => setPeriod(p)}
+                    key={id}
+                    onClick={() => setPeriod(id)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      period === p ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
+                      period === id ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {p === 'today' ? 'Today' : p === 'week' ? 'Week' : 'Month'}
+                    {label}
                   </button>
                 ))}
               </div>

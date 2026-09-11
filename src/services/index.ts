@@ -153,12 +153,8 @@ export type {
 } from './auditLogService';
 
 // Original Chat Service (for completion requests)
-export { requestChatCompletion, ChatbotSession, createChatSession, getBotResponse, getFollowUpSuggestions } from './chatbotService';
+export { requestChatCompletion } from './chatbotService';
 export type { ChatMessage as ChatbotMessage, UserDemographics, ChatApiRequest, ChatApiResponse, ChatCitation, SafetyFlag } from './chatbotService';
-
-// Frontend RAG Fallback Service
-export { executeFrontendRagFallback, generateOpenModelResponse, generateLocalBrowserRagResponse, retrieveRagContext } from './frontendRagService';
-export type { KnowledgeTopic } from './frontendRagService';
 
 // Analytics (Mock Data - kept for reference)
 export { AnalyticsService } from './analyticsService';

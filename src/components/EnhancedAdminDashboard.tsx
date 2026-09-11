@@ -83,7 +83,7 @@ function prettifyLabel(value: string): string {
 }
 
 export function AdminDashboard({ selectedLanguage, session }: AdminDashboardProps) {
-  const [period, setPeriod] = useState<'today' | 'week' | 'month'>('week');
+  const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'year' | 'all'>('week');
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
   const [, setHealthStatus] = useState<any>(null);
@@ -429,15 +429,21 @@ export function AdminDashboard({ selectedLanguage, session }: AdminDashboardProp
 
           {/* Period Selector */}
           <div className="flex gap-2">
-            {(['today', 'week', 'month'] as const).map((p) => (
+            {([
+              { id: 'today', label: 'Today' },
+              { id: 'week', label: 'This Week' },
+              { id: 'month', label: 'This Month' },
+              { id: 'year', label: 'This Year' },
+              { id: 'all', label: 'All Time' },
+            ] as const).map(({ id, label }) => (
               <Button
-                key={p}
-                variant={period === p ? 'default' : 'outline'}
+                key={id}
+                variant={period === id ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setPeriod(p)}
-                className={period === p ? 'bg-blue-600 text-white' : ''}
+                onClick={() => setPeriod(id)}
+                className={period === id ? 'bg-blue-600 text-white' : ''}
               >
-                {p === 'today' ? 'Today' : p === 'week' ? 'This Week' : 'This Month'}
+                {label}
               </Button>
             ))}
           </div>

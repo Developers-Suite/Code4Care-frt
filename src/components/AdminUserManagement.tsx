@@ -58,21 +58,13 @@ import {
 import { logger } from '@/utils/logger';
 import { buildAdminExportFilename, downloadJsonFile } from '@/utils/adminExport';
 
-function getPlatformInfo(id: string): { platform: 'telegram' | 'whatsapp' | 'web'; label: string } {
-  if (id.startsWith('telegram:')) return { platform: 'telegram', label: 'Telegram' };
+function getPlatformInfo(id: string): { platform: 'whatsapp' | 'web'; label: string } {
   if (id.startsWith('whatsapp:')) return { platform: 'whatsapp', label: 'WhatsApp' };
   return { platform: 'web', label: 'Web' };
 }
 
 function PlatformBadge({ id }: { id: string }) {
   const { platform, label } = getPlatformInfo(id);
-  if (platform === 'telegram') {
-    return (
-      <Badge className="bg-sky-50 text-sky-700 border-sky-200 gap-1 text-xs py-0">
-        <Send className="w-3 h-3" />{label}
-      </Badge>
-    );
-  }
   if (platform === 'whatsapp') {
     return (
       <Badge className="bg-green-50 text-green-700 border-green-200 gap-1 text-xs py-0">

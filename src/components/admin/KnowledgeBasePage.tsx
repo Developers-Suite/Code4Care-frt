@@ -69,7 +69,10 @@ async function fetchDocuments(page: number, pageSize: number, statusFilter: stri
   if (!API_BASE_URL) return null;
   try {
     const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-    if (statusFilter) params.set('status', statusFilter);
+    if (statusFilter) {
+      params.set('status_filter', statusFilter);
+      params.set('status', statusFilter);
+    }
     const res = await fetch(`${API_BASE_URL}/admin/documents?${params}`, {
       headers: {
         'Content-Type': 'application/json',

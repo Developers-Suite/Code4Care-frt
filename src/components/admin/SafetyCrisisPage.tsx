@@ -5,14 +5,14 @@ import {
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Zap } from 'lucide-react';
+import { AlertTriangle, Zap, ArrowRight } from 'lucide-react';
 import { ExportButton } from './ExportButton';
 import { RealAnalyticsService, SafetyAnalyticsResponse } from '@/services/realAnalyticsService';
 import { getNumber } from '@/utils/analyticsUtils';
 import { StaffSession } from '@/services/staffAccessService';
 import { logger } from '@/utils/logger';
 
-type Period = 'today' | 'week' | 'month';
+type Period = 'today' | 'week' | 'month' | 'year' | 'all';
 
 const CRISIS_COLORS: Record<string, string> = {
   self_harm: '#ef4444',
@@ -111,7 +111,11 @@ export function SafetyCrisisPage({ session }: SafetyCrisisPageProps) {
     return bars;
   }, [selfHarm, suicidal, abuse, safety, panicTotal]);
 
-  const periodLabel = period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
+  const periodLabel =
+    period === 'today' ? 'Today' :
+    period === 'week' ? 'This Week' :
+    period === 'month' ? 'This Month' :
+    period === 'year' ? 'This Year' : 'All Time';
   const hasCrisis = crisisTotal > 0 || panicTotal > 0;
 
   return (
@@ -142,10 +146,21 @@ export function SafetyCrisisPage({ session }: SafetyCrisisPageProps) {
                 }}
               />
               <div className="flex gap-1 bg-white border border-[#E8ECFF] rounded-lg p-1">
-                {(['today', 'week', 'month'] as Period[]).map((p) => (
-                  <button key={p} onClick={() => setPeriod(p)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${period === p ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                    {p === 'today' ? 'Today' : p === 'week' ? 'Week' : 'Month'}
+                {([
+                  { id: 'today', label: 'Today' },
+                  { id: 'week', label: 'Week' },
+                  { id: 'month', label: 'Month' },
+                  { id: 'year', label: 'Year' },
+                  { id: 'all', label: 'All Time' },
+                ] as const).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setPeriod(id)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      period === id ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {label}
                   </button>
                 ))}
               </div>

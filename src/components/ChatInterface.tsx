@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Send, Mic, Clock, User, ShieldCheck, Volume2, Pause, ThumbsUp, ThumbsDown, Flag } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Send, Mic, Clock, User, ShieldCheck, Volume2, Pause, ThumbsUp, ThumbsDown, Flag, Headphones, Radio } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import ReactMarkdown from 'react-markdown';
@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "./ui/dialog";
 import { useApp } from "@/providers/AppProvider";
-import { ChatCitation, createChatSession, requestChatCompletion } from "@/services/chatbotService";
+import { ChatCitation, requestChatCompletion } from "@/services/chatbotService";
 import { FeedbackService } from "@/services/feedbackService";
 import { ReportService } from "@/services/reportService";
 import { SuggestionsService } from "@/services/suggestionsService";
@@ -29,7 +29,7 @@ import { TypewriterMessage } from "./TypewriterMessage";
 interface Message {
   id: string;
   text: string;
-  sender: 'bot' | 'user';
+  sender: 'bot' | 'user' | 'staff' | 'consultant';
   timestamp: Date;
   options?: string[];
   followUpSuggestions?: string[];
@@ -39,6 +39,7 @@ interface Message {
   responseTimeMs?: number;
   feedbackRating?: number;
   isReported?: boolean;
+  isLiveAgent?: boolean;  // true for counselor-originated messages
 }
 
 interface ChatInterfaceProps {
@@ -61,11 +62,15 @@ export function ChatInterface({
   const [chatLanguage, setChatLanguage] = useState(i18n.resolvedLanguage?.split('-')[0] || i18n.language || 'en');
   const [completedBotMessages, setCompletedBotMessages] = useState<Set<string>>(new Set());
   const [, setSuggestions] = useState<string[]>([]);
+  const [isLiveCounselorRequested, setIsLiveCounselorRequested] = useState(false);
+  const [isHumanTakeover, setIsHumanTakeover] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const localChatSessionRef = useRef<ReturnType<typeof createChatSession> | null>(null);
+  const lastPolledMessageIdRef = useRef<string | undefined>(undefined);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const STORAGE_KEY = `lydiacontactcenter_chat_${sessionId}`;
+  const CHAT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | undefined>(undefined);
@@ -261,6 +266,92 @@ export function ChatInterface({
   }, [messages, isTyping]);
 
   useEffect(() => {
+    const hasCounselorRequest = messages.some((m) =>
+      m.text.toLowerCase().includes('live counselor') ||
+      m.text.toLowerCase().includes('trained counselor') ||
+      m.text.toLowerCase().includes('connecting you now')
+    );
+    if (hasCounselorRequest) {
+      setIsLiveCounselorRequested(true);
+    }
+  }, [messages]);
+
+  // ── Poll for live counselor messages ─────────────────────────────────
+  const pollForCounselorMessages = useCallback(async () => {
+    if (!sessionId || !CHAT_API_BASE_URL) return;
+    try {
+      const params = new URLSearchParams({ session_id: sessionId });
+      if (lastPolledMessageIdRef.current) {
+        params.append('since_message_id', lastPolledMessageIdRef.current);
+      }
+      const res = await fetch(`${CHAT_API_BASE_URL}/v1/session/messages?${params.toString()}`);
+      if (!res.ok) return;
+      const data = await res.json() as {
+        is_human_takeover: boolean;
+        is_escalated: boolean;
+        messages: Array<{ id: string; sender: string; content: string; created_at: string }>;
+      };
+
+      // Update takeover state
+      setIsHumanTakeover(data.is_human_takeover);
+      if (data.is_escalated) setIsLiveCounselorRequested(true);
+
+      // Merge only counselor (staff/consultant) messages we haven't seen yet
+      const incomingStaff = data.messages.filter(
+        (m) => m.sender === 'staff' || m.sender === 'consultant'
+      );
+
+      if (incomingStaff.length > 0) {
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newMsgs: Message[] = incomingStaff
+            .filter((m) => !existingIds.has(m.id))
+            .map((m) => ({
+              id: m.id,
+              text: m.content,
+              sender: 'staff' as const,
+              timestamp: new Date(m.created_at),
+              isLiveAgent: true,
+              mode: 'consultant' as const,
+            }));
+          return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
+        });
+      }
+
+      // Track last seen message id across all messages
+      if (data.messages.length > 0) {
+        lastPolledMessageIdRef.current = data.messages[data.messages.length - 1].id;
+      }
+    } catch {
+      // silently ignore polling errors
+    }
+  }, [sessionId, CHAT_API_BASE_URL]);
+
+  // Start/stop polling when escalation status changes
+  useEffect(() => {
+    const shouldPoll = isLiveCounselorRequested || isHumanTakeover;
+    if (shouldPoll) {
+      // Immediate poll
+      void pollForCounselorMessages();
+      // Then every 4 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        void pollForCounselorMessages();
+      }, 4000);
+    } else {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [isLiveCounselorRequested, isHumanTakeover, pollForCounselorMessages]);
+
+  useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -302,24 +393,22 @@ export function ChatInterface({
       }, 0);
 
     const languageCode = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
-    if (!localChatSessionRef.current) {
-      localChatSessionRef.current = createChatSession(languageCode, { ageRange, genderIdentity, region });
-    }
 
-    const addLocalFallbackResponse = (reason: unknown) => {
-      logger.warn('Using local chatbot fallback:', reason);
-      const fallbackText = localChatSessionRef.current?.getResponse(outgoingMessage, consultantMode).trim();
-      const answerText = fallbackText || 'Hey bestie, I’m here with you. Tell me a little more about what’s going on and we’ll work through it together.';
+    const addServiceUnavailableResponse = (reason: unknown) => {
+      logger.warn('Backend Chat API unavailable:', reason);
+      const errorMessage = t(
+        'chat.serviceUnavailable',
+        "I'm having trouble connecting to our health service right now. Please check your internet connection and try again in a moment, or tap the headphones button / call 1221 for live counselor support."
+      );
 
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        text: answerText,
+        text: errorMessage,
         sender: 'bot',
         timestamp: new Date(),
         mode: consultantMode ? 'consultant' : 'chatbot',
         citations: [],
         languageDetected: languageCode,
-        responseTimeMs: 0,
       }]);
     };
 
@@ -357,6 +446,19 @@ export function ChatInterface({
         setSessionId(response.session_id);
       }
 
+      const isTakeoverActive = Array.isArray(response.safety_flags) &&
+        response.safety_flags.some((f) => {
+          if (typeof f === 'string') return f === 'human_takeover_active';
+          if (f && typeof f === 'object') return (f as Record<string, unknown>).label === 'human_takeover_active';
+          return false;
+        });
+
+      if (isTakeoverActive) {
+        // Backend is in human takeover mode — AI is silent. Just update state and stop.
+        setIsHumanTakeover(true);
+        return;
+      }
+
       const answerText = response.answer.trim();
 
       if (answerText) {
@@ -372,27 +474,6 @@ export function ChatInterface({
         };
 
         setMessages(prev => [...prev, botMsg]);
-
-        // // Fetch follow-up suggestions for this bot message
-        // try {
-        //   const languageCode = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
-        //   const suggestionsResponse = await SuggestionsService.getSuggestions({ 
-        //     language: languageCode,
-        //     context: answerText
-        //   });
-          
-        //   if (suggestionsResponse.suggestions && suggestionsResponse.suggestions.length > 0) {
-        //     setMessages(prev => 
-        //       prev.map(msg => 
-        //         msg.id === botMsg.id 
-        //           ? { ...msg, followUpSuggestions: suggestionsResponse.suggestions.slice(0, 3) }
-        //           : msg
-        //       )
-        //     );
-        //   }
-        // } catch (err) {
-        //   logger.error('Failed to fetch follow-up suggestions', err);
-        // }
 
         UserEngagementService.logNonBlocking(
           UserEngagementService.logChatEvent({
@@ -414,11 +495,11 @@ export function ChatInterface({
           'Failed to log bot response chat event',
         );
       } else {
-        addLocalFallbackResponse('Chat API returned an empty answer.');
+        addServiceUnavailableResponse('Chat API returned an empty answer.');
       }
     } catch (error) {
       logger.error('Chat API failed:', error);
-      addLocalFallbackResponse(error);
+      addServiceUnavailableResponse(error);
     } finally {
       setIsTyping(false);
       // Post an incremental analytics snapshot so messages are recorded instantly
@@ -461,6 +542,10 @@ export function ChatInterface({
         // intentionally ignore analytics errors
       }
     }
+  };
+
+  const handleRequestLiveCounselor = () => {
+    handleSend(t('chat.requestLiveAgent', 'I would like to speak with a live counselor please.'));
   };
 
   const handleFeedback = async (messageId: string, rating: number) => {
@@ -533,12 +618,65 @@ export function ChatInterface({
                     <p className="text-xs text-[#4A66A8]">{t('common.privacyNotice')}</p>
                   </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#4A66A8]">
-                  <Clock className="w-3.5 h-3.5" />
-                  {sessionDuration}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Compact Live Counselor Icon Button with Hover Tooltip */}
+                  <div className="relative group inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={handleRequestLiveCounselor}
+                      className="p-2 sm:p-2.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-all duration-200 hover:scale-105 shadow-sm active:scale-95 flex items-center justify-center relative"
+                      aria-label={t('chat.requestLiveCounselor', 'Talk to a live counselor')}
+                    >
+                      <Headphones className="w-4 h-4 text-current" />
+                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse ring-2 ring-white" />
+                    </button>
+                    {/* Hover Tooltip */}
+                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex items-center px-2.5 py-1 text-[11px] font-semibold text-white bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg whitespace-nowrap transition-opacity duration-200 z-50">
+                      {t('chat.requestLiveCounselor', 'Talk to a live counselor')}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/90" />
+                    </div>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#4A66A8]">
+                    <Clock className="w-3.5 h-3.5" />
+                    {sessionDuration}
+                  </div>
                 </div>
               </div>
            </div>
+
+          {/* Live Takeover / Live Counselor Status Banner */}
+          {(consultantMode || isHumanTakeover) ? (
+            <div className="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-3 shadow-sm flex items-center justify-between gap-3 text-emerald-950">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-full bg-emerald-200 text-emerald-800">
+                  <Radio className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-emerald-900">Live Counselor Connected</p>
+                  <p className="text-[11px] text-emerald-700">You are chatting directly with a trained human health counselor.</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
+                Live Active
+              </span>
+            </div>
+          ) : isLiveCounselorRequested ? (
+            <div className="rounded-2xl border border-rose-300 bg-rose-50/95 p-3.5 shadow-sm flex items-center justify-between gap-3 text-rose-950 animate-pulse">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-full bg-rose-200 text-rose-800">
+                  <Headphones className="w-4 h-4 text-rose-700" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-rose-900">Live Agent Takeover Requested</p>
+                  <p className="text-[11px] text-rose-700">You are in the queue. A live counselor is connecting to your chat now.</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
+                In Queue
+              </span>
+            </div>
+          ) : null}
 
           {/* Conversation starters moved to render below the welcome message */}
 
@@ -551,24 +689,39 @@ export function ChatInterface({
                   className={`flex gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                 >
                 <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm ${
-                    message.sender === 'bot' 
-                        ? (message.mode === 'consultant' ? 'bg-emerald-600' : 'bg-blue-600') 
-                        : 'bg-white border border-slate-100'
+                    message.sender === 'bot'
+                        ? (message.mode === 'consultant' ? 'bg-emerald-600' : 'bg-blue-600')
+                        : (message.sender === 'staff' || message.isLiveAgent)
+                          ? 'bg-emerald-600'
+                          : 'bg-white border border-slate-100'
                 }`}>
-                    {message.sender === 'bot' ? (
+                    {(message.sender === 'bot') ? (
                       <img
                         src={CHATBOT_AVATAR_SRC}
                         alt={`${botName} avatar`}
                         className="h-full w-full object-cover object-top"
                       />
+                    ) : (message.sender === 'staff' || message.isLiveAgent) ? (
+                      <Headphones className="w-5 h-5 text-white" />
                     ) : <User className="w-5 h-5 text-slate-400" />}
                 </div>
 
                 <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                  {/* Live agent label above bubble */}
+                  {(message.sender === 'staff' || message.isLiveAgent) && (
+                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                        <Headphones className="w-3 h-3" />
+                        Live Agent
+                      </span>
+                    </div>
+                  )}
                   <div className={`p-4 rounded-[24px] shadow-sm relative group ${
-                    message.sender === 'user' 
-                        ? 'bg-blue-600 text-white rounded-tr-none' 
-                        : (message.mode === 'consultant' ? 'bg-emerald-50 text-emerald-900 border border-emerald-100 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none')
+                    message.sender === 'user'
+                        ? 'bg-blue-600 text-white rounded-tr-none'
+                        : (message.sender === 'staff' || message.isLiveAgent)
+                          ? 'bg-emerald-600 text-white border border-emerald-500 rounded-tl-none'
+                          : (message.mode === 'consultant' ? 'bg-emerald-50 text-emerald-900 border border-emerald-100 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none')
                   }`}>
                     {message.sender === 'bot' ? (
                       <TypewriterMessage
@@ -600,7 +753,11 @@ export function ChatInterface({
                   
                   <div className="mt-1.5 flex items-center gap-2 px-1">
                       <span className="text-[10px] text-slate-400 font-medium">
-                        {message.sender === 'bot' ? (message.mode === 'consultant' ? `${botName} Consultant` : botName) : (nickname || t('chat.anonymous'))}
+                        {(message.sender === 'staff' || message.isLiveAgent)
+                          ? 'Live Counselor'
+                          : message.sender === 'bot'
+                            ? (message.mode === 'consultant' ? `${botName} Consultant` : botName)
+                            : (nickname || t('chat.anonymous'))}
                       </span>
                       <span className="text-[10px] text-slate-300">•</span>
                       <span className="text-[10px] text-slate-400 font-medium">
@@ -749,6 +906,24 @@ export function ChatInterface({
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-4">
+          {/* Compact Live Counselor Icon Button with Hover Tooltip */}
+          <div className="relative group inline-flex items-center flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleRequestLiveCounselor}
+              className="h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-all duration-200 hover:scale-105 shadow-sm active:scale-95 flex items-center justify-center relative"
+              aria-label={t('chat.requestLiveCounselor', 'Talk to a live counselor')}
+            >
+              <Headphones className="w-5 h-5 text-current" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse ring-2 ring-white" />
+            </button>
+            {/* Hover Tooltip */}
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex items-center px-2.5 py-1 text-[11px] font-semibold text-white bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg whitespace-nowrap transition-opacity duration-200 z-50">
+              {t('chat.requestLiveCounselor', 'Talk to a live counselor')}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/90" />
+            </div>
+          </div>
+
           <div className="flex-1">
             <Input
               value={inputValue}

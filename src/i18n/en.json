@@ -34,6 +34,9 @@
     "statusLoggedIn": "Logged in as",
     "initialMessage": "Hey bestie! I'm here for all your sexual and reproductive health questions, no judgment, no awkward vibes. This chat is private and confidential, so what's on your mind?",
     "consultantMessage": "Hi! I'm a Lydia Contact Center consultant. I'm here to provide personalized support and guidance on sexual and reproductive health matters. Your conversation is completely private and confidential. How can I help you today?",
+    "requestLiveCounselor": "Talk to a live counselor",
+    "requestLiveAgent": "I would like to speak with a live counselor please.",
+    "serviceUnavailable": "I'm having trouble connecting to our health service right now. Please check your internet connection and try again in a moment, or tap the headphones button / call 1221 for live counselor support.",
     "quickReplies": {
        "contraception": "Tell me about contraception",
        "sti": "What are STIs?",
@@ -357,17 +360,17 @@
     "medications": [
       {
         "id": "1",
-        "name": "Postinor-2",
+        "name": "Lydia Postpil",
         "category": "emergencyContraception",
         "description": "Emergency contraception used within 72 hours.",
-        "price": "GH₵ 15-25"
+        "price": "GH₵ 10-20"
       },
       {
         "id": "2",
-        "name": "Birth Control Pills",
+        "name": "Lydia Daily Contraceptive Pills",
         "category": "contraceptives",
         "description": "Daily pills to prevent pregnancy.",
-        "price": "GH₵ 8-20/mo"
+        "price": "GH₵ 8-18/mo"
       }
     ]
   },
@@ -377,7 +380,7 @@
     "yourId": "Your ID:",
     "copy": "Copy ID",
     "copied": "Copied!",
-    "note": "Important: This ID works across Web, WhatsApp, and Telegram.",
+    "note": "Important: This ID works across Web and WhatsApp.",
     "close": "Close"
   }
 }

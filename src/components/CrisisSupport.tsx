@@ -54,10 +54,10 @@ export function CrisisSupport({ selectedLanguage }: CrisisSupportProps) {
         {
           id: 4,
           type: "SRH Information",
-          contact: "Marie Stopes Ghana",
-          phone: "0302-234-040",
+          contact: "Room 1221 (Lydia Contact Center)",
+          phone: "1221",
           icon: "info",
-          description: "Contraception, family planning, and safe services"
+          description: "Free & confidential helpline and SRH counseling (Mon-Fri 8am-5pm)"
         }
       ]
     },
@@ -97,10 +97,10 @@ export function CrisisSupport({ selectedLanguage }: CrisisSupportProps) {
         {
           id: 4,
           type: "Nwokoɔ Akwahosan Nsɛm",
-          contact: "Marie Stopes Ghana",
-          phone: "0302-234-040",
+          contact: "Room 1221 (Lydia Contact Center)",
+          phone: "1221",
           icon: "info",
-          description: "Awo si ano, abusua nhyehyɛe, ne dwumadie a ɛho tew"
+          description: "Awo si ano, abusua nhyehyɛe, afotusoɔ a wontua hwee (Mon-Fri 8am-5pm)"
         }
       ]
     },
@@ -140,10 +140,10 @@ export function CrisisSupport({ selectedLanguage }: CrisisSupportProps) {
         {
           id: 4,
           type: "Ahasi kple Vidzidzi Lãmesɛ",
-          contact: "Marie Stopes Ghana",
-          phone: "0302-234-040",
+          contact: "Room 1221 (Lydia Contact Center)",
+          phone: "1221",
           icon: "info",
-          description: "Fuvɔvɔ, ƒome ɖoɖo, kple dɔwɔna siwo li ŋu le dedie"
+          description: "Fuvɔvɔ, ƒome ɖoɖo, kple kpekpeɖeŋu si womexea fe ɖe eŋu o (Mon-Fri 8am-5pm)"
         }
       ]
     }

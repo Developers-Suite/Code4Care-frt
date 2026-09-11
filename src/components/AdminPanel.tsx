@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { Bell, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
 import { UsersSessionsPage } from './admin/UsersSessionsPage';
 import { ConversationsPage } from './admin/ConversationsPage';
 import { SafetyCrisisPage } from './admin/SafetyCrisisPage';
-import { FeatureEngagementPage } from './admin/FeatureEngagementPage';
-import { SupportPage } from './admin/SupportPage';
-import { KnowledgeBasePage } from './admin/KnowledgeBasePage';
 import { AdminAuditPage } from './admin/AdminAuditPage';
 import { AdminManagementPage } from './admin/AdminManagementPage';
 import { StaffSession } from '@/services/staffAccessService';
+import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
+import { useQueueNotifications } from '@/hooks/useQueueNotifications';
+import { logger } from '@/utils/logger';
 
 interface AdminPanelProps {
   selectedLanguage: string;
@@ -20,6 +22,39 @@ interface AdminPanelProps {
 
 export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelProps) {
   const [currentSection, setCurrentSection] = useState<AdminSection>('overview');
+  const [waitingRequests, setWaitingRequests] = useState<SupportRequestListItem[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkQueue = async () => {
+      try {
+        const response = await SupportRequestService.listSupportRequests(
+          { status: 'waiting' },
+          session.accessToken
+        );
+        if (isMounted && response?.requests) {
+          setWaitingRequests(response.requests);
+        }
+      } catch (err) {
+        logger.error('Error polling waiting support requests', err);
+      }
+    };
+
+    void checkQueue();
+    const interval = setInterval(() => {
+      void checkQueue();
+    }, 6000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [session.accessToken]);
+
+  const { soundMuted, toggleSound, permission, requestPermission, testAlert } = useQueueNotifications({
+    waitingRequests,
+    onSelectRequest: () => setCurrentSection('conversations'),
+  });
 
   const renderContent = () => {
     switch (currentSection) {
@@ -27,9 +62,9 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
       case 'users':         return <UsersSessionsPage session={session} />;
       case 'conversations': return <ConversationsPage session={session} />;
       case 'safety':        return <SafetyCrisisPage session={session} />;
-      case 'audit':           return <AdminAuditPage session={session} />;
-      case 'admin-accounts':  return <AdminManagementPage session={session} />;
-      default:                return <OverviewPage session={session} />;
+      case 'audit':         return <AdminAuditPage session={session} />;
+      case 'admin-accounts':return <AdminManagementPage session={session} />;
+      default:              return <OverviewPage session={session} />;
     }
   };
 
@@ -48,6 +83,62 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+        {/* Top Notification & Status Bar */}
+        <header className="h-14 border-b border-[#E8ECFF] bg-white px-6 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-semibold text-gray-800 capitalize">
+              {currentSection.replace('-', ' ')}
+            </span>
+            {waitingRequests.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCurrentSection('conversations')}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors animate-pulse"
+                title="Click to view waiting conversations"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                {waitingRequests.length} waiting in queue
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {permission !== 'granted' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 h-8"
+                onClick={requestPermission}
+              >
+                <Bell className="w-3.5 h-3.5" />
+                Enable Desktop Alerts
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1.5 text-xs h-8 ${soundMuted ? 'text-gray-400 border-gray-200' : 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}
+              onClick={toggleSound}
+              title={soundMuted ? 'Unmute queue chime' : 'Mute queue chime'}
+            >
+              {soundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              {soundMuted ? 'Muted' : 'Chime Active'}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-gray-500 hover:text-gray-900 gap-1 h-8"
+              onClick={testAlert}
+              title="Test chime sound and desktop alert"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Test Alert
+            </Button>
+          </div>
+        </header>
+
         <div className="flex-1 overflow-y-auto">
           <motion.div
             key={currentSection}

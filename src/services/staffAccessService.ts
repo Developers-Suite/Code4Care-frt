@@ -145,6 +145,8 @@ export interface AdminConversationListItem {
   last_active_at: string;
   ended_at?: string | null;
   is_escalated: boolean;
+  is_human_takeover?: boolean;
+  interim_ai_active?: boolean;
   has_safety_flags: boolean;
   has_crisis?: boolean;
   has_panic?: boolean;
@@ -173,10 +175,13 @@ export interface AdminConversationMessage {
 export interface AdminConversationDetail {
   id: string;
   session_id: string;
+  platform?: string;
   language: string;
   created_at: string;
   last_active_at: string;
   is_escalated: boolean;
+  is_human_takeover?: boolean;
+  interim_ai_active?: boolean;
   auto_delete_period: string;
   auto_delete_at: string;
   messages: AdminConversationMessage[];
@@ -186,6 +191,7 @@ export interface AdminListConversationsOptions {
   page?: number;
   page_size?: number;
   is_escalated?: boolean | null;
+  is_human_takeover?: boolean | null;
   has_crisis?: boolean | null;
 }
 
@@ -431,6 +437,7 @@ function buildAdminHeaders(accessToken?: string) {
 
 function mergeRemoteStaffIntoLocal(remoteStaff: AdminStaffRecord[]): StaffAccount[] {
   const existing = parseJson<StaffAccount[]>(safeStorage.getItem(STAFF_ACCOUNTS_KEY), []);
+  const requests = StaffAccessService.getSupportRequests();
 
   return withCalculatedLoads(
     remoteStaff.map((member) => {
@@ -450,7 +457,7 @@ function mergeRemoteStaffIntoLocal(remoteStaff: AdminStaffRecord[]): StaffAccoun
         password: local?.password ?? '',
       };
     }),
-    existing,
+    requests,
   );
 }
 
@@ -886,6 +893,7 @@ export class StaffAccessService {
       page: options.page ?? 1,
       page_size: options.page_size ?? 20,
       is_escalated: options.is_escalated,
+      is_human_takeover: options.is_human_takeover,
       has_crisis: options.has_crisis,
     }), {
       method: 'GET',
@@ -914,6 +922,59 @@ export class StaffAccessService {
     }
 
     return readJsonResponse<AdminConversationDetail>(response);
+  }
+
+  static async takeoverConversation(
+    conversationId: string,
+    accessToken?: string,
+  ): Promise<{ status: string; is_human_takeover: boolean; conversation_id: string }> {
+    const token = requireAdminAccessToken(accessToken);
+    const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/takeover`), {
+      method: 'POST',
+      headers: buildAdminHeaders(token),
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiError(response));
+    }
+
+    return readJsonResponse(response);
+  }
+
+  static async releaseConversation(
+    conversationId: string,
+    accessToken?: string,
+  ): Promise<{ status: string; is_human_takeover: boolean; conversation_id: string }> {
+    const token = requireAdminAccessToken(accessToken);
+    const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/release`), {
+      method: 'POST',
+      headers: buildAdminHeaders(token),
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiError(response));
+    }
+
+    return readJsonResponse(response);
+  }
+
+  static async replyToConversation(
+    conversationId: string,
+    content: string,
+    accessToken?: string,
+  ): Promise<AdminConversationMessage> {
+    const token = requireAdminAccessToken(accessToken);
+    const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/reply`), {
+      method: 'POST',
+      headers: buildAdminHeaders(token),
+      body: JSON.stringify({ content }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await readApiError(response));
+    }
+
+    return readJsonResponse<AdminConversationMessage>(response);
   }
 
   static async listFeedback(

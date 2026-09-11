@@ -10,7 +10,7 @@ import { getNumber } from '@/utils/analyticsUtils';
 import { StaffSession } from '@/services/staffAccessService';
 import { logger } from '@/utils/logger';
 
-type Period = 'today' | 'week' | 'month';
+type Period = 'today' | 'week' | 'month' | 'year' | 'all';
 
 const FEATURE_COLORS = ['#006d77', '#BE322D', '#F59E0B', '#8b5cf6', '#22c55e', '#ec4899'];
 
@@ -103,10 +103,21 @@ export function FeatureEngagementPage({ session }: FeatureEngagementPageProps) {
               <p className="text-sm text-gray-500 mt-0.5">Stories, myth-buster, resources and feature adoption</p>
             </div>
             <div className="flex gap-1 bg-white border border-[#E8ECFF] rounded-lg p-1">
-              {(['today', 'week', 'month'] as Period[]).map((p) => (
-                <button key={p} onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${period === p ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
-                  {p === 'today' ? 'Today' : p === 'week' ? 'Week' : 'Month'}
+              {([
+                { id: 'today', label: 'Today' },
+                { id: 'week', label: 'Week' },
+                { id: 'month', label: 'Month' },
+                { id: 'year', label: 'Year' },
+                { id: 'all', label: 'All Time' },
+              ] as const).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setPeriod(id)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    period === id ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {label}
                 </button>
               ))}
             </div>

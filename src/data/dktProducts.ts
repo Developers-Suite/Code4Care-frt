@@ -1,6 +1,7 @@
 export interface DKTProduct {
   id: string;
   name: string;
+  category: string;
   gender: "male" | "female" | "both";
   description: string;
   uses: string[];
@@ -370,6 +371,7 @@ export const dktProducts: DKTProduct[] = [
 
 export function getDKTProducts(category?: string, gender?: string): DKTProduct[] {
   return dktProducts.filter(product => {
+    const matchesCategory = !category || category === "all" || product.category === category;
     const matchesGender = !gender || gender === "all" || product.gender === gender || product.gender === "both";
     return matchesCategory && matchesGender;
   });
