@@ -459,7 +459,24 @@ export function ChatInterface({
         return;
       }
 
-      const answerText = response.answer.trim();
+      const cleanDashes = (str: string): string => {
+        return str
+          .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, ', ')
+          .replace(/\bstep[-\s]+by[-\s]+step\b/gi, 'step by step')
+          .replace(/\bside[-\s]+effects?\b/gi, 'side effects')
+          .replace(/\bnon[-\s]+latex\b/gi, 'non latex')
+          .replace(/\bstress[-\s]+free\b/gi, 'stress free')
+          .replace(/(\w)-(\w)/g, '$1 $2')
+          .replace(/--/g, ', ')
+          .replace(/\s+-\s+/g, ', ')
+          .replace(/-/g, ' ')
+          .replace(/\s*,\s*,+/g, ',')
+          .replace(/\s*,\s*\./g, '.')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      };
+
+      const answerText = cleanDashes(response.answer);
 
       if (answerText) {
         const botMsg: Message = {
