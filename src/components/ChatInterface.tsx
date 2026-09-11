@@ -948,7 +948,7 @@ export function ChatInterface({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={t('chat.placeholder')}
+              placeholder={isHumanTakeover ? t('chat.counselorPlaceholder', 'Message your live counselor...') : t('chat.placeholder')}
               className="h-11 sm:h-12 w-full rounded-full pl-4 sm:pl-5 pr-4 bg-white border border-slate-300 shadow-sm focus:bg-white focus:border-blue-500 transition-all text-sm font-medium placeholder:text-slate-500 placeholder:opacity-100 focus:placeholder:text-slate-400"
             />
           </div>
