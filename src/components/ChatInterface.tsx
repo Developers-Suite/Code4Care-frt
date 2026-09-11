@@ -48,6 +48,24 @@ interface ChatInterfaceProps {
 
 const CHATBOT_AVATAR_SRC = "/logo/3.png";
 
+const cleanDashes = (str: string): string => {
+  if (!str) return '';
+  return str
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, ', ')
+    .replace(/\bstep[-\s]+by[-\s]+step\b/gi, 'step by step')
+    .replace(/\bside[-\s]+effects?\b/gi, 'side effects')
+    .replace(/\bnon[-\s]+latex\b/gi, 'non latex')
+    .replace(/\bstress[-\s]+free\b/gi, 'stress free')
+    .replace(/(\w)-(\w)/g, '$1 $2')
+    .replace(/--/g, ', ')
+    .replace(/\s+-\s+/g, ', ')
+    .replace(/-/g, ' ')
+    .replace(/\s*,\s*,+/g, ',')
+    .replace(/\s*,\s*\./g, '.')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
 export function ChatInterface({ 
   clearTrigger = 0 
 }: ChatInterfaceProps) {
@@ -278,13 +296,14 @@ export function ChatInterface({
 
   // ── Poll for live counselor messages ─────────────────────────────────
   const pollForCounselorMessages = useCallback(async () => {
-    if (!sessionId || !CHAT_API_BASE_URL) return;
+    if (!sessionId) return;
     try {
+      const apiBase = (CHAT_API_BASE_URL || '').replace(/\/$/, '');
       const params = new URLSearchParams({ session_id: sessionId });
       if (lastPolledMessageIdRef.current) {
         params.append('since_message_id', lastPolledMessageIdRef.current);
       }
-      const res = await fetch(`${CHAT_API_BASE_URL}/v1/session/messages?${params.toString()}`);
+      const res = await fetch(`${apiBase}/v1/session/messages?${params.toString()}`);
       if (!res.ok) return;
       const data = await res.json() as {
         is_human_takeover: boolean;
@@ -292,9 +311,13 @@ export function ChatInterface({
         messages: Array<{ id: string; sender: string; content: string; created_at: string }>;
       };
 
-      // Update takeover state
-      setIsHumanTakeover(data.is_human_takeover);
-      if (data.is_escalated) setIsLiveCounselorRequested(true);
+      // Update takeover and escalation state immediately
+      if (data.is_human_takeover !== undefined) {
+        setIsHumanTakeover(data.is_human_takeover);
+      }
+      if (data.is_escalated) {
+        setIsLiveCounselorRequested(true);
+      }
 
       // Merge only counselor (staff/consultant) messages we haven't seen yet
       const incomingStaff = data.messages.filter(
@@ -308,7 +331,7 @@ export function ChatInterface({
             .filter((m) => !existingIds.has(m.id))
             .map((m) => ({
               id: m.id,
-              text: m.content,
+              text: cleanDashes(m.content),
               sender: 'staff' as const,
               timestamp: new Date(m.created_at),
               isLiveAgent: true,
@@ -327,29 +350,25 @@ export function ChatInterface({
     }
   }, [sessionId, CHAT_API_BASE_URL]);
 
-  // Start/stop polling when escalation status changes
+  // Continuously poll while session is active so counselor takeover and messages are received immediately
   useEffect(() => {
-    const shouldPoll = isLiveCounselorRequested || isHumanTakeover;
-    if (shouldPoll) {
-      // Immediate poll
+    if (!sessionId) return;
+
+    // Immediate poll
+    void pollForCounselorMessages();
+
+    // Then poll every 3 seconds
+    pollingIntervalRef.current = setInterval(() => {
       void pollForCounselorMessages();
-      // Then every 4 seconds
-      pollingIntervalRef.current = setInterval(() => {
-        void pollForCounselorMessages();
-      }, 4000);
-    } else {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    }
+    }, 3000);
+
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
       }
     };
-  }, [isLiveCounselorRequested, isHumanTakeover, pollForCounselorMessages]);
+  }, [sessionId, pollForCounselorMessages]);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -458,23 +477,6 @@ export function ChatInterface({
         setIsHumanTakeover(true);
         return;
       }
-
-      const cleanDashes = (str: string): string => {
-        return str
-          .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, ', ')
-          .replace(/\bstep[-\s]+by[-\s]+step\b/gi, 'step by step')
-          .replace(/\bside[-\s]+effects?\b/gi, 'side effects')
-          .replace(/\bnon[-\s]+latex\b/gi, 'non latex')
-          .replace(/\bstress[-\s]+free\b/gi, 'stress free')
-          .replace(/(\w)-(\w)/g, '$1 $2')
-          .replace(/--/g, ', ')
-          .replace(/\s+-\s+/g, ', ')
-          .replace(/-/g, ' ')
-          .replace(/\s*,\s*,+/g, ',')
-          .replace(/\s*,\s*\./g, '.')
-          .replace(/\s{2,}/g, ' ')
-          .trim();
-      };
 
       const answerText = cleanDashes(response.answer);
 
