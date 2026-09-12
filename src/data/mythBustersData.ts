@@ -7,6 +7,7 @@ export interface MythBusterItem {
 }
 
 const englishMyths: MythBusterItem[] = [
+  // Pregnancy
   {
     id: "pregnancy-first-time",
     category: "Pregnancy",
@@ -20,132 +21,6 @@ const englishMyths: MythBusterItem[] = [
     myth: "You cannot get pregnant during your period",
     fact: "This is false. Pregnancy is still possible because sperm can survive and cycles can vary.",
     source: "World Health Organization"
-  },
-  {
-    id: "contraception-condoms-only-late",
-    category: "Contraception",
-    myth: "Condoms are only needed when there is obvious risk",
-    fact: "This is false. Condoms are most effective when used consistently and correctly for every sexual encounter.",
-    source: "Planned Parenthood"
-  },
-  {
-    id: "contraception-pill-infertility",
-    category: "Contraception",
-    myth: "The pill causes permanent infertility",
-    fact: "This is false. Most people can become pregnant after stopping hormonal contraception.",
-    source: "Mayo Clinic"
-  },
-  {
-    id: "sti-no-symptoms",
-    category: "STIs",
-    myth: "If you have no symptoms, you do not need STI testing",
-    fact: "This is false. Many STIs have no symptoms at first, so testing is still important.",
-    source: "Centers for Disease Control and Prevention"
-  },
-  {
-    id: "sti-only-adults",
-    category: "STIs",
-    myth: "Only adults get STIs",
-    fact: "This is false. Anyone who is sexually active can be at risk if they are exposed.",
-    source: "World Health Organization"
-  },
-  {
-    id: "puberty-bad-sign",
-    category: "Puberty",
-    myth: "Body odor, acne, and voice changes mean something is wrong",
-    fact: "This is false. These are common puberty changes and usually part of normal development.",
-    source: "UNICEF"
-  },
-  {
-    id: "puberty-wet-dreams-dangerous",
-    category: "Puberty",
-    myth: "Wet dreams are always a sign of illness",
-    fact: "This is false. Wet dreams can be a normal puberty experience for many young people.",
-    source: "NHS"
-  },
-  {
-    id: "menstruation-dirty",
-    category: "Menstrual Health",
-    myth: "Periods are dirty and people should avoid normal activities",
-    fact: "This is false. Menstruation is a normal body process and should not prevent safe participation in daily life.",
-    source: "UNFPA"
-  },
-  {
-    id: "menstruation-bathing-harmful",
-    category: "Menstrual Health",
-    myth: "You should not bathe or wash your hair during your period",
-    fact: "This is false. Good hygiene, including bathing, is safe and helpful during menstruation.",
-    source: "NHS"
-  },
-  {
-    id: "consent-silence",
-    category: "Consent",
-    myth: "If someone does not say no, it means yes",
-    fact: "This is false. Consent must be clear, voluntary, and ongoing.",
-    source: "RAINN"
-  },
-  {
-    id: "consent-drunk-yes",
-    category: "Consent",
-    myth: "Someone who is drunk can clearly consent",
-    fact: "This is false. Alcohol and drugs can affect judgment and the ability to give real consent.",
-    source: "Planned Parenthood"
-  },
-  {
-    id: "relationships-jealousy-love",
-    category: "Relationships",
-    myth: "Jealousy and control are proof of love",
-    fact: "This is false. Respect, trust, and freedom are stronger signs of a healthy relationship.",
-    source: "Love Is Respect"
-  },
-  {
-    id: "relationships-checking-phone",
-    category: "Relationships",
-    myth: "A partner has the right to check your phone any time",
-    fact: "This is false. Privacy and boundaries still matter in healthy relationships.",
-    source: "Love Is Respect"
-  },
-  {
-    id: "mental-health-strength",
-    category: "Mental Health",
-    myth: "Asking for emotional support means you are weak",
-    fact: "This is false. Reaching out for help is a healthy and brave step.",
-    source: "National Alliance on Mental Illness"
-  },
-  {
-    id: "mental-health-mood-fix",
-    category: "Mental Health",
-    myth: "You can always just ignore anxiety and it will disappear",
-    fact: "This is false. Ongoing anxiety often needs support, coping tools, and sometimes professional care.",
-    source: "World Health Organization"
-  },
-  {
-    id: "digital-safety-private-photo",
-    category: "Digital Safety",
-    myth: "Sending private photos is safe if you trust the person",
-    fact: "This is false. Once an image is shared, control over where it goes can be lost.",
-    source: "Cyberwise"
-  },
-  {
-    id: "digital-safety-delete-everywhere",
-    category: "Digital Safety",
-    myth: "Deleting a message always removes it from everywhere",
-    fact: "This is false. Screenshots, forwards, and backups can keep content alive.",
-    source: "Internet Safety Resources"
-  },
-  {
-    id: "clinic-home-remedies",
-    category: "Health Care",
-    myth: "Home remedies can replace a clinic visit for STI or pregnancy concerns",
-    fact: "This is false. Professional assessment is safer because it confirms what is happening and guides treatment.",
-    source: "World Health Organization"
-  },
-  {
-    id: "clinic-treatment-stop",
-    category: "Health Care",
-    myth: "You can stop treatment as soon as symptoms improve",
-    fact: "This is false. Treatment plans should be completed exactly as instructed by a health professional.",
-    source: "Centers for Disease Control and Prevention"
   },
   {
     id: "pregnancy-spotting-not-pregnant",
@@ -166,6 +41,36 @@ const englishMyths: MythBusterItem[] = [
     category: "Pregnancy",
     myth: "Exercise during pregnancy causes miscarriage",
     fact: "This is false. Gentle, approved exercise is usually safe and beneficial during pregnancy.",
+    source: "Mayo Clinic"
+  },
+  {
+    id: "pregnancy-douching-prevents",
+    category: "Pregnancy",
+    myth: "Douching or washing after sex prevents pregnancy",
+    fact: "This is false. Sperm enter the cervix within seconds after ejaculation; washing or douching does not prevent pregnancy and can increase infection risk.",
+    source: "World Health Organization"
+  },
+  {
+    id: "pregnancy-pull-out-100-percent",
+    category: "Pregnancy",
+    myth: "The withdrawal (pull-out) method is 100% effective against pregnancy",
+    fact: "This is false. Pre-ejaculatory fluid can contain active sperm, and timing errors lead to high failure rates without barrier or hormonal contraception.",
+    source: "Planned Parenthood"
+  },
+
+  // Contraception
+  {
+    id: "contraception-condoms-only-late",
+    category: "Contraception",
+    myth: "Condoms are only needed when there is obvious risk",
+    fact: "This is false. Condoms are most effective when used consistently and correctly for every sexual encounter.",
+    source: "Planned Parenthood"
+  },
+  {
+    id: "contraception-pill-infertility",
+    category: "Contraception",
+    myth: "The pill causes permanent infertility",
+    fact: "This is false. Most people can become pregnant after stopping hormonal contraception.",
     source: "Mayo Clinic"
   },
   {
@@ -197,6 +102,36 @@ const englishMyths: MythBusterItem[] = [
     source: "Royal College of Obstetricians and Gynaecologists"
   },
   {
+    id: "contraception-double-condom",
+    category: "Contraception",
+    myth: "Using two condoms at once provides double protection",
+    fact: "This is false. Using two condoms simultaneously creates friction that increases the risk of both condoms tearing.",
+    source: "Centers for Disease Control and Prevention"
+  },
+  {
+    id: "contraception-emergency-abortion",
+    category: "Contraception",
+    myth: "Emergency contraception (morning-after pill) causes an abortion",
+    fact: "This is false. Emergency contraception works by delaying or preventing ovulation; it does not terminate an existing pregnancy.",
+    source: "World Health Organization"
+  },
+
+  // STIs
+  {
+    id: "sti-no-symptoms",
+    category: "STIs",
+    myth: "If you have no symptoms, you do not need STI testing",
+    fact: "This is false. Many STIs have no symptoms at first, so testing is still important.",
+    source: "Centers for Disease Control and Prevention"
+  },
+  {
+    id: "sti-only-adults",
+    category: "STIs",
+    myth: "Only adults get STIs",
+    fact: "This is false. Anyone who is sexually active can be at risk if they are exposed.",
+    source: "World Health Organization"
+  },
+  {
     id: "sti-monogamy-protection",
     category: "STIs",
     myth: "Monogamy alone prevents STIs",
@@ -225,6 +160,36 @@ const englishMyths: MythBusterItem[] = [
     source: "CDC"
   },
   {
+    id: "sti-toilet-seats",
+    category: "STIs",
+    myth: "You can easily catch HIV or STIs from toilet seats or door handles",
+    fact: "This is false. Sexually transmitted infections cannot survive long on inanimate surfaces like toilet seats or door handles.",
+    source: "Centers for Disease Control and Prevention"
+  },
+  {
+    id: "sti-oral-sex-safe",
+    category: "STIs",
+    myth: "Oral sex cannot transmit STIs",
+    fact: "This is false. Many STIs, including herpes, HPV, gonorrhea, and syphilis, can be transmitted through oral sex.",
+    source: "World Health Organization"
+  },
+
+  // Puberty
+  {
+    id: "puberty-bad-sign",
+    category: "Puberty",
+    myth: "Body odor, acne, and voice changes mean something is wrong",
+    fact: "This is false. These are common puberty changes and usually part of normal development.",
+    source: "UNICEF"
+  },
+  {
+    id: "puberty-wet-dreams-dangerous",
+    category: "Puberty",
+    myth: "Wet dreams are always a sign of illness",
+    fact: "This is false. Wet dreams can be a normal puberty experience for many young people.",
+    source: "NHS"
+  },
+  {
     id: "puberty-height-stop",
     category: "Puberty",
     myth: "Your height stops growing after puberty starts",
@@ -244,6 +209,29 @@ const englishMyths: MythBusterItem[] = [
     myth: "Certain sports prevent normal puberty development",
     fact: "This is false. Sports do not stop puberty; good nutrition supports healthy development.",
     source: "American Medical Association"
+  },
+  {
+    id: "puberty-masturbation-blindness",
+    category: "Puberty",
+    myth: "Masturbation causes blindness or physical harm",
+    fact: "This is false. Masturbation is a normal, harmless form of self-exploration and sexual expression.",
+    source: "NHS"
+  },
+
+  // Menstrual Health
+  {
+    id: "menstruation-dirty",
+    category: "Menstrual Health",
+    myth: "Periods are dirty and people should avoid normal activities",
+    fact: "This is false. Menstruation is a normal body process and should not prevent safe participation in daily life.",
+    source: "UNFPA"
+  },
+  {
+    id: "menstruation-bathing-harmful",
+    category: "Menstrual Health",
+    myth: "You should not bathe or wash your hair during your period",
+    fact: "This is false. Good hygiene, including bathing, is safe and helpful during menstruation.",
+    source: "NHS"
   },
   {
     id: "menstruation-pain-normal",
@@ -274,6 +262,29 @@ const englishMyths: MythBusterItem[] = [
     source: "Mayo Clinic"
   },
   {
+    id: "menstruation-tampons-virginity",
+    category: "Menstrual Health",
+    myth: "Using a tampon breaks virginity or affects the hymen permanently",
+    fact: "This is false. Virginity is a social concept, not a medical condition, and tampons do not alter your sexual status.",
+    source: "UNICEF"
+  },
+
+  // Consent
+  {
+    id: "consent-silence",
+    category: "Consent",
+    myth: "If someone does not say no, it means yes",
+    fact: "This is false. Consent must be clear, voluntary, and ongoing.",
+    source: "RAINN"
+  },
+  {
+    id: "consent-drunk-yes",
+    category: "Consent",
+    myth: "Someone who is drunk can clearly consent",
+    fact: "This is false. Alcohol and drugs can affect judgment and the ability to give real consent.",
+    source: "Planned Parenthood"
+  },
+  {
     id: "consent-regret-rape",
     category: "Consent",
     myth: "Regretting sex after means it was not consensual",
@@ -300,6 +311,29 @@ const englishMyths: MythBusterItem[] = [
     myth: "Religion overrides the need for consent",
     fact: "This is false. Consent is a universal right regardless of belief.",
     source: "Amnesty International"
+  },
+  {
+    id: "consent-marriage-automatic",
+    category: "Consent",
+    myth: "Marriage gives automatic consent for sexual activity at any time",
+    fact: "This is false. Consent is required for every sexual encounter, even within marriage or long-term partnerships.",
+    source: "United Nations Human Rights"
+  },
+
+  // Relationships
+  {
+    id: "relationships-jealousy-love",
+    category: "Relationships",
+    myth: "Jealousy and control are proof of love",
+    fact: "This is false. Respect, trust, and freedom are stronger signs of a healthy relationship.",
+    source: "Love Is Respect"
+  },
+  {
+    id: "relationships-checking-phone",
+    category: "Relationships",
+    myth: "A partner has the right to check your phone any time",
+    fact: "This is false. Privacy and boundaries still matter in healthy relationships.",
+    source: "Love Is Respect"
   },
   {
     id: "relationships-love-excuse",
@@ -329,6 +363,22 @@ const englishMyths: MythBusterItem[] = [
     fact: "This is false. Healthy relationships allow time for other important connections.",
     source: "Love Is Respect"
   },
+
+  // Mental Health
+  {
+    id: "mental-health-strength",
+    category: "Mental Health",
+    myth: "Asking for emotional support means you are weak",
+    fact: "This is false. Reaching out for help is a healthy and brave step.",
+    source: "National Alliance on Mental Illness"
+  },
+  {
+    id: "mental-health-mood-fix",
+    category: "Mental Health",
+    myth: "You can always just ignore anxiety and it will disappear",
+    fact: "This is false. Ongoing anxiety often needs support, coping tools, and sometimes professional care.",
+    source: "World Health Organization"
+  },
   {
     id: "mental-health-meditation-cure",
     category: "Mental Health",
@@ -349,6 +399,22 @@ const englishMyths: MythBusterItem[] = [
     myth: "You should immediately feel better after a breakup",
     fact: "This is false. Grief from a breakup takes time and support.",
     source: "Psychology Today"
+  },
+
+  // Digital Safety
+  {
+    id: "digital-safety-private-photo",
+    category: "Digital Safety",
+    myth: "Sending private photos is safe if you trust the person",
+    fact: "This is false. Once an image is shared, control over where it goes can be lost.",
+    source: "Cyberwise"
+  },
+  {
+    id: "digital-safety-delete-everywhere",
+    category: "Digital Safety",
+    myth: "Deleting a message always removes it from everywhere",
+    fact: "This is false. Screenshots, forwards, and backups can keep content alive.",
+    source: "Internet Safety Resources"
   },
   {
     id: "digital-safety-vpn-perfect",
@@ -377,6 +443,22 @@ const englishMyths: MythBusterItem[] = [
     myth: "Using a fake name online means nothing can harm you",
     fact: "This is false. Digital harm is real even when anonymous.",
     source: "Cyberwise"
+  },
+
+  // Health Care
+  {
+    id: "clinic-home-remedies",
+    category: "Health Care",
+    myth: "Home remedies can replace a clinic visit for STI or pregnancy concerns",
+    fact: "This is false. Professional assessment is safer because it confirms what is happening and guides treatment.",
+    source: "World Health Organization"
+  },
+  {
+    id: "clinic-treatment-stop",
+    category: "Health Care",
+    myth: "You can stop treatment as soon as symptoms improve",
+    fact: "This is false. Treatment plans should be completed exactly as instructed by a health professional.",
+    source: "Centers for Disease Control and Prevention"
   },
   {
     id: "clinic-appointment-shame",
