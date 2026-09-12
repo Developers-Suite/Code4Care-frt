@@ -82,6 +82,10 @@ export function ChatInterface({
   const [, setSuggestions] = useState<string[]>([]);
   const [isLiveCounselorRequested, setIsLiveCounselorRequested] = useState(false);
   const [isHumanTakeover, setIsHumanTakeover] = useState(false);
+  const [takeoverModalOpen, setTakeoverModalOpen] = useState(false);
+  const [takeoverStatus, setTakeoverStatus] = useState<"idle" | "queued" | "live">(
+    consultantMode ? "live" : "idle"
+  );
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -291,6 +295,7 @@ export function ChatInterface({
     );
     if (hasCounselorRequest) {
       setIsLiveCounselorRequested(true);
+      setTakeoverStatus((current) => current === "live" ? current : "queued");
     }
   }, [messages]);
 
@@ -314,9 +319,14 @@ export function ChatInterface({
       // Update takeover and escalation state immediately
       if (data.is_human_takeover !== undefined) {
         setIsHumanTakeover(data.is_human_takeover);
+        if (data.is_human_takeover) {
+          setTakeoverStatus("live");
+          setTakeoverModalOpen(false);
+        }
       }
       if (data.is_escalated) {
         setIsLiveCounselorRequested(true);
+        setTakeoverStatus((current) => current === "live" ? current : "queued");
       }
 
       // Merge only counselor (staff/consultant) messages we haven't seen yet
@@ -325,6 +335,9 @@ export function ChatInterface({
       );
 
       if (incomingStaff.length > 0) {
+        setTakeoverStatus("live");
+        setIsHumanTakeover(true);
+        setTakeoverModalOpen(false);
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const newMsgs: Message[] = incomingStaff
@@ -475,6 +488,8 @@ export function ChatInterface({
       if (isTakeoverActive) {
         // Backend is in human takeover mode — AI is silent. Just update state and stop.
         setIsHumanTakeover(true);
+        setTakeoverStatus("live");
+        setTakeoverModalOpen(false);
         return;
       }
 
@@ -564,8 +579,23 @@ export function ChatInterface({
   };
 
   const handleRequestLiveCounselor = () => {
+    if (takeoverStatus === "live") return;
+    setTakeoverStatus("queued");
+    setTakeoverModalOpen(true);
     handleSend(t('chat.requestLiveAgent', 'I would like to speak with a live counselor please.'));
   };
+
+  useEffect(() => {
+    const handleHeaderRequest = () => handleRequestLiveCounselor();
+    window.addEventListener('code4care:request-takeover', handleHeaderRequest);
+    return () => window.removeEventListener('code4care:request-takeover', handleHeaderRequest);
+  });
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('code4care:takeover-status', {
+      detail: takeoverStatus,
+    }));
+  }, [takeoverStatus]);
 
   const handleFeedback = async (messageId: string, rating: number) => {
     try {
@@ -638,24 +668,6 @@ export function ChatInterface({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Compact Live Counselor Icon Button with Hover Tooltip */}
-                  <div className="relative group inline-flex items-center">
-                    <button
-                      type="button"
-                      onClick={handleRequestLiveCounselor}
-                      className="p-2 sm:p-2.5 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-all duration-200 hover:scale-105 shadow-sm active:scale-95 flex items-center justify-center relative"
-                      aria-label={t('chat.requestLiveCounselor', 'Talk to a live counselor')}
-                    >
-                      <Headphones className="w-4 h-4 text-current" />
-                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse ring-2 ring-white" />
-                    </button>
-                    {/* Hover Tooltip */}
-                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex items-center px-2.5 py-1 text-[11px] font-semibold text-white bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg whitespace-nowrap transition-opacity duration-200 z-50">
-                      {t('chat.requestLiveCounselor', 'Talk to a live counselor')}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/90" />
-                    </div>
-                  </div>
-
                   <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#4A66A8]">
                     <Clock className="w-3.5 h-3.5" />
                     {sessionDuration}
@@ -672,27 +684,12 @@ export function ChatInterface({
                   <Radio className="w-4 h-4 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-emerald-900">Live Counselor Connected</p>
-                  <p className="text-[11px] text-emerald-700">You are chatting directly with a trained human health counselor.</p>
+                  <p className="text-xs font-bold text-emerald-900">Live Consultant Chat</p>
+                  <p className="text-[11px] text-emerald-700">A trained human consultant is responding in this chat.</p>
                 </div>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
                 Live Active
-              </span>
-            </div>
-          ) : isLiveCounselorRequested ? (
-            <div className="rounded-2xl border border-rose-300 bg-rose-50/95 p-3.5 shadow-sm flex items-center justify-between gap-3 text-rose-950 animate-pulse">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-full bg-rose-200 text-rose-800">
-                  <Headphones className="w-4 h-4 text-rose-700" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-rose-900">Live Agent Takeover Requested</p>
-                  <p className="text-[11px] text-rose-700">You are in the queue. A live counselor is connecting to your chat now.</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
-                In Queue
               </span>
             </div>
           ) : null}
@@ -1015,6 +1012,34 @@ export function ChatInterface({
               className="rounded-xl bg-[#BE322D] hover:bg-[#A82B27] text-white"
             >
               {t('common.submit', 'Submit Report')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Live counselor request confirmation */}
+      <Dialog open={takeoverModalOpen} onOpenChange={setTakeoverModalOpen}>
+        <DialogContent className="rounded-3xl border-rose-200">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold text-[#241515]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                <Headphones className="h-5 w-5" />
+              </span>
+              Live counselor requested
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4 text-sm text-[#6D4A49]">
+            <p>Your request has been sent to the counselor queue.</p>
+            <p>A trained counselor will join this chat as soon as one is available.</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setTakeoverModalOpen(false)}
+              className="rounded-xl bg-[#BE322D] text-white hover:bg-[#A82B27]"
+            >
+              Continue chat
             </Button>
           </DialogFooter>
         </DialogContent>

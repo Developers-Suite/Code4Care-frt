@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Menu, UserCheck, AlertCircle, User } from "lucide-react";
+import { Shield, Menu, UserCheck, AlertCircle, User, ListOrdered } from "lucide-react";
 import { useApp } from '@/providers/AppProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,25 @@ export const Header: React.FC<HeaderProps> = ({
   const { nickname, botName, consultantMode } = useApp();
 
   const [showConsultantModal, setShowConsultantModal] = React.useState(false);
+  const [takeoverStatus, setTakeoverStatus] = React.useState<"idle" | "queued" | "live">(
+    consultantMode ? "live" : "idle"
+  );
+
+  React.useEffect(() => {
+    const handleTakeoverStatus = (event: Event) => {
+      const status = (event as CustomEvent<"idle" | "queued" | "live">).detail;
+      setTakeoverStatus(status);
+    };
+
+    window.addEventListener('code4care:takeover-status', handleTakeoverStatus);
+    return () => window.removeEventListener('code4care:takeover-status', handleTakeoverStatus);
+  }, []);
+
+  const requestTakeover = () => {
+    if (takeoverStatus !== "live") {
+      window.dispatchEvent(new Event('code4care:request-takeover'));
+    }
+  };
 
   const consultantPhone = '1221';
 
@@ -75,6 +94,41 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-1 sm:gap-2">
+
+            {/* Consultant queue status */}
+            <div className="relative group inline-flex items-center">
+              <button
+                type="button"
+                onClick={requestTakeover}
+                disabled={takeoverStatus === "live"}
+                className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm transition-colors disabled:cursor-default ${
+                  takeoverStatus === "live"
+                    ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                    : takeoverStatus === "queued"
+                      ? "border-amber-300 bg-amber-50 text-amber-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100"
+                }`}
+                aria-label={
+                  takeoverStatus === "live"
+                    ? "Live consultant chat active"
+                    : takeoverStatus === "queued"
+                      ? "Consultant request in queue"
+                      : "Request live consultant"
+                }
+              >
+                <ListOrdered className="h-4 w-4" />
+                <span className={`absolute right-0.5 top-0.5 h-2 w-2 rounded-full ring-2 ring-white ${
+                  takeoverStatus === "live"
+                    ? "bg-emerald-500"
+                    : takeoverStatus === "queued"
+                      ? "animate-pulse bg-amber-500"
+                      : "animate-pulse bg-emerald-500"
+                }`} />
+              </button>
+              <span className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-lg bg-gray-900/90 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+                {takeoverStatus === "live" ? "Live consultant chat" : takeoverStatus === "queued" ? "Consultant in queue" : "Join consultant queue"}
+              </span>
+            </div>
 
             {/* Consultant Button (opens modal instead of calling directly) */}
             {consultantPhone && (

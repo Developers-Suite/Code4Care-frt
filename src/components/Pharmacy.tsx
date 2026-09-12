@@ -7,6 +7,8 @@ import {
   Building2,
   Phone,
   PhoneCall,
+  ChevronDown,
+  Search,
   X,
 } from "lucide-react";
 
@@ -20,6 +22,7 @@ import {
 
 import { useTranslation } from "react-i18next";
 import { DKTProducts } from "./DKTProductsDropdown";
+import { REGIONAL_CLINICS } from "../data/regionalClinics";
 
 /* -------------------- DATA -------------------- */
 
@@ -46,24 +49,6 @@ const CONTACT_DETAILS = {
   email: "info@dktghana.org",
 };
 
-const REGION_CONTACTS = [
-  { region: "Volta Region", phone: "0501516799" },
-  { region: "Upper West Region", phone: "0501516867" },
-  { region: "Western North Region", phone: "0501516913" },
-  { region: "Bono Region", phone: "0501516883" },
-  { region: "Northern Region", phone: "0501336328" },
-  { region: "Bono East Region", phone: "0505156874" },
-  { region: "Eastern Region", phone: "0501336311" },
-  { region: "Accra West / Central", phone: "0501336326" },
-  { region: "Western Region", phone: "0501336327" },
-  { region: "Ashanti Region", phone: "0501336329" },
-  { region: "Northern / Upper West / Upper East", phone: "0501336308" },
-  { region: "Accra West", phone: "0501336304" },
-  { region: "Eastern / Volta", phone: "0501336306" },
-  { region: "Accra East", phone: "0501336327" },
-  { region: "Central / Western", phone: "0501336310" },
-];
-
 /* -------------------- TYPES -------------------- */
 
 type SearchType =
@@ -71,6 +56,15 @@ type SearchType =
   | "clinic near me"
   | "24 hour pharmacy near me"
   | "family planning clinic near me";
+
+const normalizePhoneNumbers = (phone: string) =>
+  phone
+    .split("/")
+    .map((number) => {
+      const digits = number.replace(/\D/g, "");
+      return digits ? (digits.startsWith("0") ? digits : `0${digits}`) : number.trim();
+    })
+    .join(" / ");
 
 /* -------------------- COMPONENT -------------------- */
 
@@ -88,6 +82,27 @@ export function Pharmacy() {
   const [activeTab, setActiveTab] = useState<
     "healthcare" | "dkt" | "contacts"
   >("healthcare");
+  const [contactSearch, setContactSearch] = useState("");
+  const [expandedRegion, setExpandedRegion] = useState<string | null>(null);
+
+  const filteredRegions = REGIONAL_CLINICS.map((regionGroup) => {
+    const search = contactSearch.trim().toLowerCase();
+    const clinics = regionGroup.clinics.filter((clinic) =>
+      [
+        regionGroup.region,
+        clinic.no,
+        clinic.name,
+        clinic.location,
+        clinic.owner,
+        normalizePhoneNumbers(clinic.tel),
+        clinic.rcr,
+      ]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(search))
+    );
+
+    return { ...regionGroup, clinics };
+  }).filter((regionGroup) => regionGroup.clinics.length > 0);
 
   /* -------------------- MAP -------------------- */
 
@@ -279,7 +294,7 @@ export function Pharmacy() {
                     Regional Health Contacts
                   </h3>
                   <p className="text-sm text-[#6D4A49]">
-                    Official regional health directorate contact lines.
+                    Search the complete regional clinic and facility contact list.
                   </p>
                 </div>
               </div>
@@ -309,41 +324,99 @@ export function Pharmacy() {
                 </div>
               </Card>
 
-              {/* CONTACT GRID */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                {REGION_CONTACTS.map((c) => (
-                  <Card
-                    key={c.region}
-                    className="p-5 rounded-3xl border-[#F1D5D4] hover:shadow-md transition"
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <h4 className="font-bold text-[#241515]">
-                          {c.region}
-                        </h4>
-                      </div>
-
-                      <span className="rounded-full bg-[#FDECEC] px-3 py-1 text-xs font-semibold text-[#BE322D]">
-                        Regional Contact
-                      </span>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-[#6D4A49] break-all">
-                        {c.phone}
-                      </span>
-
-                      <a
-                        href={`tel:${c.phone}`}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#BE322D]"
-                      >
-                        <Phone className="w-4 h-4" />
-                        Call
-                      </a>
-                    </div>
-                  </Card>
-                ))}
+              <div className="relative mb-4">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#BE322D]" />
+                <input
+                  type="search"
+                  value={contactSearch}
+                  onChange={(event) => setContactSearch(event.target.value)}
+                  placeholder="Search clinic, location, owner, RCR, or phone"
+                  aria-label="Search regional clinic contacts"
+                  className="w-full rounded-2xl border border-[#F1D5D4] bg-white py-3 pl-11 pr-4 text-sm text-[#241515] outline-none transition placeholder:text-[#9B7B7A] focus:border-[#BE322D] focus:ring-2 focus:ring-[#FDECEC]"
+                />
               </div>
+
+              <div className="space-y-3">
+                {filteredRegions.map((regionGroup) => {
+                  const isExpanded = expandedRegion === regionGroup.region;
+
+                  return (
+                    <Card
+                      key={regionGroup.region}
+                      className="overflow-hidden rounded-3xl border-[#F1D5D4]"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedRegion(isExpanded ? null : regionGroup.region)
+                        }
+                        aria-expanded={isExpanded}
+                        className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-[#FFF7F7]"
+                      >
+                        <span>
+                          <span className="block font-bold text-[#241515]">
+                            {regionGroup.region}
+                          </span>
+                          <span className="mt-1 block text-sm text-[#6D4A49]">
+                            {regionGroup.clinics.length} facility contact{regionGroup.clinics.length === 1 ? "" : "s"}
+                          </span>
+                        </span>
+                        <ChevronDown
+                          className={`h-5 w-5 shrink-0 text-[#BE322D] transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="space-y-3 border-t border-[#F1D5D4] bg-[#FFFDFD] p-4">
+                          {regionGroup.clinics.map((clinic, index) => (
+                            <div
+                              key={`${clinic.name}-${clinic.tel}-${index}`}
+                              className="rounded-2xl border border-[#F1D5D4] bg-white p-4"
+                            >
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#BE322D]">
+                                    {clinic.no ? `Facility #${clinic.no}` : "Facility"}
+                                  </p>
+                                  <h4 className="mt-1 font-bold text-[#241515]">
+                                    {clinic.name}
+                                  </h4>
+                                  <p className="mt-1 text-sm text-[#6D4A49]">
+                                    {clinic.location}
+                                  </p>
+                                </div>
+                                <a
+                                  href={`tel:${normalizePhoneNumbers(clinic.tel).split(" / ")[0]}`}
+                                  className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#BE322D]"
+                                >
+                                  <Phone className="h-4 w-4" />
+                                  Call
+                                </a>
+                              </div>
+                              <div className="mt-4 grid gap-2 text-sm text-[#6D4A49] sm:grid-cols-2">
+                                <p><strong className="text-[#241515]">Phone:</strong> {normalizePhoneNumbers(clinic.tel)}</p>
+                                {clinic.owner && <p><strong className="text-[#241515]">Owner:</strong> {clinic.owner}</p>}
+                                {clinic.rcr && <p><strong className="text-[#241515]">RCR:</strong> {clinic.rcr}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {filteredRegions.length === 0 && (
+                <Card className="rounded-3xl border-[#F1D5D4] p-6 text-center">
+                  <p className="font-semibold text-[#241515]">No contacts found</p>
+                  <p className="mt-1 text-sm text-[#6D4A49]">
+                    Try another clinic, region, or phone number.
+                  </p>
+                </Card>
+              )}
             </div>
           )}
 
