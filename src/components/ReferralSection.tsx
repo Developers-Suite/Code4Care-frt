@@ -1,155 +1,258 @@
-import { MapPin, Phone, Clock, Navigation, Locate, Loader2, Star, ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "./ui/button";
+import { useState, useMemo } from "react";
+import { Search, MapPin, Phone, User, ShieldCheck, ChevronDown, ChevronUp, Building2, UserCheck } from "lucide-react";
+import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Input } from "./ui/input";
-import { useState } from "react";
+import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "motion/react";
+import { REGIONAL_CLINICS, RegionClinics, ClinicContact } from "@/data/regionalClinics";
+import { motion } from "motion/react";
 
 export function ReferralSection() {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string>("all");
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
-  const [expandedClinics, setExpandedClinics] = useState<number[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [expandedRegions, setExpandedRegions] = useState<Record<string, boolean>>(() => {
+    // Expand Greater Accra by default if desired, or expand all when searching
+    return { "Greater Accra": true };
+  });
 
-  const clinicsData = t('clinics.list', { returnObjects: true });
-  const clinics = Array.isArray(clinicsData) ? clinicsData : [];
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 10) / 10;
+  const toggleRegion = (regionName: string) => {
+    setExpandedRegions((prev) => ({
+      ...prev,
+      [regionName]: !prev[regionName],
+    }));
   };
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) return;
-    setLoadingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLoadingLocation(false);
-      },
-      () => setLoadingLocation(false)
-    );
+  const expandAll = () => {
+    const allExpanded: Record<string, boolean> = {};
+    REGIONAL_CLINICS.forEach((r) => {
+      allExpanded[r.region] = true;
+    });
+    setExpandedRegions(allExpanded);
   };
 
-  const allCenters = clinics.flatMap(clinic => 
-    clinic.centers.map((center: any) => ({
-      ...center,
-      clinicName: clinic.name,
-      clinicType: clinic.type,
-      services: clinic.services,
-      distance: userLocation ? calculateDistance(userLocation.lat, userLocation.lng, center.coordinates.lat, center.coordinates.lng) : null
-    }))
-  ).sort((a, b) => (a.distance || 999) - (b.distance || 999));
+  const collapseAll = () => {
+    setExpandedRegions({});
+  };
 
-  const filteredClinics = clinics.filter(c => 
-    (selectedType === "all" || c.type.toLowerCase() === selectedType.toLowerCase()) &&
-    (searchQuery === "" || c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.centers.some((dc: any) => dc.address.toLowerCase().includes(searchQuery.toLowerCase())))
-  );
+  // Filter logic: matches name, location, owner, tel, rcr or region name
+  const filteredData = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return REGIONAL_CLINICS.map((regGroup) => {
+      // Region filter
+      if (selectedRegion !== "all" && regGroup.region.toLowerCase() !== selectedRegion.toLowerCase()) {
+        return null;
+      }
+
+      if (!query) {
+        return regGroup;
+      }
+
+      const matchingClinics = regGroup.clinics.filter((c) => {
+        return (
+          c.name.toLowerCase().includes(query) ||
+          c.location.toLowerCase().includes(query) ||
+          (c.owner && c.owner.toLowerCase().includes(query)) ||
+          c.tel.toLowerCase().includes(query) ||
+          (c.rcr && c.rcr.toLowerCase().includes(query)) ||
+          regGroup.region.toLowerCase().includes(query)
+        );
+      });
+
+      if (matchingClinics.length > 0) {
+        return {
+          ...regGroup,
+          clinics: matchingClinics,
+        };
+      }
+
+      return null;
+    }).filter((item): item is RegionClinics => item !== null);
+  }, [searchQuery, selectedRegion]);
+
+  const totalClinicsCount = useMemo(() => {
+    return filteredData.reduce((acc, curr) => acc + curr.clinics.length, 0);
+  }, [filteredData]);
+
+  // Clean format for tel link (take first phone number if multiple separated by slash)
+  const formatTel = (tel: string) => {
+    const firstNum = tel.split("/")[0].trim().replace(/\s+/g, "");
+    return firstNum;
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4">
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Input 
-            placeholder={t('clinics.search')} 
-            value={searchQuery} 
+          <Input
+            placeholder="Search clinic name, location, owner, or phone..."
+            value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-2xl h-12 pl-12 border-slate-200"
+            className="rounded-2xl h-12 pl-11 border-slate-200 bg-white text-slate-800 shadow-sm"
           />
-          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         </div>
-        <Button 
-          onClick={requestLocation} 
-          disabled={loadingLocation}
-          className="rounded-2xl h-12 px-6 bg-white text-[#BE322D] border border-[#F4D6D5] hover:bg-[#FFF1F1]"
+
+        <select
+          value={selectedRegion}
+          onChange={(e) => setSelectedRegion(e.target.value)}
+          className="rounded-2xl h-12 px-4 border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#BE322D] shadow-sm"
         >
-          {loadingLocation ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Locate className="w-5 h-5 mr-2" />}
-          {t('clinics.locationBtn')}
-        </Button>
+          <option value="all">All Regions ({REGIONAL_CLINICS.length})</option>
+          {REGIONAL_CLINICS.map((r) => (
+            <option key={r.region} value={r.region}>
+              {r.region} ({r.clinics.length})
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {filteredClinics.map((clinic) => {
-          const isExpanded = expandedClinics.includes(clinic.id);
-          return (
-            <Card key={clinic.id} className="overflow-hidden border-slate-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900">{clinic.name}</h3>
-                    <div className="flex gap-2 mt-2">
-                      {clinic.services.map((s: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="bg-slate-50 text-slate-500 font-normal border-none">
-                          {s}
-                        </Badge>
-                      ))}
+      {/* Summary bar and expand/collapse actions */}
+      <div className="flex items-center justify-between text-sm text-slate-500 px-1">
+        <span>
+          Showing <strong>{totalClinicsCount}</strong> facility contact{totalClinicsCount !== 1 ? "s" : ""} across{" "}
+          <strong>{filteredData.length}</strong> region{filteredData.length !== 1 ? "s" : ""}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={expandAll}
+            className="text-xs font-semibold text-[#BE322D] hover:underline"
+          >
+            Expand All
+          </button>
+          <span>|</span>
+          <button
+            onClick={collapseAll}
+            className="text-xs font-semibold text-slate-500 hover:underline"
+          >
+            Collapse All
+          </button>
+        </div>
+      </div>
+
+      {/* Region Accordions */}
+      {filteredData.length === 0 ? (
+        <Card className="p-8 text-center border-slate-200 rounded-3xl bg-white">
+          <Building2 className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+          <h3 className="text-lg font-bold text-slate-800 mb-1">No Clinic Contacts Found</h3>
+          <p className="text-sm text-slate-500">
+            No clinics matched "{searchQuery}". Try clearing search filters or checking another region.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredData.map((regionGroup) => {
+            const isExpanded = searchQuery.trim().length > 0 || !!expandedRegions[regionGroup.region];
+
+            return (
+              <Collapsible
+                key={regionGroup.region}
+                open={isExpanded}
+                onOpenChange={() => toggleRegion(regionGroup.region)}
+                className="border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden"
+              >
+                <CollapsibleTrigger asChild>
+                  <button className="w-full p-5 flex items-center justify-between bg-slate-50/80 hover:bg-slate-100/80 transition-colors text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-2xl bg-[#FFF1F1] flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-[#BE322D]" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          {regionGroup.region} Region
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {regionGroup.clinics.length} facility contact{regionGroup.clinics.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <Badge className="bg-[#BE322D] px-3 py-1 rounded-full text-white">{clinic.type}</Badge>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="border-slate-200 text-slate-600 font-semibold bg-white">
+                        {regionGroup.clinics.length}
+                      </Badge>
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
 
-                <div className="space-y-3">
-                  {clinic.centers.slice(0, isExpanded ? clinic.centers.length : 1).map((center: any) => {
-                    const dist = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, center.coordinates.lat, center.coordinates.lng) : null;
-                    return (
-                      <motion.div 
-                        key={center.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="p-4 bg-slate-50 rounded-2xl border border-slate-100"
+                <CollapsibleContent>
+                  <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 bg-white">
+                    {regionGroup.clinics.map((clinic: ClinicContact, idx: number) => (
+                      <motion.div
+                        key={`${clinic.name}-${idx}`}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:border-[#F4D6D5] hover:bg-[#FFFDFD] transition-all flex flex-col justify-between"
                       >
-                         <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
-                               <p className="font-semibold text-slate-800">{center.address}</p>
-                               <p className="text-sm text-slate-500 flex items-center mt-1">
-                                  <Clock className="w-3 h-3 mr-1" /> {center.hours}
-                               </p>
+                              <div className="flex items-center gap-2">
+                                {clinic.no && (
+                                  <span className="text-xs font-bold text-slate-400">#{clinic.no}</span>
+                                )}
+                                <h4 className="font-bold text-slate-900 leading-snug">{clinic.name}</h4>
+                              </div>
+                              {clinic.location && (
+                                <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
+                                  <MapPin className="w-3.5 h-3.5 text-[#BE322D]" />
+                                  <span>{clinic.location}</span>
+                                </div>
+                              )}
                             </div>
-                            {dist !== null && (
-                               <Badge variant="outline" className="border-emerald-200 text-emerald-600 bg-emerald-50">
-                                  {dist} km away
-                               </Badge>
-                            )}
-                         </div>
-                         <div className="flex gap-2">
-                             <Button asChild variant="outline" className="flex-1 rounded-xl h-10 border-[#F4D6D5] text-[#BE322D] hover:bg-[#FFF1F1]">
-                               <a href={`tel:${center.phone}`}><Phone className="w-4 h-4 mr-2" /> Call</a>
-                            </Button>
-                             <Button asChild className="flex-1 rounded-xl h-10 bg-gradient-to-r from-[#BE322D] to-[#F16365] hover:from-[#9F2622] hover:to-[#DD575A]">
-                               <a href={`https://www.google.com/maps/search/?api=1&query=${center.coordinates.lat},${center.coordinates.lng}`} target="_blank" rel="noreferrer">
-                                  <Navigation className="w-4 h-4 mr-2" /> Directions
-                               </a>
-                            </Button>
-                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                            <Badge className="bg-[#FFF1F1] text-[#BE322D] hover:bg-[#FDECEC] border-none text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                              Clinic
+                            </Badge>
+                          </div>
 
-                {clinic.centers.length > 1 && (
-                  <Button 
-                    variant="ghost" 
-                    className="w-full mt-4 text-slate-400 hover:text-[#BE322D]"
-                    onClick={() => setExpandedClinics(prev => isExpanded ? prev.filter(id => id !== clinic.id) : [...prev, clinic.id])}
-                  >
-                    {isExpanded ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                    {isExpanded ? 'Show Less' : `Show ${clinic.centers.length - 1} more locations`}
-                  </Button>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+                          <div className="space-y-1.5 my-3 text-xs text-slate-600">
+                            {clinic.owner && (
+                              <div className="flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span>
+                                  <strong>Owner/Admin:</strong> {clinic.owner}
+                                </span>
+                              </div>
+                            )}
+
+                            {clinic.rcr && (
+                              <div className="flex items-center gap-1.5 text-emerald-700">
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>
+                                  <strong>RCR in Charge:</strong> {clinic.rcr}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-slate-800 truncate">{clinic.tel}</span>
+                          <Button
+                            asChild
+                            size="sm"
+                            className="rounded-xl h-9 bg-gradient-to-r from-[#BE322D] to-[#F16365] hover:from-[#9F2622] hover:to-[#DD575A] text-white shrink-0"
+                          >
+                            <a href={`tel:${formatTel(clinic.tel)}`}>
+                              <Phone className="w-3.5 h-3.5 mr-1.5" /> Call
+                            </a>
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
