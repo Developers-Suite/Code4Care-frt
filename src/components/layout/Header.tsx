@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Menu, UserCheck, AlertCircle, User, ListOrdered } from "lucide-react";
+import { Shield, Menu, UserCheck, AlertCircle, User, Headphones } from "lucide-react";
 import { useApp } from '@/providers/AppProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
                       : "Request live consultant"
                 }
               >
-                <ListOrdered className="h-4 w-4" />
+                <Headphones className="h-4 w-4" />
                 <span className={`absolute right-0.5 top-0.5 h-2 w-2 rounded-full ring-2 ring-white ${
                   takeoverStatus === "live"
                     ? "bg-emerald-500"
