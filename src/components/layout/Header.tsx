@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Menu, UserCheck, Headphones, Phone, MessageSquare, X, ChevronRight, Radio } from "lucide-react";
+import { Shield, Menu, UserCheck, Headphones, MessageSquare, X, ChevronRight, Radio } from "lucide-react";
 import { useApp } from '@/providers/AppProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,15 +36,6 @@ export const Header: React.FC<HeaderProps> = ({
     setShowConsultantModal(false);
     if (takeoverStatus !== "live") {
       window.dispatchEvent(new Event('code4care:request-takeover'));
-    }
-  };
-
-  const consultantPhone = '1221';
-
-  const handleCallConsultant = () => {
-    setShowConsultantModal(false);
-    if (consultantPhone) {
-      window.location.href = `tel:${consultantPhone.replace(/\D/g, '')}`;
     }
   };
 
@@ -172,13 +163,11 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-gray-600 mt-2 mb-4">
-              Choose how you would like to reach our trained health counselors:
+              Speak directly with a trained counselor right here in this chat window:
             </p>
 
-            {/* Options List */}
+            {/* Action Button */}
             <div className="space-y-3">
-
-              {/* Option 1: Live Chat */}
               <button
                 type="button"
                 onClick={handleStartChatWithConsultant}
@@ -191,7 +180,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-gray-900">
-                        Chat with a Consultant
+                        Request a Consultant
                       </span>
                       {takeoverStatus === "live" ? (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-800">
@@ -211,34 +200,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <ChevronRight className="w-5 h-5 text-emerald-600 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </button>
-
-              {/* Option 2: Phone Call */}
-              <button
-                type="button"
-                onClick={handleCallConsultant}
-                className="w-full text-left p-3.5 sm:p-4 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50/80 to-white hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between gap-3"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 group-hover:scale-105 transition-transform">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        Call Helpline 1221
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
-                        Toll-Free
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                      Speak over the phone (Mon–Fri, 8:00 AM – 5:00 PM).
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-blue-600 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
-              </button>
-
             </div>
 
             {/* Footer notice */}
