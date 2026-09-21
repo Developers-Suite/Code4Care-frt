@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, MapPin, Phone, User, ShieldCheck, ChevronDown, ChevronUp, Building2, UserCheck } from "lucide-react";
+import { Search, MapPin, Phone, ShieldCheck, ChevronDown, ChevronUp, Building2 } from "lucide-react";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -35,7 +35,7 @@ export function ReferralSection() {
     setExpandedRegions({});
   };
 
-  // Filter logic: matches name, location, owner, tel, rcr or region name
+  // Filter logic: matches name, location, tel or region name
   const filteredData = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -53,9 +53,7 @@ export function ReferralSection() {
         return (
           c.name.toLowerCase().includes(query) ||
           c.location.toLowerCase().includes(query) ||
-          (c.owner && c.owner.toLowerCase().includes(query)) ||
           c.tel.toLowerCase().includes(query) ||
-          (c.rcr && c.rcr.toLowerCase().includes(query)) ||
           regGroup.region.toLowerCase().includes(query)
         );
       });
@@ -87,7 +85,7 @@ export function ReferralSection() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Input
-            placeholder="Search clinic name, location, owner, or phone..."
+            placeholder="Search clinic name, location, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="rounded-2xl h-12 pl-11 border-slate-200 bg-white text-slate-800 shadow-sm"
@@ -211,28 +209,9 @@ export function ReferralSection() {
                             </Badge>
                           </div>
 
-                          <div className="space-y-1.5 my-3 text-xs text-slate-600">
-                            {clinic.owner && (
-                              <div className="flex items-center gap-1.5">
-                                <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span>
-                                  <strong>Owner/Admin:</strong> {clinic.owner}
-                                </span>
-                              </div>
-                            )}
-
-                            {clinic.rcr && (
-                              <div className="flex items-center gap-1.5 text-emerald-700">
-                                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                <span>
-                                  <strong>RCR in Charge:</strong> {clinic.rcr}
-                                </span>
-                              </div>
-                            )}
-                          </div>
                         </div>
 
-                        <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                        <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2 mt-3">
                           <span className="text-sm font-semibold text-slate-800 truncate">{clinic.tel}</span>
                           <Button
                             asChild

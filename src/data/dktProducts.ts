@@ -114,15 +114,26 @@ export const dktProducts: DKTProduct[] = [
 
   // --- DAILY CONTRACEPTIVE PILLS (Female) ---
   {
-    id: "lydia-daily-pills",
-    name: "Lydia Daily Contraceptive Pills",
+    id: "lydia-ocp",
+    name: "Lydia OCP",
     category: "dailyPills",
     gender: "female",
-    description: "Regular daily oral contraceptive pills with added iron for menstrual health.",
-    uses: ["Daily pregnancy prevention", "Cycle regulation", "Iron supplementation"],
+    description: "Daily oral contraceptive pills (DOCP) providing regular, reliable pregnancy prevention and cycle regulation.",
+    uses: ["Daily pregnancy prevention", "Cycle regulation", "Menstrual pain relief"],
     whereToGet: ["Pharmacies countrywide", "Family planning clinics", "DKT outlets"],
     priceRange: "GH₵ 8-18 per pack",
     availability: "Continuously available"
+  },
+  {
+    id: "lydia-daphne",
+    name: "Lydia Daphne",
+    category: "dailyPills",
+    gender: "female",
+    description: "Low-dose combined daily oral contraceptive pill under the Lydia brand for effective birth control and acne management.",
+    uses: ["Daily pregnancy prevention", "Hormonal balance", "Cycle regulation"],
+    whereToGet: ["Pharmacies countrywide", "Family planning clinics", "DKT outlets"],
+    priceRange: "GH₵ 10-25 per pack",
+    availability: "Widely available"
   },
 
   // --- INTRAUTERINE CONTRACEPTIVE DEVICES (IUCD/IUD) (Female) ---
@@ -186,17 +197,6 @@ export const dktProducts: DKTProduct[] = [
     whereToGet: ["Licensed health facilities", "DKT partner clinics", "Pharmacies with prescription"],
     priceRange: "GH₵ 25-50",
     availability: "Available via licensed health providers"
-  },
-  {
-    id: "mm-combi-kit",
-    name: "MM Combi Kit",
-    category: "abortionKits",
-    gender: "female",
-    description: "Combined Misoprostol and Mifepristone medication kit for medical pregnancy termination.",
-    uses: ["Combined medical abortion", "Clinical reproductive care"],
-    whereToGet: ["Licensed health facilities", "Clinical procurement channels", "DKT partner providers"],
-    priceRange: "GH₵ 40-80",
-    availability: "Available through trained healthcare providers"
   },
   {
     id: "miso-fem",
