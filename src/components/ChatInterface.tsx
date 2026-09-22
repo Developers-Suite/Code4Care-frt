@@ -678,17 +678,17 @@ export function ChatInterface({
 
           {/* Live Takeover / Live Counselor Status Banner */}
           {(consultantMode || isHumanTakeover) ? (
-            <div className="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-3 shadow-sm flex items-center justify-between gap-3 text-emerald-950">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm flex items-center justify-between gap-3 text-slate-900">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-full bg-emerald-200 text-emerald-800">
-                  <Radio className="w-4 h-4 animate-pulse" />
+                <div className="p-1.5 rounded-full bg-slate-100 text-slate-700">
+                  <Radio className="w-4 h-4 animate-pulse text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-emerald-900">Live Consultant Chat</p>
-                  <p className="text-[11px] text-emerald-700">A trained human consultant is responding in this chat.</p>
+                  <p className="text-xs font-bold text-slate-900">Live Consultant Chat</p>
+                  <p className="text-[11px] text-slate-600">A trained human consultant is responding in this chat.</p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
+              <span className="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
                 Live Active
               </span>
             </div>
@@ -706,9 +706,9 @@ export function ChatInterface({
                 >
                 <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm ${
                     message.sender === 'bot'
-                        ? (message.mode === 'consultant' ? 'bg-emerald-600' : 'bg-blue-600')
+                        ? (message.mode === 'consultant' ? 'bg-slate-700' : 'bg-blue-600')
                         : (message.sender === 'staff' || message.isLiveAgent)
-                          ? 'bg-emerald-600'
+                          ? 'bg-slate-800'
                           : 'bg-white border border-slate-100'
                 }`}>
                     {(message.sender === 'bot') ? (
@@ -726,7 +726,7 @@ export function ChatInterface({
                   {/* Live agent label above bubble */}
                   {(message.sender === 'staff' || message.isLiveAgent) && (
                     <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-full">
                         <Headphones className="w-3 h-3" />
                         Live Agent
                       </span>
@@ -736,7 +736,7 @@ export function ChatInterface({
                     message.sender === 'user'
                         ? 'bg-blue-600 text-white rounded-tr-none'
                         : (message.sender === 'staff' || message.isLiveAgent)
-                          ? 'bg-emerald-600 text-white border border-emerald-500 rounded-tl-none'
+                          ? 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
                           : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
                   }`}>
                     {message.sender === 'bot' ? (
