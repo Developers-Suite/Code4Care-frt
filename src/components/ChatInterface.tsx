@@ -66,12 +66,12 @@ const cleanDashes = (str: string): string => {
     .trim();
 };
 
-export function ChatInterface({ 
-  clearTrigger = 0 
+export function ChatInterface({
+  clearTrigger = 0
 }: ChatInterfaceProps) {
   const { t, i18n } = useTranslation();
   const { nickname, botName, sessionId, setSessionId, consultantMode, sessionDuration, ageRange, genderIdentity, region, analyticsOptIn } = useApp();
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -86,7 +86,7 @@ export function ChatInterface({
   const [takeoverStatus, setTakeoverStatus] = useState<"idle" | "queued" | "live">(
     consultantMode ? "live" : "idle"
   );
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const lastPolledMessageIdRef = useRef<string | undefined>(undefined);
@@ -109,7 +109,7 @@ export function ChatInterface({
         audioRef.current.currentTime = 0;
         audioRef.current = null;
       }
-      try { window.speechSynthesis.cancel(); } catch {}
+      try { window.speechSynthesis.cancel(); } catch { }
       setPlayingId(undefined);
       return;
     }
@@ -545,7 +545,7 @@ export function ChatInterface({
           try {
             const storedMessages = storedMessagesRaw ? JSON.parse(storedMessagesRaw) : [];
             messagesExchanged = Array.isArray(storedMessages) ? storedMessages.length : 0;
-          } catch {}
+          } catch { }
 
           const startTs = Number(safeStorage.getItem('lydiacontactcenter_session_started_at')) || Date.now();
           const durationSeconds = Math.max(0, Math.round((Date.now() - startTs) / 1000));
@@ -656,25 +656,25 @@ export function ChatInterface({
     <div className="flex h-full min-h-0 flex-col bg-[#f8faff]">
       <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-8">
         <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
-           <div className="rounded-3xl border border-[#CFE0FF] bg-gradient-to-r from-white to-[#EDF4FF] p-4 md:p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0048ff] to-[#00a3ff] flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0048ff]">{t('common.privacyFirst')}</p>
-                    <p className="text-xs text-[#4A66A8]">{t('common.privacyNotice')}</p>
-                  </div>
+          <div className="rounded-3xl border border-[#CFE0FF] bg-gradient-to-r from-white to-[#EDF4FF] p-4 md:p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0048ff] to-[#00a3ff] flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#4A66A8]">
-                    <Clock className="w-3.5 h-3.5" />
-                    {sessionDuration}
-                  </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0048ff]">{t('common.privacyFirst')}</p>
+                  <p className="text-xs text-[#4A66A8]">{t('common.privacyNotice')}</p>
                 </div>
               </div>
-           </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden sm:flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#4A66A8]">
+                  <Clock className="w-3.5 h-3.5" />
+                  {sessionDuration}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Live Takeover / Live Counselor Status Banner */}
           {(consultantMode || isHumanTakeover) ? (
@@ -704,13 +704,12 @@ export function ChatInterface({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   className={`flex gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                 >
-                <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm ${
-                    message.sender === 'bot'
-                        ? (message.mode === 'consultant' ? 'bg-slate-700' : 'bg-blue-600')
-                        : (message.sender === 'staff' || message.isLiveAgent)
-                          ? 'bg-slate-800'
-                          : 'bg-white border border-slate-100'
-                }`}>
+                  <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm ${message.sender === 'bot'
+                    ? (message.mode === 'consultant' ? 'bg-emerald-700' : 'bg-blue-600')
+                    : (message.sender === 'staff' || message.isLiveAgent)
+                      ? 'bg-slate-800'
+                      : 'bg-white border border-slate-100'
+                    }`}>
                     {(message.sender === 'bot') ? (
                       <img
                         src={CHATBOT_AVATAR_SRC}
@@ -720,54 +719,53 @@ export function ChatInterface({
                     ) : (message.sender === 'staff' || message.isLiveAgent) ? (
                       <Headphones className="w-5 h-5 text-white" />
                     ) : <User className="w-5 h-5 text-slate-400" />}
-                </div>
-
-                <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[80%]`}>
-                  {/* Live agent label above bubble */}
-                  {(message.sender === 'staff' || message.isLiveAgent) && (
-                    <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-full">
-                        <Headphones className="w-3 h-3" />
-                        Live Agent
-                      </span>
-                    </div>
-                  )}
-                  <div className={`p-4 rounded-[24px] shadow-sm relative group ${
-                    message.sender === 'user'
-                        ? 'bg-blue-600 text-white rounded-tr-none'
-                        : (message.sender === 'staff' || message.isLiveAgent)
-                          ? 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
-                          : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
-                  }`}>
-                    {message.sender === 'bot' ? (
-                      <TypewriterMessage
-                        text={message.text}
-                        speed={15}
-                        isCompleted={completedBotMessages.has(message.id)}
-                        onComplete={() => {
-                          setCompletedBotMessages(prev => new Set([...prev, message.id]));
-                        }}
-                      />
-                    ) : (
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap chat-markdown">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
-                      </div>
-                    )}
                   </div>
 
-                  {message.sender === 'bot' && (
-                    <div className="mt-3 w-full space-y-2">
-                      {(message.responseTimeMs !== undefined || message.languageDetected) && (
-                        <p className="px-1 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                          {message.responseTimeMs !== undefined && `Answered in ${message.responseTimeMs} ms`}
-                          {message.responseTimeMs !== undefined && message.languageDetected ? ' • ' : ''}
-                          {message.languageDetected ? `Language: ${message.languageDetected}` : ''}
-                        </p>
+                  <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                    {/* Live agent label above bubble */}
+                    {(message.sender === 'staff' || message.isLiveAgent) && (
+                      <div className="flex items-center gap-1.5 mb-1 px-1">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white bg-emerald-100 border border-slate-300 px-2 py-0.5 rounded-full">
+                          <Headphones className="w-3 h-3" />
+                          Live Agent
+                        </span>
+                      </div>
+                    )}
+                    <div className={`p-4 rounded-[24px] shadow-sm relative group ${message.sender === 'user'
+                      ? 'bg-blue-600 text-white rounded-tr-none'
+                      : (message.sender === 'staff' || message.isLiveAgent)
+                        ? 'bg-white text-slate-800 border border-slate-200 rounded-tl-none'
+                        : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
+                      }`}>
+                      {message.sender === 'bot' ? (
+                        <TypewriterMessage
+                          text={message.text}
+                          speed={15}
+                          isCompleted={completedBotMessages.has(message.id)}
+                          onComplete={() => {
+                            setCompletedBotMessages(prev => new Set([...prev, message.id]));
+                          }}
+                        />
+                      ) : (
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap chat-markdown">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                        </div>
                       )}
                     </div>
-                  )}
-                  
-                  <div className="mt-1.5 flex items-center gap-2 px-1">
+
+                    {message.sender === 'bot' && (
+                      <div className="mt-3 w-full space-y-2">
+                        {(message.responseTimeMs !== undefined || message.languageDetected) && (
+                          <p className="px-1 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                            {message.responseTimeMs !== undefined && `Answered in ${message.responseTimeMs} ms`}
+                            {message.responseTimeMs !== undefined && message.languageDetected ? ' • ' : ''}
+                            {message.languageDetected ? `Language: ${message.languageDetected}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-1.5 flex items-center gap-2 px-1">
                       <span className="text-[10px] text-slate-400 font-medium">
                         {(message.sender === 'staff' || message.isLiveAgent)
                           ? 'Live Counselor'
@@ -795,11 +793,10 @@ export function ChatInterface({
                         <>
                           <button
                             onClick={() => handleFeedback(message.id, 5)}
-                            className={`p-1 rounded-md transition-colors ${
-                              message.feedbackRating === 5
-                                ? 'bg-green-100 text-green-600'
-                                : 'hover:bg-slate-100 text-slate-400'
-                            }`}
+                            className={`p-1 rounded-md transition-colors ${message.feedbackRating === 5
+                              ? 'bg-green-100 text-green-600'
+                              : 'hover:bg-slate-100 text-slate-400'
+                              }`}
                             aria-label="Helpful"
                             title="Helpful"
                           >
@@ -807,11 +804,10 @@ export function ChatInterface({
                           </button>
                           <button
                             onClick={() => handleFeedback(message.id, 1)}
-                            className={`p-1 rounded-md transition-colors ${
-                              message.feedbackRating === 1
-                                ? 'bg-red-100 text-red-600'
-                                : 'hover:bg-slate-100 text-slate-400'
-                            }`}
+                            className={`p-1 rounded-md transition-colors ${message.feedbackRating === 1
+                              ? 'bg-red-100 text-red-600'
+                              : 'hover:bg-slate-100 text-slate-400'
+                              }`}
                             aria-label="Not helpful"
                             title="Not helpful"
                           >
@@ -819,11 +815,10 @@ export function ChatInterface({
                           </button>
                           <button
                             onClick={() => handleReport(message.id)}
-                            className={`p-1 rounded-md transition-colors ${
-                              message.isReported
-                                ? 'bg-orange-100 text-orange-600'
-                                : 'hover:bg-slate-100 text-slate-400'
-                            }`}
+                            className={`p-1 rounded-md transition-colors ${message.isReported
+                              ? 'bg-orange-100 text-orange-600'
+                              : 'hover:bg-slate-100 text-slate-400'
+                              }`}
                             aria-label="Report message"
                             title="Report message"
                             disabled={message.isReported}
@@ -832,40 +827,40 @@ export function ChatInterface({
                           </button>
                         </>
                       )}
+                    </div>
+
+                    {message.options && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {message.options.map((option, idx) => (
+                          <Button
+                            key={idx}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { handleSend(option); }}
+                            className="rounded-xl border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
+                          >
+                            {option}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+
+                    {message.sender === 'bot' && message.followUpSuggestions && message.followUpSuggestions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {message.followUpSuggestions.map((suggestion, idx) => (
+                          <Button
+                            key={idx}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { handleSend(suggestion); }}
+                            className="rounded-xl border-emerald-600 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
+                          >
+                            {suggestion}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-
-                  {message.options && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {message.options.map((option, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { handleSend(option); }}
-                          className="rounded-xl border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
-                        >
-                          {option}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-
-                  {message.sender === 'bot' && message.followUpSuggestions && message.followUpSuggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {message.followUpSuggestions.map((suggestion, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { handleSend(suggestion); }}
-                          className="rounded-xl border-emerald-600 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all duration-200 text-xs py-1 h-9 font-semibold"
-                        >
-                          {suggestion}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 </motion.div>
 
                 {/* Show conversation starters directly below the welcome message */}
@@ -951,7 +946,7 @@ export function ChatInterface({
           </div>
 
           <button
-            onClick={() => { if(!recognitionRef.current) return; isListening ? recognitionRef.current.stop() : (recognitionRef.current.start(), setIsListening(true)); }}
+            onClick={() => { if (!recognitionRef.current) return; isListening ? recognitionRef.current.stop() : (recognitionRef.current.start(), setIsListening(true)); }}
             className={`p-2 rounded-full transition-colors flex items-center justify-center flex-shrink-0 ${isListening ? 'bg-red-100 text-red-600' : 'text-slate-500 hover:text-blue-600'}`}
             aria-label="Toggle voice input"
           >
@@ -966,9 +961,9 @@ export function ChatInterface({
             <Send className="w-5 h-5 text-current" />
           </Button>
         </div>
-        
+
       </div>
-      
+
       {/* Report Message Modal */}
       <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
         <DialogContent className="rounded-3xl">
@@ -982,7 +977,7 @@ export function ChatInterface({
             <p className="text-sm text-[#6D4A49]">
               {t('chat.reportPrompt', 'Please describe why you are reporting this message:')}
             </p>
-            
+
             <textarea
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
