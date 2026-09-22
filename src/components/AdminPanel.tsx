@@ -14,6 +14,7 @@ import { StaffSession } from '@/services/staffAccessService';
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
 import { logger } from '@/utils/logger';
+import { UserAvatarProfile } from './admin/UserAvatarProfile';
 
 interface AdminPanelProps {
   selectedLanguage: string;
@@ -121,6 +122,14 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
               <Sparkles className="w-3.5 h-3.5" />
               Test Alert
             </Button>
+
+            <div className="h-5 w-px bg-gray-200 mx-1" />
+
+            <UserAvatarProfile
+              session={session}
+              onLogout={onLogout}
+              onNavigate={setCurrentSection}
+            />
           </div>
         </header>
 
