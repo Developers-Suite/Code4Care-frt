@@ -1,10 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Bell, Volume2, VolumeX, Sparkles, Headphones } from 'lucide-react';
+import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Sparkles, Headphones } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { NotificationPopover } from './NotificationPopover';
 import {
   StaffAccessService,
   StaffSession,
@@ -27,7 +28,7 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
     [supportRequests]
   );
 
-  const { soundMuted, toggleSound, permission, requestPermission, testAlert } = useQueueNotifications({
+  const { permission, requestPermission, testAlert } = useQueueNotifications({
     waitingRequests,
   });
 
@@ -141,33 +142,17 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
             <p className="text-gray-500 mt-1">Welcome, {session.name}. Manage support queue and active conversations.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {permission !== 'granted' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
-                onClick={requestPermission}
-              >
-                <Bell className="w-3.5 h-3.5" />
-                Enable Desktop Alerts
-              </Button>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className={`gap-1.5 text-xs ${soundMuted ? 'text-gray-400 border-gray-200' : 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}
-              onClick={toggleSound}
-              title={soundMuted ? 'Unmute queue chime' : 'Mute queue chime'}
-            >
-              {soundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-              {soundMuted ? 'Chime Muted' : 'Chime Active'}
-            </Button>
+            <NotificationPopover
+              notifications={waitingRequests}
+              onSelectNotification={(requestId) => claimRequest(requestId)}
+              onRequestPermission={requestPermission}
+              permissionGranted={permission === 'granted'}
+            />
 
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-gray-500 hover:text-gray-900 gap-1"
+              className="text-xs text-gray-500 hover:text-gray-900 gap-1 h-8"
               onClick={testAlert}
               title="Test chime sound and desktop alert"
             >
@@ -175,8 +160,8 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
               Test Alert
             </Button>
 
-            <Button variant="outline" className="gap-2 border-red-200 text-red-600 hover:bg-red-50" onClick={onLogout}>
-              <LogOut className="w-4 h-4" />
+            <Button variant="outline" size="sm" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 h-8 text-xs" onClick={onLogout}>
+              <LogOut className="w-3.5 h-3.5" />
               Logout
             </Button>
           </div>

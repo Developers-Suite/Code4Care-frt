@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Bell, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NotificationPopover } from './NotificationPopover';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
 import { UsersSessionsPage } from './admin/UsersSessionsPage';
@@ -51,7 +52,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
     };
   }, [session.accessToken]);
 
-  const { soundMuted, toggleSound, permission, requestPermission, testAlert } = useQueueNotifications({
+  const { permission, requestPermission, testAlert } = useQueueNotifications({
     waitingRequests,
     onSelectRequest: () => setCurrentSection('conversations'),
   });
@@ -103,28 +104,12 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
           </div>
 
           <div className="flex items-center gap-2">
-            {permission !== 'granted' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 text-xs bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 h-8"
-                onClick={requestPermission}
-              >
-                <Bell className="w-3.5 h-3.5" />
-                Enable Desktop Alerts
-              </Button>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className={`gap-1.5 text-xs h-8 ${soundMuted ? 'text-gray-400 border-gray-200' : 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}
-              onClick={toggleSound}
-              title={soundMuted ? 'Unmute queue chime' : 'Mute queue chime'}
-            >
-              {soundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-              {soundMuted ? 'Muted' : 'Chime Active'}
-            </Button>
+            <NotificationPopover
+              notifications={waitingRequests}
+              onSelectNotification={() => setCurrentSection('conversations')}
+              onRequestPermission={requestPermission}
+              permissionGranted={permission === 'granted'}
+            />
 
             <Button
               variant="ghost"
