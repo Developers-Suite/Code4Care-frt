@@ -13,6 +13,7 @@ import {
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { logger } from '@/utils/logger';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
+import { UserAvatarProfile } from './admin/UserAvatarProfile';
 
 interface SupportCounselorDashboardProps {
   session: StaffSession;
@@ -160,10 +161,12 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
               Test Alert
             </Button>
 
-            <Button variant="outline" size="sm" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 h-8 text-xs" onClick={onLogout}>
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
-            </Button>
+            <div className="h-5 w-px bg-gray-200 mx-1" />
+
+            <UserAvatarProfile
+              session={session}
+              onLogout={onLogout}
+            />
           </div>
         </div>
 
