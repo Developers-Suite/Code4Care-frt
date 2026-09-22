@@ -737,7 +737,7 @@ export function ChatInterface({
                         ? 'bg-blue-600 text-white rounded-tr-none'
                         : (message.sender === 'staff' || message.isLiveAgent)
                           ? 'bg-emerald-600 text-white border border-emerald-500 rounded-tl-none'
-                          : (message.mode === 'consultant' ? 'bg-emerald-50 text-emerald-900 border border-emerald-100 rounded-tl-none' : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none')
+                          : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
                   }`}>
                     {message.sender === 'bot' ? (
                       <TypewriterMessage
