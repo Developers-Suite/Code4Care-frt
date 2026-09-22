@@ -725,7 +725,7 @@ export function ChatInterface({
                     {/* Live agent label above bubble */}
                     {(message.sender === 'staff' || message.isLiveAgent) && (
                       <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white bg-emerald-100 border border-slate-300 px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-green bg-emerald-200 border border-slate-300 px-2 py-0.5 rounded-full">
                           <Headphones className="w-3 h-3" />
                           Live Agent
                         </span>
