@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell } from 'lucide-react';
 import { NotificationPopover } from './NotificationPopover';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
@@ -52,7 +51,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
     };
   }, [session.accessToken]);
 
-  const { permission, requestPermission, testAlert } = useQueueNotifications({
+  const { permission, requestPermission } = useQueueNotifications({
     waitingRequests,
     onSelectRequest: () => setCurrentSection('conversations'),
   });
@@ -110,17 +109,6 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
               onRequestPermission={requestPermission}
               permissionGranted={permission === 'granted'}
             />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-gray-500 hover:text-gray-900 gap-1 h-8"
-              onClick={testAlert}
-              title="Test chime sound and desktop alert"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Test Alert
-            </Button>
           </div>
         </header>
 
