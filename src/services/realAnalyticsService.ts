@@ -316,6 +316,7 @@ function normalizeAnalyticsOverviewSummary(data: AnalyticsOverviewSummary): Anal
     self_harm_mentions: ['self_harm_mentions', 'selfHarmMentions', 'self_harm_mentions_detected'],
     suicidal_ideation_mentions: ['suicidal_ideation_mentions', 'suicidalIdeationMentions', 'suicidal_ideation'],
     abuse_mentions: ['abuse_mentions', 'abuseMentionsDetected', 'abuse_mentions_detected'],
+    severe_distress_mentions: ['severe_distress_mentions', 'severeDistressMentions', 'severe_distress'],
     concerned_users_followed_up: ['concerned_users_followed_up', 'concernedUsersFollowedUp', 'followed_up'],
     risks_escalated_to_human: ['risks_escalated_to_human', 'risksEscalatedToHuman', 'total_escalated'],
   });
@@ -377,6 +378,7 @@ function normalizeAnalyticsOverviewSummary(data: AnalyticsOverviewSummary): Anal
       self_harm_mentions: getNumber(safetyRecord, 'self_harm_mentions', 'selfHarmMentions', 'self_harm_mentions_detected'),
       suicidal_ideation_mentions: getNumber(safetyRecord, 'suicidal_ideation_mentions', 'suicidalIdeationMentions', 'suicidal_ideation'),
       abuse_mentions: getNumber(safetyRecord, 'abuse_mentions', 'abuseMentionsDetected', 'abuse_mentions_detected'),
+      severe_distress_mentions: getNumber(safetyRecord, 'severe_distress_mentions', 'severeDistressMentions', 'severe_distress'),
       concerned_users_followed_up: getNumber(safetyRecord, 'concerned_users_followed_up', 'concernedUsersFollowedUp', 'followed_up'),
       risks_escalated_to_human: getNumber(safetyRecord, 'risks_escalated_to_human', 'risksEscalatedToHuman', 'total_escalated'),
     },

@@ -45,6 +45,31 @@ function formatDateTime(iso: string) {
   });
 }
 
+function formatUserDisplay(nickname?: string | null, platform?: string | null): string {
+  if (!nickname || !nickname.trim()) return platform === 'whatsapp' ? 'WhatsApp User' : 'Anonymous';
+  const clean = nickname.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length >= 7 && (clean.startsWith('+') || /^\d+$/.test(clean) || digits.length >= clean.length * 0.7)) {
+    return platform === 'whatsapp' ? 'WhatsApp User' : 'Anonymous';
+  }
+  return clean;
+}
+
+function formatSessionDisplay(sessionId: string): string {
+  if (!sessionId) return '';
+  if (sessionId.startsWith('whatsapp:') || sessionId.startsWith('wa:')) {
+    const parts = sessionId.split(':');
+    const val = parts[1] || '';
+    if (val.startsWith('anon_')) return `wa:${val}`;
+    return `wa:anon_${val.slice(-6)}`;
+  }
+  const digits = sessionId.replace(/\D/g, '');
+  if (digits.length >= 7 && (sessionId.startsWith('+') || /^\d+$/.test(sessionId))) {
+    return `anon_${digits.slice(-6)}`;
+  }
+  return `…${sessionId.slice(-8)}`;
+}
+
 // ── Conversation detail panel ────────────────────────────────────────────────
 
 interface ConversationDetailPanelProps {
@@ -218,9 +243,9 @@ function ConversationDetailPanel({
           <div className="flex items-start justify-between">
             <div className="min-w-0">
               <p className="font-semibold text-gray-900 text-sm truncate">
-                {conv.user_nickname ?? 'Anonymous'}
+                {formatUserDisplay(conv.user_nickname, conv.platform)}
               </p>
-              <p className="text-xs text-gray-400 font-mono mt-0.5">…{conv.session_id.slice(-12)}</p>
+              <p className="text-xs text-gray-400 font-mono mt-0.5">{formatSessionDisplay(conv.session_id)}</p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {conv.platform && (
                   <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
@@ -626,8 +651,8 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
                   filename: 'conversations',
                   headers: ['User', 'Session ID', 'Started', 'Last Active', 'Messages', 'Language', 'Status'],
                   rows: convs.map((c) => [
-                    c.user_nickname ?? 'Anonymous',
-                    `…${c.session_id.slice(-8)}`,
+                    formatUserDisplay(c.user_nickname, c.platform),
+                    formatSessionDisplay(c.session_id),
                     new Date(c.created_at).toLocaleString('en-GB'),
                     new Date(c.last_active_at).toLocaleString('en-GB'),
                     String(c.message_count),
@@ -709,7 +734,7 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="text-xs font-semibold text-gray-900">{conv.user_nickname ?? 'Anonymous'}</p>
+                            <p className="text-xs font-semibold text-gray-900">{formatUserDisplay(conv.user_nickname, conv.platform)}</p>
                             {needsTakeover && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
                                 <Headphones className="w-3 h-3 text-rose-600" />
@@ -717,7 +742,7 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-400 font-mono">…{conv.session_id.slice(-8)}</p>
+                          <p className="text-xs text-gray-400 font-mono">{formatSessionDisplay(conv.session_id)}</p>
                           {conv.platform && (
                             <span className={`inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                               conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' :

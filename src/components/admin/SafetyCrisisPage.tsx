@@ -80,36 +80,43 @@ export function SafetyCrisisPage({ session }: SafetyCrisisPageProps) {
   }, [period, session.accessToken]);
 
   const inc = safety?.incidents ?? {};
-  const crisisTotal = getNumber(inc, 'total') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
-  const panicTotal = getNumber(analytics?.safety ?? {}, 'panic_exits_total');
-  const interventions = getNumber(inc, 'crisis_total') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
+  const crisisTotal = getNumber(inc, 'total', 'crisis_total') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
+  const panicTotal = getNumber(inc, 'panic_exits_total') || getNumber(analytics?.safety ?? {}, 'panic_exits_total');
+  const interventions = getNumber(inc, 'crisis_total', 'crisis_interventions') || getNumber(analytics?.safety ?? {}, 'crisis_interventions');
   const escalatedHuman = getNumber(inc, 'risks_escalated_to_human') || getNumber(analytics?.safety ?? {}, 'risks_escalated_to_human');
   const followedUp = getNumber(inc, 'concerned_users_followed_up') || getNumber(analytics?.safety ?? {}, 'concerned_users_followed_up');
-  const selfHarm = getNumber(inc, 'self_harm_mentions') || getNumber(analytics?.safety ?? {}, 'self_harm_mentions');
-  const suicidal = getNumber(inc, 'suicidal_ideation_mentions') || getNumber(analytics?.safety ?? {}, 'suicidal_ideation_mentions');
-  const abuse = getNumber(inc, 'abuse_mentions') || getNumber(analytics?.safety ?? {}, 'abuse_mentions');
+  const selfHarm = getNumber(inc, 'self_harm_mentions') || getNumber(safety?.severity_distribution ?? {}, 'self_harm') || getNumber(analytics?.safety ?? {}, 'self_harm_mentions');
+  const suicidal = getNumber(inc, 'suicidal_ideation_mentions') || getNumber(safety?.severity_distribution ?? {}, 'suicidal_ideation') || getNumber(analytics?.safety ?? {}, 'suicidal_ideation_mentions');
+  const abuse = getNumber(inc, 'abuse_mentions') || getNumber(safety?.severity_distribution ?? {}, 'abuse') || getNumber(analytics?.safety ?? {}, 'abuse_mentions');
+  let severeDistress = getNumber(inc, 'severe_distress_mentions') || getNumber(safety?.severity_distribution ?? {}, 'severe_distress') || getNumber(analytics?.safety ?? {}, 'severe_distress_mentions', 'severeDistressMentions');
+
+  // If crisisTotal exceeds the individual breakdown sums (e.g., uncategorized events),
+  // attribute the remaining count so the chart never omits recorded crisis events
+  const breakdownSum = selfHarm + suicidal + abuse + severeDistress;
+  if (crisisTotal > breakdownSum) {
+    severeDistress += (crisisTotal - breakdownSum);
+  }
 
   const crisisTypeData = useMemo(() => {
-    const sev = safety?.severity_distribution ?? {};
     const data = [
-      { name: 'Self-Harm', value: Number(sev['self_harm'] ?? selfHarm), key: 'self_harm' },
-      { name: 'Suicidal Ideation', value: Number(sev['suicidal_ideation'] ?? suicidal), key: 'suicidal_ideation' },
-      { name: 'Abuse', value: Number(sev['abuse'] ?? abuse), key: 'abuse' },
-      { name: 'Severe Distress', value: Number(sev['severe_distress'] ?? 0), key: 'severe_distress' },
+      { name: 'Self-Harm', value: selfHarm, key: 'self_harm' },
+      { name: 'Suicidal Ideation', value: suicidal, key: 'suicidal_ideation' },
+      { name: 'Abuse', value: abuse, key: 'abuse' },
+      { name: 'Severe Distress', value: severeDistress, key: 'severe_distress' },
     ].filter((x) => x.value > 0);
     return data;
-  }, [safety, selfHarm, suicidal, abuse]);
+  }, [selfHarm, suicidal, abuse, severeDistress]);
 
   const eventChartData = useMemo(() => {
     const bars = [
       { name: 'Self-Harm', value: selfHarm, fill: '#ef4444' },
       { name: 'Suicidal Ideation', value: suicidal, fill: '#dc2626' },
       { name: 'Abuse', value: abuse, fill: '#f97316' },
-      { name: 'Severe Distress', value: Number(safety?.severity_distribution?.['severe_distress'] ?? 0), fill: '#f59e0b' },
+      { name: 'Severe Distress', value: severeDistress, fill: '#f59e0b' },
       { name: 'Panic Button', value: panicTotal, fill: '#8b5cf6' },
     ];
     return bars;
-  }, [selfHarm, suicidal, abuse, safety, panicTotal]);
+  }, [selfHarm, suicidal, abuse, severeDistress, panicTotal]);
 
   const periodLabel =
     period === 'today' ? 'Today' :
@@ -141,6 +148,7 @@ export function SafetyCrisisPage({ session }: SafetyCrisisPageProps) {
                     ['Self-Harm', String(selfHarm)],
                     ['Suicidal Ideation', String(suicidal)],
                     ['Abuse', String(abuse)],
+                    ['Severe Distress', String(severeDistress)],
                     ...crisisTypeData.map((d) => [`Crisis Type: ${d.name}`, String(d.value)]),
                   ],
                 }}
