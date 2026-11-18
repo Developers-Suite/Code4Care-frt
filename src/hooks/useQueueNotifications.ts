@@ -83,17 +83,7 @@ export function useQueueNotifications({
           },
         });
 
-        // 3. Display interactive Sonner toast
-        toast.warning(`New Live Chat Request: ${nickname}${urgencyText}`, {
-          description: 'A WhatsApp user is waiting for counselor takeover.',
-          duration: 10000,
-          action: onSelectRequest
-            ? {
-                label: 'View Case',
-                onClick: () => onSelectRequest(ticket.id),
-              }
-            : undefined,
-        });
+        // 3. In-app announcement is the header bell only; no toast popup.
       });
     }
   }, [waitingRequests, onSelectRequest]);

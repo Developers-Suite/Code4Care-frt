@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Lock, CheckCircle, Globe, ShieldCheck } from 'lucide-react';
 
@@ -9,6 +10,8 @@ interface DesktopHeroIntroProps {
 const heroImage = '/introscreen/6046367028903349859.jpg';
 
 export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
+  const navigate = useNavigate();
+
   return (
     // Grid container forces two equal columns on medium screens and up
     <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen w-full bg-white">
@@ -85,6 +88,14 @@ export function DesktopHeroIntro({ onComplete }: DesktopHeroIntroProps) {
               Get Started
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="mt-4 mx-auto md:mx-0 flex items-center gap-1.5 w-fit text-xs font-medium text-[#8A6B6B] hover:text-[#BE322D] transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Login
+            </button>
           </div>
           
           <p className="text-sm text-[#8A6B6B] animate-pulse">
