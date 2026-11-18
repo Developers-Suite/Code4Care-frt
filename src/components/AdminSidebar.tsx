@@ -42,14 +42,14 @@ const navigationItems: {
   desc: string;
   roles?: string[];
 }[] = [
-  { id: 'overview',        label: 'Overview',          icon: LayoutDashboard, desc: 'Executive summary & KPIs' },
-  { id: 'counselor-queue', label: 'Support Queue',     icon: Headphones,      desc: 'Live takeover queue' },
-  { id: 'users',           label: 'Users & Sessions',  icon: Users,           desc: 'Demographics & retention', roles: ['admin', 'supervisor'] },
-  { id: 'conversations',   label: 'Conversations',     icon: MessageSquare,   desc: 'Chat volume & topics' },
-  { id: 'safety',          label: 'Safety & Crisis',   icon: AlertTriangle,   desc: 'Crisis & escalations' },
-  { id: 'audit',           label: 'Admin & Audit',     icon: Shield,          desc: 'Reports & audit log', roles: ['admin', 'supervisor'] },
-  { id: 'admin-accounts',  label: 'Admin Accounts',    icon: UserCog,         desc: 'Manage staff access', roles: ['admin'] },
-];
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, desc: 'Executive summary & KPIs' },
+    // { id: 'counselor-queue', label: 'Support Queue',     icon: Headphones,      desc: 'Live takeover queue' },
+    { id: 'users', label: 'Users & Sessions', icon: Users, desc: 'Demographics & retention', roles: ['admin', 'supervisor'] },
+    { id: 'conversations', label: 'Conversations', icon: MessageSquare, desc: 'Chat volume & topics' },
+    { id: 'safety', label: 'Safety & Crisis', icon: AlertTriangle, desc: 'Crisis & escalations' },
+    { id: 'audit', label: 'Admin & Audit', icon: Shield, desc: 'Reports & audit log', roles: ['admin', 'supervisor'] },
+    { id: 'admin-accounts', label: 'Admin Accounts', icon: UserCog, desc: 'Manage staff access', roles: ['admin'] },
+  ];
 
 export function AdminSidebar({
   currentSection,
@@ -108,17 +108,15 @@ export function AdminSidebar({
                 }}
                 whileHover={{ x: 3 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full group rounded-lg px-3 py-2.5 transition-all duration-150 text-left ${
-                  isActive
-                    ? 'bg-[#FFF1F1] border border-[#F4D6D5]'
-                    : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
-                }`}
+                className={`w-full group rounded-lg px-3 py-2.5 transition-all duration-150 text-left ${isActive
+                  ? 'bg-[#FFF1F1] border border-[#F4D6D5]'
+                  : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
+                  }`}
               >
                 <div className="flex items-center gap-2.5">
                   <Icon
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      isActive ? 'text-[#BE322D]' : 'text-gray-400 group-hover:text-gray-600'
-                    }`}
+                    className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-[#BE322D]' : 'text-gray-400 group-hover:text-gray-600'
+                      }`}
                   />
                   <div className="text-left flex-1 min-w-0">
                     <div className={`text-sm font-medium truncate ${isActive ? 'text-[#BE322D]' : 'text-gray-700'}`}>
