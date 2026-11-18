@@ -129,20 +129,20 @@ export function Pharmacy() {
       const embed =
         lat && lng
           ? `https://www.google.com/maps?q=${encodeURIComponent(
-              query
-            )}&ll=${lat},${lng}&z=14&output=embed`
+            query
+          )}&ll=${lat},${lng}&z=14&output=embed`
           : `https://www.google.com/maps?q=${encodeURIComponent(
-              query
-            )}&output=embed`;
+            query
+          )}&output=embed`;
 
       const external =
         lat && lng
           ? `https://www.google.com/maps/search/${encodeURIComponent(
-              query
-            )}/@${lat},${lng},14z`
+            query
+          )}/@${lat},${lng},14z`
           : `https://www.google.com/maps/search/${encodeURIComponent(
-              query
-            )}`;
+            query
+          )}`;
 
       setMapUrl(embed);
       setExternalUrl(external);
@@ -199,83 +199,22 @@ export function Pharmacy() {
             <div className="inline-flex rounded-2xl border border-[#F1D5D4] bg-white p-1">
 
               {[
-                { key: "healthcare", label: "Health Care", icon: Navigation },
                 { key: "dkt", label: "DKT Products", icon: Pill },
-                { key: "contacts", label: "Regional Contacts", icon: PhoneCall },
+                { key: "contacts", label: "Regional Clinics", icon: PhoneCall },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
-                    activeTab === tab.key
-                      ? "bg-[#BE322D] text-white"
-                      : "text-[#6D4A49] hover:text-[#241515]"
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${activeTab === tab.key
+                    ? "bg-[#BE322D] text-white"
+                    : "text-[#6D4A49] hover:text-[#241515]"
+                    }`}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* ---------------- HEALTHCARE ---------------- */}
-          {activeTab === "healthcare" && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                <button
-                  onClick={() => openMapSearch("pharmacy near me")}
-                  disabled={loading}
-                  className="rounded-3xl bg-[#BE322D] p-6 text-white text-left"
-                >
-                  <Navigation className="w-7 h-7 mb-4" />
-                  <h3 className="text-2xl font-bold">Find Pharmacies</h3>
-                  <p className="text-white/90 text-sm">
-                    Locate nearby pharmacies instantly.
-                  </p>
-                  <p className="mt-4 text-sm font-semibold text-white/90">
-                    {loading ? "Finding nearby..." : "Open interactive map"}
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => openMapSearch("clinic near me")}
-                  disabled={loading}
-                  className="rounded-3xl bg-white border border-[#F1D5D4] p-6 text-left"
-                >
-                  <Building2 className="w-7 h-7 text-[#BE322D] mb-4" />
-                  <h3 className="text-2xl font-bold">Find Clinics</h3>
-                  <p className="text-[#6D4A49] text-sm">
-                    Search SRHR clinics near you.
-                  </p>
-                  <p className="mt-4 text-sm font-semibold text-[#BE322D]">
-                    {loading ? "Finding nearby..." : "Open healthcare search"}
-                  </p>
-                </button>
-              </div>
-
-              <Card className="rounded-3xl border-[#F1D5D4] p-6">
-                <h3 className="text-xl font-bold mb-4">
-                  Browse by Region
-                </h3>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {REGIONS.map((region) => (
-                    <button
-                      key={region}
-                      onClick={() =>
-                        openRegionSearch(region)
-                      }
-                      disabled={loading}
-                      className="flex items-center justify-between border rounded-2xl p-3 hover:bg-[#FFF7F7]"
-                    >
-                      <span className="text-sm">{region}</span>
-                      <MapPin className="w-4 h-4 text-[#BE322D]" />
-                    </button>
-                  ))}
-                </div>
-              </Card>
-            </>
-          )}
 
           {/* ---------------- DKT ---------------- */}
           {activeTab === "dkt" && <DKTProducts />}
@@ -362,9 +301,8 @@ export function Pharmacy() {
                           </span>
                         </span>
                         <ChevronDown
-                          className={`h-5 w-5 shrink-0 text-[#BE322D] transition-transform ${
-                            isExpanded ? "rotate-180" : ""
-                          }`}
+                          className={`h-5 w-5 shrink-0 text-[#BE322D] transition-transform ${isExpanded ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
 
