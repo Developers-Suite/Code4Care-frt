@@ -288,12 +288,33 @@ export function ChatInterface({
   }, [messages, isTyping]);
 
   useEffect(() => {
-    const hasCounselorRequest = messages.some((m) =>
-      m.text.toLowerCase().includes('live counselor') ||
-      m.text.toLowerCase().includes('trained counselor') ||
-      m.text.toLowerCase().includes('connecting you now')
-    );
-    if (hasCounselorRequest) {
+    let lastConclusionIdx = -1;
+    let lastRequestIdx = -1;
+
+    messages.forEach((m, idx) => {
+      const lower = m.text.toLowerCase();
+      if (
+        lower.includes('concluded the session') ||
+        lower.includes('concluded') ||
+        lower.includes('session ended')
+      ) {
+        lastConclusionIdx = idx;
+      }
+      if (
+        (m.sender === 'user' && (lower.includes('live counselor') || lower.includes('trained counselor') || lower.includes('consultant'))) ||
+        lower.includes('transferring you right away') ||
+        lower.includes('connecting you now')
+      ) {
+        lastRequestIdx = idx;
+      }
+    });
+
+    if (lastConclusionIdx > lastRequestIdx && lastConclusionIdx !== -1) {
+      // Prior counselor session concluded and no newer request has been sent
+      setIsLiveCounselorRequested(false);
+      setIsHumanTakeover(false);
+      setTakeoverStatus("idle");
+    } else if (lastRequestIdx !== -1 && (lastConclusionIdx === -1 || lastRequestIdx > lastConclusionIdx)) {
       setIsLiveCounselorRequested(true);
       setTakeoverStatus((current) => current === "live" ? current : "queued");
     }
@@ -322,11 +343,14 @@ export function ChatInterface({
         if (data.is_human_takeover) {
           setTakeoverStatus("live");
           setTakeoverModalOpen(false);
+        } else if (!data.is_escalated) {
+          setTakeoverStatus("idle");
+          setIsLiveCounselorRequested(false);
         }
       }
-      if (data.is_escalated) {
+      if (data.is_escalated && !data.is_human_takeover) {
         setIsLiveCounselorRequested(true);
-        setTakeoverStatus((current) => current === "live" ? current : "queued");
+        setTakeoverStatus("queued");
       }
 
       // Merge only counselor (staff/consultant) messages we haven't seen yet
@@ -578,6 +602,8 @@ export function ChatInterface({
     }
   };
 
+  const handleRequestLiveCounselorRef = useRef<() => void>(() => {});
+
   const handleRequestLiveCounselor = () => {
     if (takeoverStatus === "live") return;
     setTakeoverStatus("queued");
@@ -586,10 +612,14 @@ export function ChatInterface({
   };
 
   useEffect(() => {
-    const handleHeaderRequest = () => handleRequestLiveCounselor();
+    handleRequestLiveCounselorRef.current = handleRequestLiveCounselor;
+  });
+
+  useEffect(() => {
+    const handleHeaderRequest = () => handleRequestLiveCounselorRef.current();
     window.addEventListener('code4care:request-takeover', handleHeaderRequest);
     return () => window.removeEventListener('code4care:request-takeover', handleHeaderRequest);
-  });
+  }, []);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('code4care:takeover-status', {

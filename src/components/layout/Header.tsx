@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 interface HeaderProps {
   onMenuClick: () => void;
   onPanicClick: () => void;
+  onNavigateToChat?: () => void;
   consultantPhoneNumber?: string; // Optional prop if passed from parent
 }
 
@@ -16,6 +17,7 @@ const DEFAULT_CONSULTANT_PHONE = "+233501661660"; // Replace with your actual he
 export const Header: React.FC<HeaderProps> = ({
   onMenuClick,
   onPanicClick,
+  onNavigateToChat,
   consultantPhoneNumber = DEFAULT_CONSULTANT_PHONE
 }) => {
   const { t } = useTranslation();
@@ -38,8 +40,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleStartChatWithConsultant = () => {
     setShowConsultantModal(false);
+    onNavigateToChat?.();
     if (takeoverStatus !== "live") {
-      window.dispatchEvent(new Event('code4care:request-takeover'));
+      setTimeout(() => {
+        window.dispatchEvent(new Event('code4care:request-takeover'));
+      }, 50);
     }
   };
 

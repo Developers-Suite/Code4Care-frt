@@ -1,11 +1,11 @@
 // Safe localStorage operations with error handling and logging
 
+const isSensitiveKey = (key: string) => /token|auth|secret|password|jwt/i.test(key);
+
 export const safeStorage = {
   getItem: (key: string, defaultValue: string | null = null): string | null => {
     try {
-      console.log(`💾 [STORAGE] Getting item: ${key}`);
       const value = localStorage.getItem(key);
-      console.log(`✅ [STORAGE] Retrieved: ${key} =`, value ? `"${value.substring(0, 50)}..."` : 'null');
       return value;
     } catch (error) {
       console.error(`🔴 [STORAGE] Error getting item "${key}":`, error);
@@ -15,9 +15,7 @@ export const safeStorage = {
 
   setItem: (key: string, value: string): boolean => {
     try {
-      console.log(`💾 [STORAGE] Setting item: ${key} =`, value ? `"${value.substring(0, 50)}..."` : 'null');
       localStorage.setItem(key, value);
-      console.log(`✅ [STORAGE] Successfully saved: ${key}`);
       return true;
     } catch (error) {
       console.error(`🔴 [STORAGE] Error setting item "${key}":`, error);

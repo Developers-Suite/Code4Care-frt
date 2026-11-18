@@ -473,6 +473,7 @@ function AppContent() {
         <Header 
           onMenuClick={() => setSidebarOpen(true)}
           onPanicClick={handlePanicClick}
+          onNavigateToChat={() => setCurrentSection("chat")}
         />
 
         <main className="relative flex-1 min-w-0 overflow-hidden">

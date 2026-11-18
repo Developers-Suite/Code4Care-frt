@@ -44,7 +44,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,json}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/code4care-backend-production\.up\.railway\.app\//,
+            urlPattern: /^https:\/\/code4care-backend-production\.up\.railway\.app\/(?:health|v1\/suggestions)/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-runtime-cache',
@@ -77,6 +77,9 @@ export default defineConfig({
   server: {
     port: 8080,
     open: false,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       '/v1': {
         target: 'https://api.lydiacallcenter.org',
