@@ -88,7 +88,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
   return (
     <div className="flex h-[100dvh] lg:h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar: docked from lg up */}
-      <aside className="hidden lg:block w-[260px] flex-shrink-0 border-r border-[#E8ECFF] bg-white overflow-y-auto">
+      <aside className="hidden md:block w-[260px] flex-shrink-0 border-r border-[#E8ECFF] bg-white overflow-y-auto">
         <AdminSidebar
           currentSection={currentSection}
           setCurrentSection={setCurrentSection}
@@ -101,7 +101,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
       {/* Sidebar: drawer on tablet and mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 z-50 md:hidden">
             <motion.div
               className="absolute inset-0 bg-gray-900/40"
               initial={{ opacity: 0 }}
@@ -140,13 +140,13 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Button
               variant="ghost"
-              size="icon"
-              className="lg:hidden -ml-1 flex-shrink-0 text-gray-600 hover:text-gray-900"
+              className="md:hidden -ml-1 h-9 flex-shrink-0 gap-1.5 px-2 text-gray-600 hover:text-gray-900"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Open navigation"
               title="Open navigation"
             >
               <Menu className="w-5 h-5" />
+              <span className="text-xs font-semibold">Menu</span>
             </Button>
             <span className="text-sm font-semibold text-gray-800 capitalize truncate">
               {currentSection.replace('-', ' ')}
