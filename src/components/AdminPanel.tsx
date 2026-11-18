@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, ShieldAlert, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { NotificationPopover } from './NotificationPopover';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
@@ -10,6 +10,9 @@ import { ConversationsPage } from './admin/ConversationsPage';
 import { SafetyCrisisPage } from './admin/SafetyCrisisPage';
 import { AdminAuditPage } from './admin/AdminAuditPage';
 import { AdminManagementPage } from './admin/AdminManagementPage';
+import { SupportCounselorDashboard } from './ConsultantDashboard';
+import { CommandPalette } from './admin/CommandPalette';
+import { canAccessSection, getDefaultSectionForRole } from '@/utils/rbac';
 import { StaffSession } from '@/services/staffAccessService';
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
@@ -24,9 +27,11 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelProps) {
-  const [currentSection, setCurrentSection] = useState<AdminSection>('overview');
+  const defaultSection: AdminSection = getDefaultSectionForRole(session.role);
+  const [currentSection, setCurrentSection] = useState<AdminSection>(defaultSection);
   const [waitingRequests, setWaitingRequests] = useState<SupportRequestListItem[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,7 +62,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
 
   const { permission, requestPermission } = useQueueNotifications({
     waitingRequests,
-    onSelectRequest: () => setCurrentSection('conversations'),
+    onSelectRequest: () => setCurrentSection(session.role === 'consultant' ? 'counselor-queue' : 'conversations'),
   });
 
   // Align the header badge and bell with the conversation log. New-request alerts keep using the
@@ -65,36 +70,68 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
   const liveWaitingRequests = useLiveWaitingRequests(waitingRequests, session.accessToken);
 
   useEffect(() => {
-    if (!isSidebarOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSidebarOpen(false);
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false);
+        setIsCommandPaletteOpen(false);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isSidebarOpen]);
+  }, []);
 
   const renderContent = () => {
+    if (!canAccessSection(session.role, currentSection)) {
+      return (
+        <div className="p-8 max-w-md mx-auto my-16 text-center bg-white rounded-2xl border border-rose-200 shadow-sm space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Access Restricted</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Your account role (<strong className="capitalize">{session.role}</strong>) does not have permission to view this section.
+            </p>
+          </div>
+          <Button
+            onClick={() => setCurrentSection(defaultSection)}
+            className="bg-[#BE322D] hover:bg-[#9F2622] text-white"
+          >
+            Return to Authorized Dashboard
+          </Button>
+        </div>
+      );
+    }
+
     switch (currentSection) {
-      case 'overview':      return <OverviewPage session={session} />;
-      case 'users':         return <UsersSessionsPage session={session} />;
-      case 'conversations': return <ConversationsPage session={session} />;
-      case 'safety':        return <SafetyCrisisPage session={session} />;
-      case 'audit':         return <AdminAuditPage session={session} />;
-      case 'admin-accounts':return <AdminManagementPage session={session} />;
-      default:              return <OverviewPage session={session} />;
+      case 'overview':         return <OverviewPage session={session} />;
+      case 'counselor-queue':  return <SupportCounselorDashboard session={session} onLogout={onLogout} embedded />;
+      case 'users':            return <UsersSessionsPage session={session} />;
+      case 'conversations':    return <ConversationsPage session={session} />;
+      case 'safety':           return <SafetyCrisisPage session={session} />;
+      case 'audit':            return <AdminAuditPage session={session} />;
+      case 'admin-accounts':   return <AdminManagementPage session={session} />;
+      default:                 return session.role === 'consultant'
+                                 ? <SupportCounselorDashboard session={session} onLogout={onLogout} embedded />
+                                 : <OverviewPage session={session} />;
     }
   };
 
   return (
     <div className="flex h-[100dvh] lg:h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar: docked from lg up */}
-      <aside className="hidden md:block w-[260px] flex-shrink-0 border-r border-[#E8ECFF] bg-white overflow-y-auto">
+      {/* Sidebar: docked from md up */}
+      <aside className="hidden md:flex flex-col h-full w-[260px] flex-shrink-0 border-r border-[#E8ECFF] bg-white">
         <AdminSidebar
           currentSection={currentSection}
           setCurrentSection={setCurrentSection}
           onLogout={onLogout}
           isMobile={false}
           role={session.role}
+          waitingCount={liveWaitingRequests.length}
         />
       </aside>
 
@@ -114,7 +151,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
               role="dialog"
               aria-modal="true"
               aria-label="Dashboard navigation"
-              className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col bg-white border-r border-[#E8ECFF] shadow-2xl"
+              className="absolute inset-y-0 left-0 flex h-full w-[280px] max-w-[85vw] flex-col bg-white border-r border-[#E8ECFF] shadow-2xl"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
@@ -127,6 +164,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
                 isMobile
                 onClose={() => setIsSidebarOpen(false)}
                 role={session.role}
+                waitingCount={liveWaitingRequests.length}
               />
             </motion.aside>
           </div>
@@ -139,13 +177,14 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
         <header className="h-14 border-b border-[#E8ECFF] bg-white px-3 sm:px-6 flex items-center justify-between gap-2 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Button
-              variant="ghost"
-              className="md:hidden -ml-1 h-9 flex-shrink-0 gap-1.5 px-2 text-gray-600 hover:text-gray-900"
+              variant="outline"
+              size="sm"
+              className="md:hidden h-9 flex-shrink-0 gap-1.5 px-2.5 text-gray-700 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 shadow-xs"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Open navigation"
               title="Open navigation"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4 text-gray-700" />
               <span className="text-xs font-semibold">Menu</span>
             </Button>
             <span className="text-sm font-semibold text-gray-800 capitalize truncate">
@@ -154,7 +193,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
             {liveWaitingRequests.length > 0 && (
               <button
                 type="button"
-                onClick={() => setCurrentSection('conversations')}
+                onClick={() => setCurrentSection(session.role === 'consultant' ? 'counselor-queue' : 'conversations')}
                 className="cursor-pointer inline-flex flex-shrink-0 items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors animate-pulse whitespace-nowrap"
                 title={`${liveWaitingRequests.length} waiting in queue - click to view`}
               >
@@ -166,9 +205,23 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2 h-9 px-3 text-xs text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+              title="Search sections and actions (Ctrl+K)"
+            >
+              <Search className="w-3.5 h-3.5 text-gray-400" />
+              <span>Search...</span>
+              <kbd className="text-[10px] font-semibold bg-white border border-gray-200 px-1 py-0.5 rounded text-gray-400">
+                ⌘K
+              </kbd>
+            </Button>
+
             <NotificationPopover
               notifications={liveWaitingRequests}
-              onSelectNotification={() => setCurrentSection('conversations')}
+              onSelectNotification={() => setCurrentSection(session.role === 'consultant' ? 'counselor-queue' : 'conversations')}
               onRequestPermission={requestPermission}
               permissionGranted={permission === 'granted'}
             />
@@ -195,6 +248,15 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
           </motion.div>
         </div>
       </div>
+
+      {/* Global Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={setCurrentSection}
+        onLogout={onLogout}
+        role={session.role}
+      />
     </div>
   );
 }

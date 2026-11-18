@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
+import { safeStorage } from '@/utils/safeStorage';
 import {
   LogOut,
   UserCog,
@@ -65,6 +67,30 @@ export const UserAvatarProfile: React.FC<UserAvatarProfileProps> = ({
   const roleColor = getRoleBadgeColor(session.role);
   const isAdmin = session.role === 'admin';
 
+  const [availability, setAvailability] = useState<'available' | 'busy' | 'away' | 'offline'>(() => {
+    return (safeStorage.getItem(`staff_avail_${session.staffId}`) as any) || 'available';
+  });
+
+  const statusColors = {
+    available: 'bg-emerald-500',
+    busy: 'bg-blue-500',
+    away: 'bg-amber-500',
+    offline: 'bg-gray-400',
+  };
+
+  const statusLabels = {
+    available: 'Available',
+    busy: 'In Consultation',
+    away: 'On Break',
+    offline: 'Offline',
+  };
+
+  const handleStatusChange = (status: 'available' | 'busy' | 'away' | 'offline') => {
+    setAvailability(status);
+    safeStorage.setItem(`staff_avail_${session.staffId}`, status);
+    toast.success(`Work status set to: ${statusLabels[status]}`);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -81,8 +107,8 @@ export const UserAvatarProfile: React.FC<UserAvatarProfileProps> = ({
               </AvatarFallback>
             </Avatar>
             <span
-              className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"
-              title="Online"
+              className={`absolute bottom-0 right-0 w-2.5 h-2.5 ${statusColors[availability]} border-2 border-white rounded-full`}
+              title={statusLabels[availability]}
             />
           </div>
 
@@ -124,14 +150,40 @@ export const UserAvatarProfile: React.FC<UserAvatarProfileProps> = ({
                   <Shield className="w-2.5 h-2.5 mr-1" />
                   {session.role}
                 </Badge>
-                <span className="inline-flex items-center text-[10px] text-emerald-600 font-medium gap-0.5">
-                  <CheckCircle2 className="w-2.5 h-2.5" />
-                  Active
+                <span className="inline-flex items-center text-[10px] text-gray-600 font-medium gap-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusColors[availability]}`} />
+                  {statusLabels[availability]}
                 </span>
               </div>
             </div>
           </div>
         </DropdownMenuLabel>
+
+        <DropdownMenuSeparator className="my-1.5" />
+
+        {/* Availability Switcher */}
+        <div className="px-2 py-1.5 bg-gray-50/80 rounded-lg mx-1 my-1 border border-gray-100">
+          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 px-1">
+            Work Status
+          </p>
+          <div className="grid grid-cols-2 gap-1">
+            {(['available', 'busy', 'away', 'offline'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleStatusChange(s)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
+                  availability === s
+                    ? 'bg-white shadow-xs font-semibold text-gray-900 border border-gray-200'
+                    : 'text-gray-600 hover:bg-white/60 hover:text-gray-800'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${statusColors[s]}`} />
+                <span className="truncate">{statusLabels[s]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <DropdownMenuSeparator className="my-1.5" />
 

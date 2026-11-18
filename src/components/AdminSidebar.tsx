@@ -7,14 +7,17 @@ import {
   LogOut,
   X,
   UserCog,
+  Headphones,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { motion } from 'motion/react';
+import { canAccessSection } from '@/utils/rbac';
 
 export type AdminSection =
   | 'overview'
+  | 'counselor-queue'
   | 'users'
   | 'conversations'
   | 'safety'
@@ -28,6 +31,8 @@ interface AdminSidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
   role?: string;
+  waitingCount?: number;
+  safetyCount?: number;
 }
 
 const navigationItems: {
@@ -35,13 +40,15 @@ const navigationItems: {
   label: string;
   icon: React.ElementType;
   desc: string;
+  roles?: string[];
 }[] = [
   { id: 'overview',        label: 'Overview',          icon: LayoutDashboard, desc: 'Executive summary & KPIs' },
-  { id: 'users',           label: 'Users & Sessions',  icon: Users,           desc: 'Demographics & retention' },
+  { id: 'counselor-queue', label: 'Support Queue',     icon: Headphones,      desc: 'Live takeover queue' },
+  { id: 'users',           label: 'Users & Sessions',  icon: Users,           desc: 'Demographics & retention', roles: ['admin', 'supervisor'] },
   { id: 'conversations',   label: 'Conversations',     icon: MessageSquare,   desc: 'Chat volume & topics' },
   { id: 'safety',          label: 'Safety & Crisis',   icon: AlertTriangle,   desc: 'Crisis & escalations' },
-  { id: 'audit',           label: 'Admin & Audit',     icon: Shield,          desc: 'Reports & audit log' },
-  { id: 'admin-accounts',  label: 'Admin Accounts',    icon: UserCog,         desc: 'Manage staff access' },
+  { id: 'audit',           label: 'Admin & Audit',     icon: Shield,          desc: 'Reports & audit log', roles: ['admin', 'supervisor'] },
+  { id: 'admin-accounts',  label: 'Admin Accounts',    icon: UserCog,         desc: 'Manage staff access', roles: ['admin'] },
 ];
 
 export function AdminSidebar({
@@ -51,23 +58,27 @@ export function AdminSidebar({
   isMobile = false,
   onClose,
   role,
+  waitingCount = 0,
+  safetyCount = 0,
 }: AdminSidebarProps) {
-  const isAdmin = role === 'admin';
+  const userRole = role || 'admin';
   const visibleItems = navigationItems.filter(
-    (item) => item.id !== 'admin-accounts' || isAdmin,
+    (item) => canAccessSection(userRole, item.id),
   );
   return (
-    <div className="flex flex-col h-full bg-white text-gray-900">
+    <div className="flex flex-col h-full bg-white text-gray-900 select-none">
       {/* Header */}
-      <div className="p-5 border-b border-[#E8ECFF]">
+      <div className="p-5 border-b border-[#E8ECFF] flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#BE322D] to-[#F16365] flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#BE322D] to-[#F16365] flex items-center justify-center flex-shrink-0 shadow-sm">
               <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="font-bold text-base leading-tight text-gray-900">Lydia Contact Center</h2>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Admin Panel</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                {role === 'consultant' ? 'Consultant Portal' : 'Admin Panel'}
+              </p>
             </div>
           </div>
           {isMobile && onClose && (
@@ -79,10 +90,10 @@ export function AdminSidebar({
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-0.5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 pt-2 pb-3">
-            Analytics
+            Navigation
           </p>
 
           {visibleItems.map((item) => {
@@ -97,7 +108,7 @@ export function AdminSidebar({
                 }}
                 whileHover={{ x: 3 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full group rounded-lg px-3 py-2.5 transition-all duration-150 ${
+                className={`w-full group rounded-lg px-3 py-2.5 transition-all duration-150 text-left ${
                   isActive
                     ? 'bg-[#FFF1F1] border border-[#F4D6D5]'
                     : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
@@ -117,6 +128,16 @@ export function AdminSidebar({
                       {item.desc}
                     </div>
                   </div>
+                  {item.id === 'counselor-queue' && waitingCount > 0 && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse flex-shrink-0">
+                      {waitingCount}
+                    </span>
+                  )}
+                  {item.id === 'safety' && safetyCount > 0 && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 flex-shrink-0">
+                      {safetyCount}
+                    </span>
+                  )}
                   {isActive && (
                     <motion.div
                       layoutId="active-dot"
@@ -130,9 +151,9 @@ export function AdminSidebar({
         </div>
       </ScrollArea>
 
-      <Separator className="bg-[#F4D6D5]" />
+      <Separator className="bg-[#F4D6D5] flex-shrink-0" />
 
-      <div className="p-3">
+      <div className="p-3 flex-shrink-0">
         <Button
           onClick={onLogout}
           variant="ghost"

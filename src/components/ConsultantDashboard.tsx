@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
 import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Headphones } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -19,6 +20,7 @@ import { UserAvatarProfile } from './admin/UserAvatarProfile';
 interface SupportCounselorDashboardProps {
   session: StaffSession;
   onLogout: () => void;
+  embedded?: boolean;
 }
 
 function formatDateTime(iso: string) {
@@ -34,7 +36,7 @@ function formatDateTime(iso: string) {
   });
 }
 
-export function SupportCounselorDashboard({ session, onLogout }: SupportCounselorDashboardProps) {
+export function SupportCounselorDashboard({ session, onLogout, embedded = false }: SupportCounselorDashboardProps) {
   const [supportRequests, setSupportRequests] = useState<SupportRequestListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -118,23 +120,45 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
     }
   };
 
-  const resolveRequest = async (requestId: string) => {
+  const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null);
+  const [resolutionOutcome, setResolutionOutcome] = useState('Information & Counseling Provided');
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [isSubmittingResolution, setIsSubmittingResolution] = useState(false);
+
+  const openResolveModal = (requestId: string) => {
+    setResolvingRequestId(requestId);
+    setResolutionOutcome('Information & Counseling Provided');
+    setResolutionNotes('');
+  };
+
+  const handleConfirmResolve = async () => {
+    if (!resolvingRequestId) return;
+    setIsSubmittingResolution(true);
     try {
+      const fullNotes = resolutionNotes.trim()
+        ? `[${resolutionOutcome}] ${resolutionNotes.trim()}`
+        : `[${resolutionOutcome}] Resolved by counselor`;
+
       await SupportRequestService.resolveSupportRequest(
-        requestId,
+        resolvingRequestId,
         {
-          resolution_notes: 'Session resolved by consultant',
-          follow_up_required: false,
+          resolution_notes: fullNotes,
+          follow_up_required: resolutionOutcome === 'Follow-up Required',
         },
         session.accessToken || session.user?.id
       );
       const updated = supportRequests.map((r) => {
-        if (r.id !== requestId) return r;
+        if (r.id !== resolvingRequestId) return r;
         return { ...r, status: 'resolved' as const };
       });
       setSupportRequests(updated);
+      toast.success('Case resolved and handover notes recorded');
+      setResolvingRequestId(null);
     } catch (error) {
       logger.error('Failed to resolve request', error);
+      toast.error('Failed to save resolution notes');
+    } finally {
+      setIsSubmittingResolution(false);
     }
   };
 
@@ -151,29 +175,36 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
   ];
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className={embedded ? "p-4 sm:p-6" : "min-h-screen bg-white p-6"}>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-start justify-between flex-wrap gap-3">
+        {!embedded ? (
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Support Consultant Dashboard</h1>
+              <p className="text-gray-500 mt-1">Welcome, {session.name}. Manage support queue and active conversations.</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <NotificationPopover
+                notifications={waitingRequests}
+                onSelectNotification={(requestId) => claimRequest(requestId)}
+                onRequestPermission={requestPermission}
+                permissionGranted={permission === 'granted'}
+              />
+
+              <div className="h-5 w-px bg-gray-200 mx-1" />
+
+              <UserAvatarProfile
+                session={session}
+                onLogout={onLogout}
+              />
+            </div>
+          </div>
+        ) : (
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Support Consultant Dashboard</h1>
-            <p className="text-gray-500 mt-1">Welcome, {session.name}. Manage support queue and active conversations.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Support Consultant Queue</h1>
+            <p className="text-gray-500 text-sm mt-1">Welcome, {session.name}. Manage live support queue and active conversations.</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <NotificationPopover
-              notifications={waitingRequests}
-              onSelectNotification={(requestId) => claimRequest(requestId)}
-              onRequestPermission={requestPermission}
-              permissionGranted={permission === 'granted'}
-            />
-
-            <div className="h-5 w-px bg-gray-200 mx-1" />
-
-            <UserAvatarProfile
-              session={session}
-              onLogout={onLogout}
-            />
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4">
           {consultantStats.map((stat, idx) => {
@@ -271,8 +302,13 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
                       Active • Duration {request.duration_minutes != null ? `${request.duration_minutes} min` : '—'}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50" onClick={() => resolveRequest(request.id)}>
-                    <CheckCircle2 className="w-4 h-4" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    onClick={() => openResolveModal(request.id)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     Resolve
                   </Button>
                 </div>
@@ -281,6 +317,74 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
           </Card>
         </div>
       </div>
+
+      {/* Case Resolution & Handover Modal */}
+      {resolvingRequestId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#E8ECFF] p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">Resolve & Handover Case</h3>
+              <button
+                type="button"
+                onClick={() => setResolvingRequestId(null)}
+                className="text-gray-400 hover:text-gray-600 text-sm font-semibold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Resolution Outcome
+                </label>
+                <select
+                  value={resolutionOutcome}
+                  onChange={(e) => setResolutionOutcome(e.target.value)}
+                  className="w-full text-xs h-9 rounded-lg border border-gray-200 px-2.5 bg-white text-gray-800 focus:outline-none focus:border-[#BE322D]"
+                >
+                  <option value="Information & Counseling Provided">Information & Counseling Provided</option>
+                  <option value="Referred to PPAG Clinic">Referred to PPAG Clinic</option>
+                  <option value="Emergency / Crisis Hotline Shared">Emergency / Crisis Hotline Shared</option>
+                  <option value="Follow-up Required">Follow-up Required</option>
+                  <option value="User Inactive / Disconnected">User Inactive / Disconnected</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Handover / Clinical Notes (Internal)
+                </label>
+                <textarea
+                  value={resolutionNotes}
+                  onChange={(e) => setResolutionNotes(e.target.value)}
+                  placeholder="Enter summary notes for medical audit and supervisor review..."
+                  className="w-full text-xs h-20 rounded-lg border border-gray-200 p-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#BE322D] resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setResolvingRequestId(null)}
+                disabled={isSubmittingResolution}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmResolve}
+                disabled={isSubmittingResolution}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
+              >
+                {isSubmittingResolution ? 'Saving...' : 'Confirm & Close Case'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

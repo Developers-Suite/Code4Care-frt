@@ -4,7 +4,6 @@ import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPanel } from "./components/AdminPanel";
 import { AdminDashboardLogin } from "./components/AdminDashboardLogin";
-import { SupportCounselorDashboard } from "./components/ConsultantDashboard";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { StaffAccessService, StaffSession } from "./services/staffAccessService";
 
@@ -56,15 +55,6 @@ function AdminDashboardAppContent() {
 
   if (!session) {
     return <AdminDashboardLogin onAdminLogin={handleAdminLogin} />;
-  }
-
-  if (session.role === 'consultant') {
-    return (
-      <>
-        <Toaster position="top-center" toastOptions={{ className: 'rounded-2xl' }} />
-        <SupportCounselorDashboard session={session} onLogout={handleAdminLogout} />
-      </>
-    );
   }
 
   return (
