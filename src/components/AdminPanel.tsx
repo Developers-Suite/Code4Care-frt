@@ -32,6 +32,15 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
   const [waitingRequests, setWaitingRequests] = useState<SupportRequestListItem[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -123,22 +132,24 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
 
   return (
     <div className="flex h-[100dvh] lg:h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar: docked from md up */}
-      <aside className="hidden md:flex flex-col h-full w-[260px] flex-shrink-0 border-r border-[#E8ECFF] bg-white">
-        <AdminSidebar
-          currentSection={currentSection}
-          setCurrentSection={setCurrentSection}
-          onLogout={onLogout}
-          isMobile={false}
-          role={session.role}
-          waitingCount={liveWaitingRequests.length}
-        />
-      </aside>
+      {/* Docked Sidebar (Desktop & Tablet >= 768px) */}
+      {!isMobile && (
+        <aside className="w-[260px] flex flex-col h-full flex-shrink-0 border-r border-[#E8ECFF] bg-white">
+          <AdminSidebar
+            currentSection={currentSection}
+            setCurrentSection={setCurrentSection}
+            onLogout={onLogout}
+            isMobile={false}
+            role={session.role}
+            waitingCount={liveWaitingRequests.length}
+          />
+        </aside>
+      )}
 
-      {/* Sidebar: drawer on tablet and mobile */}
+      {/* Slide-over Drawer (Mobile < 768px) */}
       <AnimatePresence>
-        {isSidebarOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+        {isMobile && isSidebarOpen && (
+          <div className="fixed inset-0 z-50">
             <motion.div
               className="absolute inset-0 bg-gray-900/40"
               initial={{ opacity: 0 }}
@@ -176,17 +187,19 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
         {/* Top Notification & Status Bar */}
         <header className="h-14 border-b border-[#E8ECFF] bg-white px-3 sm:px-6 flex items-center justify-between gap-2 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="md:hidden h-9 flex-shrink-0 gap-1.5 px-2.5 text-gray-700 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 shadow-xs"
-              onClick={() => setIsSidebarOpen(true)}
-              aria-label="Open navigation"
-              title="Open navigation"
-            >
-              <Menu className="w-4 h-4 text-gray-700" />
-              <span className="text-xs font-semibold">Menu</span>
-            </Button>
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 flex-shrink-0 gap-1.5 px-2.5 text-gray-700 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-gray-900 shadow-xs cursor-pointer"
+                onClick={() => setIsSidebarOpen(true)}
+                aria-label="Open navigation"
+                title="Open navigation"
+              >
+                <Menu className="w-4 h-4 text-gray-700" />
+                <span className="text-xs font-semibold">Menu</span>
+              </Button>
+            )}
             <span className="text-sm font-semibold text-gray-800 capitalize truncate">
               {currentSection.replace('-', ' ')}
             </span>

@@ -441,28 +441,32 @@ function AppContent() {
         onDismiss={handleDismiss}
       />
       
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[280px] flex-shrink-0">
-        <Sidebar 
-          currentSection={currentSection} 
-          setCurrentSection={setCurrentSection}
-          onClearChat={() => setShowClearDialog(true)}
-          onLogout={() => setShowLogoutDialog(true)}
-        />
-      </aside>
-
-      {/* Mobile Sidebar (Sheet) */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-[86vw] max-w-[300px] sm:w-[300px]">
+      {/* Desktop Sidebar (>= 768px) */}
+      {!isMobile && (
+        <aside className="flex flex-col w-[280px] flex-shrink-0">
           <Sidebar 
             currentSection={currentSection} 
             setCurrentSection={setCurrentSection}
-            onClose={() => setSidebarOpen(false)}
             onClearChat={() => setShowClearDialog(true)}
             onLogout={() => setShowLogoutDialog(true)}
           />
-        </SheetContent>
-      </Sheet>
+        </aside>
+      )}
+
+      {/* Mobile Sidebar (Sheet < 768px) */}
+      {isMobile && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-[86vw] max-w-[300px] sm:w-[300px]">
+            <Sidebar 
+              currentSection={currentSection} 
+              setCurrentSection={setCurrentSection}
+              onClose={() => setSidebarOpen(false)}
+              onClearChat={() => setShowClearDialog(true)}
+              onLogout={() => setShowLogoutDialog(true)}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Main Content */}
       <div className="flex min-w-0 flex-col flex-1 h-dvh min-h-dvh overflow-hidden">

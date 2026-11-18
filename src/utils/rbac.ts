@@ -72,22 +72,33 @@ const SECTION_REQUIRED_PERMISSIONS: Record<AdminSection, Permission> = {
   'admin-accounts': 'MANAGE_STAFF',
 };
 
+export function normalizeRole(role?: string): StaffRole {
+  if (!role) return 'admin';
+  const clean = role.trim().toLowerCase();
+  if (clean === 'counselor') return 'consultant';
+  if (clean === 'admin' || clean === 'supervisor' || clean === 'consultant' || clean === 'coordinator' || clean === 'viewer') {
+    return clean as StaffRole;
+  }
+  return 'admin';
+}
+
 export function hasPermission(role?: StaffRole | string, permission?: Permission): boolean {
-  if (!role || !permission) return false;
-  const permissions = ROLE_PERMISSIONS[role as StaffRole];
-  if (!permissions) return false;
+  if (!permission) return true;
+  const normalized = normalizeRole(role);
+  const permissions = ROLE_PERMISSIONS[normalized] || ROLE_PERMISSIONS.admin;
   return permissions.includes(permission);
 }
 
 export function canAccessSection(role?: StaffRole | string, section?: AdminSection): boolean {
-  if (!role || !section) return false;
+  if (!section) return true;
   const required = SECTION_REQUIRED_PERMISSIONS[section];
   if (!required) return true;
   return hasPermission(role, required);
 }
 
 export function getDefaultSectionForRole(role?: StaffRole | string): AdminSection {
-  switch (role) {
+  const normalized = normalizeRole(role);
+  switch (normalized) {
     case 'consultant':
       return 'counselor-queue';
     case 'supervisor':
