@@ -1,12 +1,9 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, AlertCircle, ChevronLeft, ChevronRight, X, Bot, User, ShieldAlert, Send, Radio, Headphones, Clock } from 'lucide-react';
+import { MessageSquare, AlertCircle, ChevronLeft, ChevronRight, X, Bot, User, ShieldAlert, Send, Radio, Headphones } from 'lucide-react';
 import { ExportButton } from './ExportButton';
 import {
   StaffAccessService,
@@ -20,8 +17,6 @@ import { getNumber } from '@/utils/analyticsUtils';
 import { logger } from '@/utils/logger';
 
 type Period = 'today' | 'week' | 'month' | 'year' | 'all';
-
-const TOPIC_COLORS = ['#006d77', '#BE322D', '#F59E0B', '#8b5cf6', '#22c55e', '#ec4899', '#0ea5e9', '#f97316'];
 
 function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`bg-gray-100 animate-pulse rounded ${className}`} />;
@@ -74,7 +69,7 @@ function formatSessionDisplay(sessionId: string): string {
 
 interface ConversationDetailPanelProps {
   conv: AdminConversationListItem;
-  accessToken: string;
+  accessToken?: string;
   onClose: () => void;
   onTakeoverSuccess?: (convId: string) => void;
   onReleaseSuccess?: (convId: string) => void;
@@ -433,9 +428,11 @@ function ConversationDetailPanel({
 
 interface ConversationsPageProps {
   session: StaffSession;
+  targetConversationTarget?: { sessionId?: string; convId?: string } | null;
+  onClearTarget?: () => void;
 }
 
-export function ConversationsPage({ session }: ConversationsPageProps) {
+export function ConversationsPage({ session, targetConversationTarget, onClearTarget }: ConversationsPageProps) {
   const [period, setPeriod] = useState<Period>('week');
   const [analytics, setAnalytics] = useState<any>(null);
   const [convs, setConvs] = useState<AdminConversationListItem[]>([]);
@@ -508,6 +505,66 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
     return () => clearInterval(interval);
   }, [fetchAnalytics]);
 
+  // Automatically open target conversation when triggered from support queue or notifications
+  useEffect(() => {
+    if (!targetConversationTarget) return;
+
+    let isMounted = true;
+    const matchAndOpen = async () => {
+      const { convId, sessionId } = targetConversationTarget;
+
+      // 1. Check existing loaded convs
+      const inList = convs.find(
+        (c) => (convId && c.id === convId) || (sessionId && (c.session_id === sessionId || c.id === sessionId))
+      );
+
+      if (inList) {
+        setSelectedConv(inList);
+        return;
+      }
+
+      // 2. Query conversations API specifically
+      try {
+        const response = await StaffAccessService.listConversations(
+          { page: 1, page_size: 50 },
+          session.accessToken,
+        );
+
+        if (!isMounted) return;
+
+        const matched = (response.conversations ?? []).find(
+          (c) => (convId && c.id === convId) || (sessionId && (c.session_id === sessionId || c.id === sessionId))
+        );
+
+        if (matched) {
+          setSelectedConv(matched);
+        } else if (convId || sessionId) {
+          const directId = convId || sessionId || '';
+          setSelectedConv({
+            id: directId,
+            session_id: sessionId || directId,
+            user_nickname: 'User',
+            platform: 'whatsapp',
+            language: 'en',
+            message_count: 1,
+            created_at: new Date().toISOString(),
+            last_active_at: new Date().toISOString(),
+            is_escalated: true,
+            has_safety_flags: false,
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to auto-open target conversation', err);
+      }
+    };
+
+    void matchAndOpen();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [targetConversationTarget, convs, session.accessToken]);
+
   const handleTakeoverSuccess = (convId: string) => {
     setConvs((prev) =>
       prev.map((c) =>
@@ -534,20 +591,10 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
 
   const totalPages = Math.ceil(total / pageSize);
 
-  const topicData = useMemo(() => {
-    const topics = analytics?.engagement?.topics ?? analytics?.engagement?.topicEngagement ?? [];
-    return (topics as any[])
-      .map((t: any) => ({ name: String(t.topic ?? '').replace(/_/g, ' '), value: Number(t.inquiries ?? t.count ?? 0) }))
-      .filter((t) => t.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 12);
-  }, [analytics]);
-
   const totalMessages = getNumber(analytics?.summary ?? {}, 'total_messages');
   const messagesInPeriod = getNumber(analytics?.summary ?? {}, 'messages_in_period');
   const convsInPeriod = getNumber(analytics?.summary ?? {}, 'conversations_in_period');
   const avgMsgPerConv = convsInPeriod > 0 ? Math.round(messagesInPeriod / convsInPeriod) : 0;
-  const avgResponseMs = getNumber(analytics?.performance ?? {}, 'avgResponseTime');
   const takeoverNeededCount = convs.filter((c) => c.is_escalated && !c.is_human_takeover).length;
   const periodLabel =
     period === 'today' ? 'Today' :
@@ -850,7 +897,10 @@ export function ConversationsPage({ session }: ConversationsPageProps) {
           key={selectedConv.id}
           conv={selectedConv}
           accessToken={session.accessToken}
-          onClose={() => setSelectedConv(null)}
+          onClose={() => {
+            setSelectedConv(null);
+            onClearTarget?.();
+          }}
           onTakeoverSuccess={handleTakeoverSuccess}
           onReleaseSuccess={handleReleaseSuccess}
         />

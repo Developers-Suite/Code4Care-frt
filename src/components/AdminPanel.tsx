@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Menu, ShieldAlert, Search } from 'lucide-react';
+import { Menu, ShieldAlert, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { NotificationPopover } from './NotificationPopover';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
@@ -26,7 +26,7 @@ interface AdminPanelProps {
   session: StaffSession;
 }
 
-export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelProps) {
+export function AdminPanel({ selectedLanguage: _selectedLanguage, onLogout, session }: AdminPanelProps) {
   const defaultSection: AdminSection = getDefaultSectionForRole(session.role);
   const [currentSection, setCurrentSection] = useState<AdminSection>(defaultSection);
   const [waitingRequests, setWaitingRequests] = useState<SupportRequestListItem[]>([]);
@@ -69,9 +69,19 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
     };
   }, [session.accessToken]);
 
+  const [conversationTarget, setConversationTarget] = useState<{ sessionId?: string; convId?: string } | null>(null);
+
+  const handleOpenConversation = (target: { sessionId?: string; convId?: string }) => {
+    setConversationTarget(target);
+    setCurrentSection('conversations');
+  };
+
   const { permission, requestPermission } = useQueueNotifications({
     waitingRequests,
-    onSelectRequest: () => setCurrentSection(session.role === 'consultant' ? 'counselor-queue' : 'conversations'),
+    onSelectRequest: (requestId) => {
+      const match = waitingRequests.find((r) => r.id === requestId);
+      handleOpenConversation({ sessionId: match?.session_id, convId: requestId });
+    },
   });
 
   // Align the header badge and bell with the conversation log. New-request alerts keep using the
@@ -118,14 +128,14 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
 
     switch (currentSection) {
       case 'overview':         return <OverviewPage session={session} />;
-      case 'counselor-queue':  return <SupportCounselorDashboard session={session} onLogout={onLogout} embedded />;
+      case 'counselor-queue':  return <SupportCounselorDashboard session={session} onLogout={onLogout} embedded onOpenConversation={handleOpenConversation} />;
       case 'users':            return <UsersSessionsPage session={session} />;
-      case 'conversations':    return <ConversationsPage session={session} />;
+      case 'conversations':    return <ConversationsPage session={session} targetConversationTarget={conversationTarget} onClearTarget={() => setConversationTarget(null)} />;
       case 'safety':           return <SafetyCrisisPage session={session} />;
       case 'audit':            return <AdminAuditPage session={session} />;
       case 'admin-accounts':   return <AdminManagementPage session={session} />;
       default:                 return session.role === 'consultant'
-                                 ? <SupportCounselorDashboard session={session} onLogout={onLogout} embedded />
+                                 ? <SupportCounselorDashboard session={session} onLogout={onLogout} embedded onOpenConversation={handleOpenConversation} />
                                  : <OverviewPage session={session} />;
     }
   };
@@ -234,7 +244,10 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
 
             <NotificationPopover
               notifications={liveWaitingRequests}
-              onSelectNotification={() => setCurrentSection(session.role === 'consultant' ? 'counselor-queue' : 'conversations')}
+              onSelectNotification={(requestId) => {
+                const match = liveWaitingRequests.find((r) => r.id === requestId);
+                handleOpenConversation({ sessionId: match?.session_id, convId: requestId });
+              }}
               onRequestPermission={requestPermission}
               permissionGranted={permission === 'granted'}
             />

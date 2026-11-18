@@ -1,16 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
-import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Headphones } from 'lucide-react';
+import { Activity, UserCheck, CheckCircle2, PhoneCall, Headphones, MessageSquare } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { NotificationPopover } from './NotificationPopover';
-import {
-  StaffAccessService,
-  StaffSession,
-} from '@/services/staffAccessService';
+import { StaffSession } from '@/services/staffAccessService';
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { logger } from '@/utils/logger';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
@@ -21,6 +18,7 @@ interface SupportCounselorDashboardProps {
   session: StaffSession;
   onLogout: () => void;
   embedded?: boolean;
+  onOpenConversation?: (target: { sessionId?: string; convId?: string }) => void;
 }
 
 function formatDateTime(iso: string) {
@@ -36,9 +34,14 @@ function formatDateTime(iso: string) {
   });
 }
 
-export function SupportCounselorDashboard({ session, onLogout, embedded = false }: SupportCounselorDashboardProps) {
+export function SupportCounselorDashboard({
+  session,
+  onLogout,
+  embedded = false,
+  onOpenConversation,
+}: SupportCounselorDashboardProps) {
   const [supportRequests, setSupportRequests] = useState<SupportRequestListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
 
   // Raw queue feeds alerts; what is displayed only keeps rows with a live escalated conversation.
   const rawWaitingRequests = useMemo(
@@ -49,6 +52,12 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
 
   const { permission, requestPermission } = useQueueNotifications({
     waitingRequests: rawWaitingRequests,
+    onSelectRequest: (requestId) => {
+      const match = rawWaitingRequests.find((r) => r.id === requestId);
+      if (onOpenConversation) {
+        onOpenConversation({ sessionId: match?.session_id, convId: requestId });
+      }
+    },
   });
 
   const myAssignedRequests = useMemo(
@@ -86,20 +95,44 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
     return () => clearInterval(interval);
   }, [session]);
 
-  const claimRequest = async (requestId: string) => {
+  const claimAndTakeover = async (request: SupportRequestListItem) => {
     try {
+      // 1. Assign support request to current consultant
       await SupportRequestService.assignSupportRequest(
-        requestId,
-        { staff_id: session.staffId, auto_start: false },
+        request.id,
+        { staff_id: session.staffId, auto_start: true },
         session.accessToken || session.user?.id
       );
+
+      // 2. Mark active
+      void SupportRequestService.updateSupportRequest(
+        request.id,
+        { status: 'active' },
+        session.accessToken || session.user?.id
+      ).catch(() => {});
+
+      // 3. Update local state
       const updated = supportRequests.map((r) => {
-        if (r.id !== requestId) return r;
-        return { ...r, status: 'assigned' as const, assigned_staff: { id: session.staffId, name: session.name } };
+        if (r.id !== request.id) return r;
+        return { ...r, status: 'active' as const, assigned_staff: { id: session.staffId, name: session.name } };
       });
       setSupportRequests(updated);
+
+      toast.success(`Took over chat for ${request.user_nickname || 'User'}`);
+
+      // 4. Immediately launch conversation chat panel!
+      if (onOpenConversation) {
+        onOpenConversation({ sessionId: request.session_id, convId: request.id });
+      }
     } catch (error) {
-      logger.error('Failed to claim request', error);
+      logger.error('Failed to claim and takeover request', error);
+      toast.error('Failed to claim request');
+    }
+  };
+
+  const openChatForRequest = (request: SupportRequestListItem) => {
+    if (onOpenConversation) {
+      onOpenConversation({ sessionId: request.session_id, convId: request.id });
     }
   };
 
@@ -186,7 +219,12 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
             <div className="flex items-center gap-2 flex-wrap">
               <NotificationPopover
                 notifications={waitingRequests}
-                onSelectNotification={(requestId) => claimRequest(requestId)}
+                onSelectNotification={(requestId) => {
+                  const req = rawWaitingRequests.find((r) => r.id === requestId);
+                  if (req) {
+                    void claimAndTakeover(req);
+                  }
+                }}
                 onRequestPermission={requestPermission}
                 permissionGranted={permission === 'granted'}
               />
@@ -262,7 +300,7 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
                     </div>
                     <p className="text-xs text-gray-500">Age {request.age_range || '—'} • Requested {formatDateTime(request.created_at)}</p>
                   </div>
-                  <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 flex-shrink-0" onClick={() => claimRequest(request.id)}>
+                  <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 flex-shrink-0 cursor-pointer" onClick={() => claimAndTakeover(request)}>
                     <Headphones className="w-3.5 h-3.5" />
                     Take Over
                   </Button>
@@ -287,10 +325,21 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
                     <p className="font-semibold text-gray-900">{request.user_nickname || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500">Assigned • requested {formatDateTime(request.created_at)}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-2 border-green-200 text-green-700 hover:bg-green-50" onClick={() => connectRequest(request.id)}>
-                    <PhoneCall className="w-4 h-4" />
-                    Connect
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 cursor-pointer"
+                      onClick={() => openChatForRequest(request)}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Chat
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 border-green-200 text-green-700 hover:bg-green-50 cursor-pointer" onClick={() => connectRequest(request.id)}>
+                      <PhoneCall className="w-4 h-4" />
+                      Connect
+                    </Button>
+                  </div>
                 </div>
               ))}
 
@@ -302,15 +351,26 @@ export function SupportCounselorDashboard({ session, onLogout, embedded = false 
                       Active • Duration {request.duration_minutes != null ? `${request.duration_minutes} min` : '—'}
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
-                    onClick={() => openResolveModal(request.id)}
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Resolve
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 cursor-pointer"
+                      onClick={() => openChatForRequest(request)}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Chat
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => openResolveModal(request.id)}
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Resolve
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
