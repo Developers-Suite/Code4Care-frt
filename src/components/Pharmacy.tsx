@@ -80,8 +80,8 @@ export function Pharmacy() {
   const [activeQuery, setActiveQuery] = useState("");
 
   const [activeTab, setActiveTab] = useState<
-    "healthcare" | "dkt" | "contacts"
-  >("healthcare");
+    "dkt" | "contacts"
+  >("dkt");
   const [contactSearch, setContactSearch] = useState("");
   const [expandedRegion, setExpandedRegion] = useState<string | null>(null);
 
