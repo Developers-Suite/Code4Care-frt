@@ -243,9 +243,8 @@ function ConversationDetailPanel({
               <p className="text-xs text-gray-400 font-mono mt-0.5">{formatSessionDisplay(conv.session_id)}</p>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {conv.platform && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                    conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
                     {conv.platform === 'whatsapp' ? 'WhatsApp' : 'Web'}
                   </span>
                 )}
@@ -513,45 +512,84 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
     const matchAndOpen = async () => {
       const { convId, sessionId } = targetConversationTarget;
 
-      // 1. Check existing loaded convs
-      const inList = convs.find(
-        (c) => (convId && c.id === convId) || (sessionId && (c.session_id === sessionId || c.id === sessionId))
-      );
+      // 1. If we have a real conversation id, fetch it directly
+      if (convId) {
+        // Check already-loaded list first (fast path)
+        const inList = convs.find((c) => c.id === convId);
+        if (inList) {
+          if (isMounted) setSelectedConv(inList);
+          return;
+        }
 
-      if (inList) {
-        setSelectedConv(inList);
-        return;
+        // Try fetching the conversation detail directly by id
+        try {
+          const detail = await StaffAccessService.getConversationDetail(convId, session.accessToken);
+          if (!isMounted) return;
+          // Build a minimal list-item from the detail to open the panel
+          setSelectedConv({
+            id: detail.id ?? convId,
+            session_id: detail.session_id ?? sessionId ?? convId,
+            platform: detail.platform,
+            language: detail.language ?? 'en',
+            message_count: detail.messages?.length ?? 1,
+            created_at: detail.created_at ?? new Date().toISOString(),
+            last_active_at: detail.last_active_at ?? new Date().toISOString(),
+            is_escalated: detail.is_escalated ?? true,
+            is_human_takeover: detail.is_human_takeover,
+            has_safety_flags: false,
+          });
+          return;
+        } catch {
+          // Fall through to session-based search below
+        }
       }
 
-      // 2. Query conversations API specifically
+      // 2. Search by session_id in already-loaded convs
+      if (sessionId) {
+        const inList = convs.find(
+          (c) => c.session_id === sessionId || c.id === sessionId
+        );
+        if (inList) {
+          if (isMounted) setSelectedConv(inList);
+          return;
+        }
+      }
+
+      // 3. Query the escalated conversations API filtered by is_escalated to find the match
       try {
         const response = await StaffAccessService.listConversations(
-          { page: 1, page_size: 50 },
+          { page: 1, page_size: 100, is_escalated: true },
           session.accessToken,
         );
 
         if (!isMounted) return;
 
         const matched = (response.conversations ?? []).find(
-          (c) => (convId && c.id === convId) || (sessionId && (c.session_id === sessionId || c.id === sessionId))
+          (c) =>
+            (convId && c.id === convId) ||
+            (sessionId && (c.session_id === sessionId || c.id === sessionId))
         );
 
         if (matched) {
           setSelectedConv(matched);
-        } else if (convId || sessionId) {
-          const directId = convId || sessionId || '';
-          setSelectedConv({
-            id: directId,
-            session_id: sessionId || directId,
-            user_nickname: 'User',
-            platform: 'whatsapp',
-            language: 'en',
-            message_count: 1,
-            created_at: new Date().toISOString(),
-            last_active_at: new Date().toISOString(),
-            is_escalated: true,
-            has_safety_flags: false,
-          });
+          return;
+        }
+
+        // 4. Also search all recent conversations (not just escalated)
+        const allRecent = await StaffAccessService.listConversations(
+          { page: 1, page_size: 100 },
+          session.accessToken,
+        );
+        if (!isMounted) return;
+
+        const matchedRecent = (allRecent.conversations ?? []).find(
+          (c) =>
+            (convId && c.id === convId) ||
+            (sessionId && (c.session_id === sessionId || c.id === sessionId))
+        );
+
+        if (matchedRecent) {
+          setSelectedConv(matchedRecent);
         }
       } catch (err) {
         logger.error('Failed to auto-open target conversation', err);
@@ -598,314 +636,309 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
   const takeoverNeededCount = convs.filter((c) => c.is_escalated && !c.is_human_takeover).length;
   const periodLabel =
     period === 'today' ? 'Today' :
-    period === 'week' ? 'This Week' :
-    period === 'month' ? 'This Month' :
-    period === 'year' ? 'This Year' : 'All Time';
+      period === 'week' ? 'This Week' :
+        period === 'month' ? 'This Month' :
+          period === 'year' ? 'This Year' : 'All Time';
 
   return (
     <>
-    <div className="min-h-screen bg-gray-50/50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gray-50/50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-end justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Conversations & Chat</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Message volume, topic engagement and conversation log</p>
+          {/* Header */}
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-end justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Conversations & Chat</h1>
+                <p className="text-sm text-gray-500 mt-0.5">Message volume, topic engagement and conversation log</p>
+              </div>
+              <div className="flex gap-1 bg-white border border-[#E8ECFF] rounded-lg p-1">
+                {([
+                  { id: 'today', label: 'Today' },
+                  { id: 'week', label: 'Week' },
+                  { id: 'month', label: 'Month' },
+                  { id: 'year', label: 'Year' },
+                  { id: 'all', label: 'All Time' },
+                ] as const).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setPeriod(id)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${period === id ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-1 bg-white border border-[#E8ECFF] rounded-lg p-1">
-              {([
-                { id: 'today', label: 'Today' },
-                { id: 'week', label: 'Week' },
-                { id: 'month', label: 'Month' },
-                { id: 'year', label: 'Year' },
-                { id: 'all', label: 'All Time' },
-              ] as const).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setPeriod(id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    period === id ? 'bg-[#BE322D] text-white' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          </motion.div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label: 'Total Conversations', value: total.toLocaleString(), icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
+              {
+                label: 'Takeover Needed',
+                value: takeoverNeededCount,
+                icon: Headphones,
+                color: takeoverNeededCount > 0 ? 'text-rose-600' : 'text-gray-400',
+                bg: takeoverNeededCount > 0 ? 'bg-rose-50 border border-rose-200' : 'bg-gray-50',
+                highlight: takeoverNeededCount > 0,
+              },
+              { label: 'Total Messages', value: totalMessages.toLocaleString(), icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
+              { label: `Messages (${periodLabel})`, value: messagesInPeriod.toLocaleString(), icon: MessageSquare, color: 'text-teal-600', bg: 'bg-teal-50' },
+              { label: 'Avg Msgs / Conv', value: avgMsgPerConv > 0 ? String(avgMsgPerConv) : 'None', icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Card key={item.label} className={`p-4 bg-white ${item.highlight ? 'border-rose-300 ring-2 ring-rose-100' : 'border-[#E8ECFF]'}`}>
+                  {loading ? (
+                    <div className="space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-7 w-14" /></div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${item.bg} flex-shrink-0`}>
+                        <Icon className={`w-4 h-4 ${item.color} ${item.highlight ? 'animate-pulse' : ''}`} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5">
+                          {item.label}
+                          {item.highlight && (
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                          )}
+                        </p>
+                        <p className={`text-xl font-bold ${item.highlight ? 'text-rose-700' : 'text-gray-900'}`}>{item.value}</p>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
-        </motion.div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { label: 'Total Conversations', value: total.toLocaleString(), icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50' },
-            {
-              label: 'Takeover Needed',
-              value: takeoverNeededCount,
-              icon: Headphones,
-              color: takeoverNeededCount > 0 ? 'text-rose-600' : 'text-gray-400',
-              bg: takeoverNeededCount > 0 ? 'bg-rose-50 border border-rose-200' : 'bg-gray-50',
-              highlight: takeoverNeededCount > 0,
-            },
-            { label: 'Total Messages', value: totalMessages.toLocaleString(), icon: MessageSquare, color: 'text-violet-600', bg: 'bg-violet-50' },
-            { label: `Messages (${periodLabel})`, value: messagesInPeriod.toLocaleString(), icon: MessageSquare, color: 'text-teal-600', bg: 'bg-teal-50' },
-            { label: 'Avg Msgs / Conv', value: avgMsgPerConv > 0 ? String(avgMsgPerConv) : 'None', icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card key={item.label} className={`p-4 bg-white ${item.highlight ? 'border-rose-300 ring-2 ring-rose-100' : 'border-[#E8ECFF]'}`}>
-                {loading ? (
-                  <div className="space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-7 w-14" /></div>
-                ) : (
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${item.bg} flex-shrink-0`}>
-                      <Icon className={`w-4 h-4 ${item.color} ${item.highlight ? 'animate-pulse' : ''}`} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5">
-                        {item.label}
-                        {item.highlight && (
-                          <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                        )}
-                      </p>
-                      <p className={`text-xl font-bold ${item.highlight ? 'text-rose-700' : 'text-gray-900'}`}>{item.value}</p>
-                    </div>
-                  </div>
+
+          {/* Conversation Table */}
+          <Card className="border-[#E8ECFF] bg-white overflow-hidden">
+            <div className="p-5 border-b border-[#E8ECFF] flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-semibold text-gray-900 text-sm">Conversation Log</h3>
+                {takeoverNeededCount > 0 && (
+                  <Badge className="bg-rose-100 text-rose-800 border-rose-300 text-[11px] font-bold flex items-center gap-1 animate-pulse">
+                    <Headphones className="w-3 h-3 text-rose-600" />
+                    {takeoverNeededCount} Need Takeover
+                  </Badge>
                 )}
-              </Card>
-            );
-          })}
-        </div>
-
-
-        {/* Conversation Table */}
-        <Card className="border-[#E8ECFF] bg-white overflow-hidden">
-          <div className="p-5 border-b border-[#E8ECFF] flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <h3 className="font-semibold text-gray-900 text-sm">Conversation Log</h3>
-              {takeoverNeededCount > 0 && (
-                <Badge className="bg-rose-100 text-rose-800 border-rose-300 text-[11px] font-bold flex items-center gap-1 animate-pulse">
-                  <Headphones className="w-3 h-3 text-rose-600" />
-                  {takeoverNeededCount} Need Takeover
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <ExportButton
-                data={{
-                  title: 'Conversation Log',
-                  filename: 'conversations',
-                  headers: ['User', 'Session ID', 'Started', 'Last Active', 'Messages', 'Language', 'Status'],
-                  rows: convs.map((c) => [
-                    formatUserDisplay(c.user_nickname, c.platform),
-                    formatSessionDisplay(c.session_id),
-                    new Date(c.created_at).toLocaleString('en-GB'),
-                    new Date(c.last_active_at).toLocaleString('en-GB'),
-                    String(c.message_count),
-                    c.language ?? 'en',
-                    c.ended_at ? 'Ended' : 'Active',
-                  ]),
-                }}
-              />
-              {([
-                { id: 'all' as const, label: 'All' },
-                { id: 'takeover' as const, label: 'Takeover Needed', count: takeoverNeededCount },
-                { id: 'crisis' as const, label: 'Crisis' },
-                { id: 'normal' as const, label: 'Normal' },
-              ]).map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => { setFilterTab(opt.id); setPage(1); }}
-                  className={`px-3 py-1 text-xs font-medium rounded-full border transition-all flex items-center gap-1.5 ${
-                    filterTab === opt.id
+              </div>
+              <div className="flex items-center gap-2">
+                <ExportButton
+                  data={{
+                    title: 'Conversation Log',
+                    filename: 'conversations',
+                    headers: ['User', 'Session ID', 'Started', 'Last Active', 'Messages', 'Language', 'Status'],
+                    rows: convs.map((c) => [
+                      formatUserDisplay(c.user_nickname, c.platform),
+                      formatSessionDisplay(c.session_id),
+                      new Date(c.created_at).toLocaleString('en-GB'),
+                      new Date(c.last_active_at).toLocaleString('en-GB'),
+                      String(c.message_count),
+                      c.language ?? 'en',
+                      c.ended_at ? 'Ended' : 'Active',
+                    ]),
+                  }}
+                />
+                {([
+                  { id: 'all' as const, label: 'All' },
+                  { id: 'takeover' as const, label: 'Takeover Needed', count: takeoverNeededCount },
+                  { id: 'crisis' as const, label: 'Crisis' },
+                  { id: 'normal' as const, label: 'Normal' },
+                ]).map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setFilterTab(opt.id); setPage(1); }}
+                    className={`px-3 py-1 text-xs font-medium rounded-full border transition-all flex items-center gap-1.5 ${filterTab === opt.id
                       ? opt.id === 'takeover'
                         ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
                         : 'bg-[#BE322D] text-white border-[#BE322D]'
                       : opt.id === 'takeover' && (opt.count ?? 0) > 0
                         ? 'bg-rose-50 text-rose-700 border-rose-200 hover:border-rose-300'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  {opt.id === 'takeover' && <Headphones className="w-3 h-3" />}
-                  {opt.label}
-                  {opt.count !== undefined && opt.count > 0 && (
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      filterTab === opt.id ? 'bg-white text-rose-700' : 'bg-rose-600 text-white animate-pulse'
-                    }`}>
-                      {opt.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-[#E8ECFF]">
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">User</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Started</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Last Active</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Messages</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Language</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {convLoading ? (
-                  Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i} className="border-b border-[#E8ECFF]">
-                      {Array.from({ length: 6 }).map((__, j) => (
-                        <td key={j} className="px-4 py-3"><Skeleton className="h-3 w-full" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : convs.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">No conversations found</td></tr>
-                ) : (
-                  convs.map((conv) => {
-                    const needsTakeover = conv.is_escalated && !conv.is_human_takeover;
-                    return (
-                      <tr
-                        key={conv.id}
-                        className={`transition-colors cursor-pointer ${
-                          needsTakeover
-                            ? 'bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500 border-b border-rose-100'
-                            : conv.is_human_takeover
-                            ? 'bg-emerald-50/40 hover:bg-emerald-100/40 border-l-4 border-l-emerald-500 border-b border-emerald-100'
-                            : 'border-b border-[#E8ECFF] hover:bg-blue-50/40'
-                        }`}
-                        onClick={() => setSelectedConv(conv)}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="text-xs font-semibold text-gray-900">{formatUserDisplay(conv.user_nickname, conv.platform)}</p>
-                            {needsTakeover && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
-                                <Headphones className="w-3 h-3 text-rose-600" />
-                                Takeover Needed
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-400 font-mono">{formatSessionDisplay(conv.session_id)}</p>
-                          {conv.platform && (
-                            <span className={`inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                              conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' :
-                              'bg-gray-100 text-gray-500'
-                            }`}>
-                              {conv.platform === 'whatsapp' ? 'WhatsApp' : 'Web'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-600">
-                          <div>{formatDate(conv.created_at)}</div>
-                          <div className="text-gray-400">{formatTime(conv.created_at)}</div>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-600">
-                          <div>{formatDate(conv.last_active_at)}</div>
-                          <div className="text-gray-400">{formatTime(conv.last_active_at)}</div>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">{conv.message_count}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline" className="text-xs font-normal capitalize">{conv.language ?? 'en'}</Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {needsTakeover ? (
-                              <Badge className="text-xs bg-rose-600 text-white font-bold border-none hover:bg-rose-700 flex items-center gap-1 shadow-sm animate-pulse">
-                                <Headphones className="w-3 h-3" />
-                                Live Takeover Needed
-                              </Badge>
-                            ) : conv.is_human_takeover ? (
-                              <>
-                                <Badge className="text-xs bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-100 font-semibold flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                  Counselor Active
-                                </Badge>
-                                {(() => {
-                                  const inactiveMins = Math.floor((Date.now() - new Date(conv.last_active_at).getTime()) / 60000);
-                                  if (inactiveMins >= 7) {
-                                    return (
-                                      <Badge className="text-[10px] bg-red-100 text-red-700 border-red-300 font-semibold flex items-center gap-1 animate-pulse">
-                                        🚨 Inactive {inactiveMins}m (Auto-releasing)
-                                      </Badge>
-                                    );
-                                  }
-                                  if (inactiveMins >= 4) {
-                                    return (
-                                      <Badge className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 font-medium flex items-center gap-1">
-                                        ⚠️ Inactive {inactiveMins}m
-                                      </Badge>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </>
-                            ) : conv.interim_ai_active ? (
-                              <Badge className="text-xs bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-100">
-                                Bridge (AI)
-                              </Badge>
-                            ) : null}
-                            {conv.ended_at ? (
-                              <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100">Ended</Badge>
-                            ) : (
-                              <Badge className="text-xs bg-green-100 text-green-700 border-green-200 hover:bg-green-100">Active</Badge>
-                            )}
-                            {(conv.crisis_types ?? []).map((ct) => (
-                              <Badge key={ct} className="text-xs bg-red-100 text-red-700 border-red-200 hover:bg-red-100 capitalize">
-                                <AlertCircle className="w-3 h-3 mr-1" />{ct.replace(/_/g, ' ')}
-                              </Badge>
-                            ))}
-                            {conv.has_panic && (
-                              <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100">Panic</Badge>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-[#E8ECFF] flex items-center justify-between text-sm">
-              <span className="text-gray-500 text-xs">Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} of {total.toLocaleString()}</span>
-              <div className="flex gap-1">
-                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-7 w-7 p-0">
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="px-3 py-1 text-xs text-gray-600 font-medium">{page} / {totalPages}</span>
-                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-7 w-7 p-0">
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
+                      }`}
+                  >
+                    {opt.id === 'takeover' && <Headphones className="w-3 h-3" />}
+                    {opt.label}
+                    {opt.count !== undefined && opt.count > 0 && (
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${filterTab === opt.id ? 'bg-white text-rose-700' : 'bg-rose-600 text-white animate-pulse'
+                        }`}>
+                        {opt.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
-        </Card>
-      </div>
-    </div>
 
-    {/* Chat detail slide-over */}
-    <AnimatePresence>
-      {selectedConv && (
-        <ConversationDetailPanel
-          key={selectedConv.id}
-          conv={selectedConv}
-          accessToken={session.accessToken}
-          onClose={() => {
-            setSelectedConv(null);
-            onClearTarget?.();
-          }}
-          onTakeoverSuccess={handleTakeoverSuccess}
-          onReleaseSuccess={handleReleaseSuccess}
-        />
-      )}
-    </AnimatePresence>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-[#E8ECFF]">
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">User</th>
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Started</th>
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Last Active</th>
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Messages</th>
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Language</th>
+                    <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {convLoading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i} className="border-b border-[#E8ECFF]">
+                        {Array.from({ length: 6 }).map((__, j) => (
+                          <td key={j} className="px-4 py-3"><Skeleton className="h-3 w-full" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : convs.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">No conversations found</td></tr>
+                  ) : (
+                    convs.map((conv) => {
+                      const needsTakeover = conv.is_escalated && !conv.is_human_takeover;
+                      return (
+                        <tr
+                          key={conv.id}
+                          className={`transition-colors cursor-pointer ${needsTakeover
+                            ? 'bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500 border-b border-rose-100'
+                            : conv.is_human_takeover
+                              ? 'bg-emerald-50/40 hover:bg-emerald-100/40 border-l-4 border-l-emerald-500 border-b border-emerald-100'
+                              : 'border-b border-[#E8ECFF] hover:bg-blue-50/40'
+                            }`}
+                          onClick={() => setSelectedConv(conv)}
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="text-xs font-semibold text-gray-900">{formatUserDisplay(conv.user_nickname, conv.platform)}</p>
+                              {needsTakeover && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
+                                  <Headphones className="w-3 h-3 text-rose-600" />
+                                  Takeover Needed
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 font-mono">{formatSessionDisplay(conv.session_id)}</p>
+                            {conv.platform && (
+                              <span className={`inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${conv.platform === 'whatsapp' ? 'bg-green-100 text-green-700' :
+                                'bg-gray-100 text-gray-500'
+                                }`}>
+                                {conv.platform === 'whatsapp' ? 'WhatsApp' : 'Web'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600">
+                            <div>{formatDate(conv.created_at)}</div>
+                            <div className="text-gray-400">{formatTime(conv.created_at)}</div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600">
+                            <div>{formatDate(conv.last_active_at)}</div>
+                            <div className="text-gray-400">{formatTime(conv.last_active_at)}</div>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{conv.message_count}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className="text-xs font-normal capitalize">{conv.language ?? 'en'}</Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {needsTakeover ? (
+                                <Badge className="text-xs bg-rose-600 text-white font-bold border-none hover:bg-rose-700 flex items-center gap-1 shadow-sm animate-pulse">
+                                  <Headphones className="w-3 h-3" />
+                                  Live Takeover Needed
+                                </Badge>
+                              ) : conv.is_human_takeover ? (
+                                <>
+                                  <Badge className="text-xs bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-100 font-semibold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Counselor Active
+                                  </Badge>
+                                  {(() => {
+                                    const inactiveMins = Math.floor((Date.now() - new Date(conv.last_active_at).getTime()) / 60000);
+                                    if (inactiveMins >= 7) {
+                                      return (
+                                        <Badge className="text-[10px] bg-red-100 text-red-700 border-red-300 font-semibold flex items-center gap-1 animate-pulse">
+                                          🚨 Inactive {inactiveMins}m (Auto-releasing)
+                                        </Badge>
+                                      );
+                                    }
+                                    if (inactiveMins >= 4) {
+                                      return (
+                                        <Badge className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 font-medium flex items-center gap-1">
+                                          ⚠️ Inactive {inactiveMins}m
+                                        </Badge>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </>
+                              ) : conv.interim_ai_active ? (
+                                <Badge className="text-xs bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-100">
+                                  Bridge (AI)
+                                </Badge>
+                              ) : null}
+                              {conv.ended_at ? (
+                                <Badge className="text-xs bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100">Ended</Badge>
+                              ) : (
+                                <Badge className="text-xs bg-green-100 text-green-700 border-green-200 hover:bg-green-100">Active</Badge>
+                              )}
+                              {(conv.crisis_types ?? []).map((ct) => (
+                                <Badge key={ct} className="text-xs bg-red-100 text-red-700 border-red-200 hover:bg-red-100 capitalize">
+                                  <AlertCircle className="w-3 h-3 mr-1" />{ct.replace(/_/g, ' ')}
+                                </Badge>
+                              ))}
+                              {conv.has_panic && (
+                                <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100">Panic</Badge>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-[#E8ECFF] flex items-center justify-between text-sm">
+                <span className="text-gray-500 text-xs">Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} of {total.toLocaleString()}</span>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-7 w-7 p-0">
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-3 py-1 text-xs text-gray-600 font-medium">{page} / {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-7 w-7 p-0">
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Chat detail slide-over */}
+      <AnimatePresence>
+        {selectedConv && (
+          <ConversationDetailPanel
+            key={selectedConv.id}
+            conv={selectedConv}
+            accessToken={session.accessToken}
+            onClose={() => {
+              setSelectedConv(null);
+              onClearTarget?.();
+            }}
+            onTakeoverSuccess={handleTakeoverSuccess}
+            onReleaseSuccess={handleReleaseSuccess}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

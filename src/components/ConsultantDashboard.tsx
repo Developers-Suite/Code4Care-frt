@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { NotificationPopover } from './NotificationPopover';
-import { StaffSession } from '@/services/staffAccessService';
+import { StaffAccessService, StaffSession } from '@/services/staffAccessService';
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { logger } from '@/utils/logger';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
@@ -97,43 +97,82 @@ export function SupportCounselorDashboard({
 
   const claimAndTakeover = async (request: SupportRequestListItem) => {
     try {
-      // 1. Assign support request to current consultant
+      // 1. Assign the support request to this consultant
       await SupportRequestService.assignSupportRequest(
         request.id,
         { staff_id: session.staffId, auto_start: true },
         session.accessToken || session.user?.id
       );
 
-      // 2. Mark active
+      // 2. Mark the request as active (best-effort)
       void SupportRequestService.updateSupportRequest(
         request.id,
         { status: 'active' },
         session.accessToken || session.user?.id
-      ).catch(() => {});
+      ).catch(() => { });
 
-      // 3. Update local state
-      const updated = supportRequests.map((r) => {
-        if (r.id !== request.id) return r;
-        return { ...r, status: 'active' as const, assigned_staff: { id: session.staffId, name: session.name } };
-      });
-      setSupportRequests(updated);
+      // 3. Resolve the real conversation id from the conversations API using session_id
+      let resolvedConvId: string | undefined;
+      if (request.session_id && onOpenConversation) {
+        try {
+          const convResponse = await StaffAccessService.listConversations(
+            { is_escalated: true, is_human_takeover: false, page_size: 100 },
+            session.accessToken,
+          );
+          const matched = (convResponse.conversations ?? []).find(
+            (c) => c.session_id === request.session_id,
+          );
+          resolvedConvId = matched?.id;
+        } catch {
+          // Fallback: use session_id directly — ConversationsPage will retry
+        }
+      }
+
+      // 4. Update local state optimistically
+      setSupportRequests((prev) =>
+        prev.map((r) =>
+          r.id !== request.id
+            ? r
+            : { ...r, status: 'active' as const, assigned_staff: { id: session.staffId, name: session.name } }
+        )
+      );
 
       toast.success(`Took over chat for ${request.user_nickname || 'User'}`);
 
-      // 4. Immediately launch conversation chat panel!
+      // 5. Navigate to the live conversation chat panel
       if (onOpenConversation) {
-        onOpenConversation({ sessionId: request.session_id, convId: request.id });
+        onOpenConversation({
+          sessionId: request.session_id,
+          convId: resolvedConvId,
+        });
       }
     } catch (error) {
       logger.error('Failed to claim and takeover request', error);
-      toast.error('Failed to claim request');
+      toast.error('Failed to claim request. Please try again.');
     }
   };
 
-  const openChatForRequest = (request: SupportRequestListItem) => {
-    if (onOpenConversation) {
-      onOpenConversation({ sessionId: request.session_id, convId: request.id });
+  const openChatForRequest = async (request: SupportRequestListItem) => {
+    if (!onOpenConversation) return;
+
+    // Resolve the actual conversation id from the conversations API
+    let resolvedConvId: string | undefined;
+    if (request.session_id) {
+      try {
+        const convResponse = await StaffAccessService.listConversations(
+          { page_size: 100 },
+          session.accessToken,
+        );
+        const matched = (convResponse.conversations ?? []).find(
+          (c) => c.session_id === request.session_id,
+        );
+        resolvedConvId = matched?.id;
+      } catch {
+        // Fallback gracefully
+      }
     }
+
+    onOpenConversation({ sessionId: request.session_id, convId: resolvedConvId });
   };
 
   const connectRequest = async (requestId: string) => {
