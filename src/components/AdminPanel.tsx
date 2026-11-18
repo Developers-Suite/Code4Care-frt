@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell } from 'lucide-react';
 import { NotificationPopover } from './NotificationPopover';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
@@ -13,6 +12,7 @@ import { AdminManagementPage } from './admin/AdminManagementPage';
 import { StaffSession } from '@/services/staffAccessService';
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
+import { useLiveWaitingRequests } from '@/hooks/useLiveWaitingRequests';
 import { logger } from '@/utils/logger';
 import { UserAvatarProfile } from './admin/UserAvatarProfile';
 
@@ -53,10 +53,14 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
     };
   }, [session.accessToken]);
 
-  const { permission, requestPermission, testAlert } = useQueueNotifications({
+  const { permission, requestPermission } = useQueueNotifications({
     waitingRequests,
     onSelectRequest: () => setCurrentSection('conversations'),
   });
+
+  // Align the header badge and bell with the conversation log. New-request alerts keep using the
+  // unfiltered queue above so they still fire.
+  const liveWaitingRequests = useLiveWaitingRequests(waitingRequests, session.accessToken);
 
   const renderContent = () => {
     switch (currentSection) {
@@ -91,7 +95,7 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
             <span className="text-sm font-semibold text-gray-800 capitalize">
               {currentSection.replace('-', ' ')}
             </span>
-            {waitingRequests.length > 0 && (
+            {liveWaitingRequests.length > 0 && (
               <button
                 type="button"
                 onClick={() => setCurrentSection('conversations')}
@@ -99,29 +103,18 @@ export function AdminPanel({ selectedLanguage, onLogout, session }: AdminPanelPr
                 title="Click to view waiting conversations"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                {waitingRequests.length} waiting in queue
+                {liveWaitingRequests.length} waiting in queue
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
             <NotificationPopover
-              notifications={waitingRequests}
+              notifications={liveWaitingRequests}
               onSelectNotification={() => setCurrentSection('conversations')}
               onRequestPermission={requestPermission}
               permissionGranted={permission === 'granted'}
             />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-gray-500 hover:text-gray-900 gap-1 h-8"
-              onClick={testAlert}
-              title="Test chime sound and desktop alert"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Test Alert
-            </Button>
 
             <div className="h-5 w-px bg-gray-200 mx-1" />
 

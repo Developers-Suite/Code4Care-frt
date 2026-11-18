@@ -47,17 +47,6 @@ export function useQueueNotifications({
     return granted;
   }, []);
 
-  const testAlert = useCallback(() => {
-    notificationSound.playChime();
-    BrowserNotificationManager.sendNotification('New Support Request (Test)', {
-      body: 'Ama (Accra) is waiting for a counselor — Youth Sexual Health',
-    });
-    toast.warning('Test Alert: New Live Counselor Request in Queue', {
-      description: 'Ama (Accra) is waiting for assistance',
-      duration: 5000,
-    });
-  }, []);
-
   useEffect(() => {
     if (!waitingRequests) return;
 
@@ -114,6 +103,5 @@ export function useQueueNotifications({
     toggleSound,
     permission,
     requestPermission,
-    testAlert,
   };
 }

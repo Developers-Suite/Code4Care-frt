@@ -5,7 +5,28 @@
 
 import { logger } from '@/utils/logger';
 
-export type AnalyticsPeriod = 'today' | 'week' | 'month' | 'year' | string;
+export type AnalyticsPeriod = 'today' | 'week' | 'month' | 'year' | 'all';
+
+/**
+ * Maps a dashboard period to a window the analytics API accepts.
+ *
+ * The API has no all-time window, so 'all' is requested as the widest window it
+ * supports instead of being sent verbatim (which the API rejected, leaving the
+ * page with empty data). Unknown or missing values fall back to 'week'.
+ */
+export function resolveApiAnalyticsPeriod(period?: string): Exclude<AnalyticsPeriod, 'all'> {
+  switch (period) {
+    case 'today':
+    case 'week':
+    case 'month':
+    case 'year':
+      return period;
+    case 'all':
+      return 'year';
+    default:
+      return 'week';
+  }
+}
 
 export interface AnalyticsSummary {
   generated_at: string;
@@ -416,7 +437,7 @@ export class RealAnalyticsService {
   ): Promise<AnalyticsOverviewSummary> {
     try {
       const response = await fetch(buildUrlWithParams('/v1/analytics/summary', {
-        period: options?.period ?? 'week',
+        period: resolveApiAnalyticsPeriod(options?.period),
       }), {
         method: 'GET',
         headers: buildHeaders(accessToken),
@@ -442,7 +463,7 @@ export class RealAnalyticsService {
    */
   static async getDashboardSummary(
     options?: {
-      period?: 'today' | 'week' | 'month' | 'year';
+      period?: AnalyticsPeriod;
       by_region?: boolean;
       by_age_group?: boolean;
       by_language?: boolean;
@@ -450,9 +471,7 @@ export class RealAnalyticsService {
     accessToken?: string,
   ): Promise<AnalyticsSummary> {
     try {
-      const summary = await RealAnalyticsService.getAnalyticsSummary({
-        period: options?.period ?? 'week',
-      }, accessToken);
+      const summary = await RealAnalyticsService.getAnalyticsSummary({ period: options?.period }, accessToken);
 
       return RealAnalyticsService.normalizeAnalyticsSummary(summary);
     } catch (error) {
@@ -467,7 +486,7 @@ export class RealAnalyticsService {
    * composing results from multiple analytics endpoints when unavailable.
    */
   static async getAggregatedReportData(
-    options?: { period?: 'today' | 'week' | 'month' | 'year' },
+    options?: { period?: AnalyticsPeriod },
     accessToken?: string,
   ): Promise<any> {
     return RealAnalyticsService.getDashboardSummary(options, accessToken);
@@ -478,13 +497,13 @@ export class RealAnalyticsService {
    */
   static async getTopicAnalytics(
     options?: {
-      period?: 'today' | 'week' | 'month' | 'year';
+      period?: AnalyticsPeriod;
       limit?: number;
     },
     accessToken?: string,
   ): Promise<TopicEngagementResponse> {
     const url = buildUrlWithParams(`${ANALYTICS_BASE_PATH}/topics`, {
-      period: options?.period ?? 'week',
+      period: resolveApiAnalyticsPeriod(options?.period),
     });
 
     try {
@@ -509,13 +528,13 @@ export class RealAnalyticsService {
    */
   static async getUserAnalytics(
     options?: {
-      period?: 'today' | 'week' | 'month' | 'year';
+      period?: AnalyticsPeriod;
       segment?: 'all' | 'new' | 'returning' | 'at-risk' | 'high_engagement';
     },
     accessToken?: string,
   ): Promise<UserAnalyticsResponse> {
     const url = buildUrlWithParams(`${ANALYTICS_BASE_PATH}/users`, {
-      period: options?.period ?? 'week',
+      period: resolveApiAnalyticsPeriod(options?.period),
     });
 
     try {
@@ -540,13 +559,13 @@ export class RealAnalyticsService {
    */
   static async getSafetyAnalytics(
     options?: {
-      period?: 'today' | 'week' | 'month' | 'year';
+      period?: AnalyticsPeriod;
       severity?: 'low' | 'medium' | 'high' | 'critical';
     },
     accessToken?: string,
   ): Promise<SafetyAnalyticsResponse> {
     const url = buildUrlWithParams(`${ANALYTICS_BASE_PATH}/safety`, {
-      period: options?.period ?? 'week',
+      period: resolveApiAnalyticsPeriod(options?.period),
     });
 
     try {
@@ -571,12 +590,12 @@ export class RealAnalyticsService {
    */
   static async getPerformanceMetrics(
     options?: {
-      period?: 'today' | 'week' | 'month' | 'year';
+      period?: AnalyticsPeriod;
     },
     accessToken?: string,
   ): Promise<PerformanceMetricsResponse> {
     const url = buildUrlWithParams(`${ANALYTICS_BASE_PATH}/performance`, {
-      period: options?.period ?? 'week',
+      period: resolveApiAnalyticsPeriod(options?.period),
     });
 
     try {

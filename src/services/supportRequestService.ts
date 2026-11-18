@@ -64,6 +64,8 @@ export interface SupportRequestListItem {
   created_at: string;
   assigned_staff?: AssignedStaff;
   estimated_wait_time_minutes?: number;
+  /** Present once a consultant has been connected to the request. */
+  duration_minutes?: number;
   safety_flags: string[];
 }
 

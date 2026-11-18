@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Sparkles, Headphones } from 'lucide-react';
+import { Activity, Clock3, LogOut, UserCheck, CheckCircle2, PhoneCall, Headphones } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -13,6 +13,7 @@ import {
 import { SupportRequestService, SupportRequestListItem } from '@/services/supportRequestService';
 import { logger } from '@/utils/logger';
 import { useQueueNotifications } from '@/hooks/useQueueNotifications';
+import { useLiveWaitingRequests } from '@/hooks/useLiveWaitingRequests';
 import { UserAvatarProfile } from './admin/UserAvatarProfile';
 
 interface SupportCounselorDashboardProps {
@@ -20,17 +21,32 @@ interface SupportCounselorDashboardProps {
   onLogout: () => void;
 }
 
+function formatDateTime(iso: string) {
+  if (!iso) return '—';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return '—';
+  return parsed.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function SupportCounselorDashboard({ session, onLogout }: SupportCounselorDashboardProps) {
   const [supportRequests, setSupportRequests] = useState<SupportRequestListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const waitingRequests = useMemo(
+  // Raw queue feeds alerts; what is displayed only keeps rows with a live escalated conversation.
+  const rawWaitingRequests = useMemo(
     () => supportRequests.filter((request) => request.status === 'waiting'),
     [supportRequests]
   );
+  const waitingRequests = useLiveWaitingRequests(rawWaitingRequests, session.accessToken);
 
-  const { permission, requestPermission, testAlert } = useQueueNotifications({
-    waitingRequests,
+  const { permission, requestPermission } = useQueueNotifications({
+    waitingRequests: rawWaitingRequests,
   });
 
   const myAssignedRequests = useMemo(
@@ -150,17 +166,6 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
               permissionGranted={permission === 'granted'}
             />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-gray-500 hover:text-gray-900 gap-1 h-8"
-              onClick={testAlert}
-              title="Test chime sound and desktop alert"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Test Alert
-            </Button>
-
             <div className="h-5 w-px bg-gray-200 mx-1" />
 
             <UserAvatarProfile
@@ -218,13 +223,13 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
                 <div key={request.id} className="p-4 flex items-center justify-between gap-3 bg-rose-50/60 border-l-4 border-l-rose-500 hover:bg-rose-100/60 transition-colors">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-gray-900">{request.userNickname}</p>
+                      <p className="font-semibold text-gray-900">{request.user_nickname || 'Anonymous'}</p>
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
                         <Headphones className="w-3 h-3 text-rose-600" />
                         Takeover Needed
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500">Age {request.userAge} • Requested {request.requestedAt}</p>
+                    <p className="text-xs text-gray-500">Age {request.age_range || '—'} • Requested {formatDateTime(request.created_at)}</p>
                   </div>
                   <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 flex-shrink-0" onClick={() => claimRequest(request.id)}>
                     <Headphones className="w-3.5 h-3.5" />
@@ -248,8 +253,8 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
               {myAssignedRequests.map((request) => (
                 <div key={request.id} className="p-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{request.userNickname}</p>
-                    <p className="text-sm text-gray-500">Assigned • {request.requestedAt}</p>
+                    <p className="font-semibold text-gray-900">{request.user_nickname || 'Anonymous'}</p>
+                    <p className="text-sm text-gray-500">Assigned • requested {formatDateTime(request.created_at)}</p>
                   </div>
                   <Button size="sm" variant="outline" className="gap-2 border-green-200 text-green-700 hover:bg-green-50" onClick={() => connectRequest(request.id)}>
                     <PhoneCall className="w-4 h-4" />
@@ -261,8 +266,10 @@ export function SupportCounselorDashboard({ session, onLogout }: SupportCounselo
               {myActiveRequests.map((request) => (
                 <div key={request.id} className="p-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{request.userNickname}</p>
-                    <p className="text-sm text-gray-500">Active • Duration {request.duration ?? 0} min</p>
+                    <p className="font-semibold text-gray-900">{request.user_nickname || 'Anonymous'}</p>
+                    <p className="text-sm text-gray-500">
+                      Active • Duration {request.duration_minutes != null ? `${request.duration_minutes} min` : '—'}
+                    </p>
                   </div>
                   <Button size="sm" variant="outline" className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50" onClick={() => resolveRequest(request.id)}>
                     <CheckCircle2 className="w-4 h-4" />
