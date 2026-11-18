@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Menu, UserCheck, Headphones, MessageSquare, X, ChevronRight, Radio } from "lucide-react";
+import { Shield, Menu, UserCheck, Headphones, MessageSquare, Phone, X } from "lucide-react";
 import { useApp } from '@/providers/AppProvider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,11 +8,15 @@ import { Badge } from '@/components/ui/badge';
 interface HeaderProps {
   onMenuClick: () => void;
   onPanicClick: () => void;
+  consultantPhoneNumber?: string; // Optional prop if passed from parent
 }
+
+const DEFAULT_CONSULTANT_PHONE = "+233501661660"; // Replace with your actual helpline number
 
 export const Header: React.FC<HeaderProps> = ({
   onMenuClick,
-  onPanicClick
+  onPanicClick,
+  consultantPhoneNumber = DEFAULT_CONSULTANT_PHONE
 }) => {
   const { t } = useTranslation();
   const { nickname, botName, consultantMode } = useApp();
@@ -91,24 +95,22 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setShowConsultantModal(true)}
-              className={`inline-flex items-center gap-1.5 sm:gap-2 rounded-full border px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-all duration-200 active:scale-95 ${
-                takeoverStatus === "live"
-                  ? "border-emerald-300 bg-emerald-100/90 text-emerald-800 hover:bg-emerald-200"
-                  : takeoverStatus === "queued"
-                    ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100"
-              }`}
+              className={`inline-flex items-center gap-1.5 sm:gap-2 rounded-full border px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-all duration-200 active:scale-95 ${takeoverStatus === "live"
+                ? "border-emerald-300 bg-emerald-100/90 text-emerald-800 hover:bg-emerald-200"
+                : takeoverStatus === "queued"
+                  ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100"
+                }`}
               title="Speak or chat with a professional consultant"
             >
               <div className="relative flex items-center justify-center">
                 <Headphones className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-current" />
-                <span className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ring-1 ring-white ${
-                  takeoverStatus === "live"
-                    ? "bg-emerald-500"
-                    : takeoverStatus === "queued"
-                      ? "animate-pulse bg-amber-500"
-                      : "animate-pulse bg-emerald-500"
-                }`} />
+                <span className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ring-1 ring-white ${takeoverStatus === "live"
+                  ? "bg-emerald-500"
+                  : takeoverStatus === "queued"
+                    ? "animate-pulse bg-amber-500"
+                    : "animate-pulse bg-emerald-500"
+                  }`} />
               </div>
 
               <span className="whitespace-nowrap">
@@ -136,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* ================= CONSULTANT CHOICE MODAL ================= */}
       {showConsultantModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-emerald-100 relative">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-emerald-100 relative">
 
             {/* Close button */}
             <button
@@ -148,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Modal Title */}
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
                 <Headphones className="w-5 h-5" />
               </div>
@@ -157,61 +159,44 @@ export const Header: React.FC<HeaderProps> = ({
                   Connect with a Consultant
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Free, confidential & youth-friendly support
+                  100% free & confidential
                 </p>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-gray-600 mt-2 mb-4">
-              Speak directly with a trained counselor right here in this chat window:
-            </p>
-
-            {/* Action Button */}
-            <div className="space-y-3">
+            {/* Side-by-Side Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={handleStartChatWithConsultant}
-                className="w-full text-left p-3.5 sm:p-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-white hover:border-emerald-400 hover:shadow-md transition-all group flex items-center justify-between gap-3"
+                className="relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 hover:border-emerald-400 transition-all active:scale-95 group"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 group-hover:scale-105 transition-transform">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        Request a Consultant
-                      </span>
-                      {takeoverStatus === "live" ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-800">
-                          Active Now
-                        </span>
-                      ) : takeoverStatus === "queued" ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1">
-                          <Radio className="w-2.5 h-2.5 animate-pulse" />
-                          In Queue
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                      Chat privately with a counselor right here in this chat window.
-                    </p>
-                  </div>
+                {takeoverStatus !== "idle" && (
+                  <span
+                    className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold ${takeoverStatus === "live"
+                      ? "bg-emerald-200 text-emerald-800"
+                      : "bg-amber-100 text-amber-800"
+                      }`}
+                  >
+                    {takeoverStatus === "live" ? "Active" : "Queued"}
+                  </span>
+                )}
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                  <MessageSquare className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-emerald-600 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                <span className="text-sm font-bold text-gray-900">Chat</span>
               </button>
-            </div>
 
-            {/* Footer notice */}
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
-              <span>All conversations are 100% confidential</span>
-              <button
-                type="button"
+              <a
+                href={`tel:${consultantPhoneNumber}`}
                 onClick={() => setShowConsultantModal(false)}
-                className="text-gray-500 hover:text-gray-800 font-medium"
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 hover:border-emerald-400 transition-all active:scale-95 group"
               >
-                Dismiss
-              </button>
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-bold text-gray-900">Call</span>
+              </a>
             </div>
 
           </div>
