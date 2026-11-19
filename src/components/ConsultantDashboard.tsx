@@ -117,25 +117,7 @@ export function SupportCounselorDashboard({
         session.accessToken || session.user?.id
       ).catch(() => { });
 
-      // 3. Resolve the real conversation id from the conversations API using session_id
-      // After takeover: is_human_takeover=true, is_escalated=false — search ALL recent convs
-      let resolvedConvId: string | undefined;
-      if (request.session_id && onOpenConversation) {
-        try {
-          const convResponse = await StaffAccessService.listConversations(
-            { page_size: 200 },
-            session.accessToken,
-          );
-          const matched = (convResponse.conversations ?? []).find(
-            (c) => c.session_id === request.session_id,
-          );
-          resolvedConvId = matched?.id;
-        } catch {
-          // Fallback: use session_id directly — ConversationsPage will retry
-        }
-      }
-
-      // 4. Update local state optimistically — include both assigned_staff AND assigned_staff_id
+      // 3. Update local state optimistically — include both assigned_staff AND assigned_staff_id
       //    so both filter paths in myAssignedRequests / myActiveRequests keep the card visible.
       setSupportRequests((prev) =>
         prev.map((r) =>
@@ -151,14 +133,6 @@ export function SupportCounselorDashboard({
       );
 
       toast.success(`Took over chat for ${request.user_nickname || 'User'}`);
-
-      // 5. Navigate to the live conversation chat panel
-      if (onOpenConversation) {
-        onOpenConversation({
-          sessionId: request.session_id,
-          convId: resolvedConvId,
-        });
-      }
     } catch (error) {
       logger.error('Failed to claim and takeover request', error);
       toast.error('Failed to claim request. Please try again.');
