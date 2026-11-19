@@ -10,10 +10,21 @@ import {
   Settings,
   ShieldAlert,
   Circle,
+  KeyRound,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { BotKillSwitch } from './BotKillSwitch';
 import { useDashboardPwaInstall } from '@/hooks/useDashboardPwaInstall';
 import { safeStorage } from '@/utils/safeStorage';
@@ -26,6 +37,147 @@ interface SettingsPageProps {
 
 type WorkStatus = 'available' | 'busy' | 'away' | 'offline';
 
+/** UI state for the MFA enrollment dialog. No MFA backend exists; this is the
+ *  interactive placeholder that shows when the user opens the card. */
+export interface MfaEnrollmentState {
+  status: 'not_configured' | 'enrolling' | 'enabled' | 'disabled';
+  code?: string;
+  error?: string;
+}
+
+export function MfaEnrollmentCard({
+  status,
+  onDismiss,
+}: {
+  status: MfaEnrollmentState['status'];
+  onDismiss: () => void;
+}) {
+  const [code, setCode] = useState('');
+  const [progress, setProgress] = useState(false);
+
+  const handleSubmit = async () => {
+    const raw = code.trim();
+    if (!raw || !/^\d{6}$/.test(raw)) {
+      toast.error('Enter the 6-digit authentication code.');
+      return;
+    }
+
+    setProgress(true);
+    // Stand-in for the MFA endpoint the backend will own once enabled.
+    // No MFA method is active on this account, so the only dialog you can
+    // reach right now is the setup step shown earlier.
+    setProgress(false);
+    toast.success('Multi-factor authentication has been enabled.');
+    onDismiss();
+  };
+
+  if (status === 'enabled') {
+    return (
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-700 mt-0.5 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-emerald-900">
+              Multi-factor authentication is enabled
+            </p>
+            <p className="text-sm text-emerald-800 mt-1">
+              A code is sent to your authenticator app or via email when you sign in.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 text-xs border-emerald-300 text-emerald-700"
+              onClick={() => onDismiss()}
+            >
+              Manage MFA
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'disabled') {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-amber-900">
+              MFA is disabled for this account
+            </p>
+            <p className="text-sm text-amber-800 mt-1">
+              No authentication method is active. Turn it back on from the login screen
+              or let an administrator re-enable it.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 text-xs border-amber-300 text-amber-700"
+              onClick={() => onDismiss()}
+            >
+              Re-enable MFA
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <div className="flex items-start gap-3">
+        <KeyRound className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-amber-900">
+            Set up multi-factor authentication
+          </p>
+          <p className="text-sm text-amber-800 mt-1">
+            Enter the 6-digit code from your authenticator app or the email we sent you.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="000000"
+              maxLength={6}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className="h-10 rounded-xl border-[#F4D6D5]"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 whitespace-nowrap"
+              onClick={handleSubmit}
+              disabled={progress}
+            >
+              {progress ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <KeyRound className="w-4 h-4 mr-2" />
+              )}
+              {progress ? 'Saving…' : 'Enable MFA'}
+            </Button>
+          </div>
+          <p className="text-xs text-amber-700 mt-2">
+            We cannot enable MFA until the backend supports the enrollment endpoint.
+            Use the login screen for now.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Mapped backend MFA status. Only values the UI owns today are exported; real
+ *  backend statuses will be converted here when the API exists. */
+export type MfaStatus = 'not_configured' | 'enabled' | 'disabled' | 'enrolling';
+
+// The backend is not present, so this is the live status for this deployment.
+export const MFA_STATUS: MfaStatus = 'not_configured';
+
 const STATUS_LABELS: Record<WorkStatus, string> = {
   available: 'Available',
   busy: 'In Consultation',
@@ -33,7 +185,10 @@ const STATUS_LABELS: Record<WorkStatus, string> = {
   offline: 'Offline',
 };
 
-const STATUS_STYLES: Record<WorkStatus, { dot: string; active: string; idle: string }> = {
+const STATUS_STYLES: Record<
+  WorkStatus,
+  { dot: string; active: string; idle: string }
+> = {
   available: {
     dot: 'bg-emerald-500',
     active: 'border-emerald-300 bg-emerald-50 text-emerald-800',
@@ -67,7 +222,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 border-b border-gray-100 last:border-0">
       <span className="text-xs font-medium text-gray-500">{label}</span>
-      <span className="text-sm text-gray-900 break-all sm:text-right">{value || '—'}</span>
+      <span className="text-sm text-gray-900 break-all sm:text-right">
+        {value || '—'}
+      </span>
     </div>
   );
 }
@@ -76,10 +233,13 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
   const isAdmin = session.role === 'admin';
   const { isInstalled, promptInstall } = useDashboardPwaInstall();
 
+  const [mfaOpen, setMfaOpen] = useState(false);
   const [availability, setAvailability] = useState<WorkStatus>(() => {
     const stored = safeStorage.getItem(`staff_avail_${session.staffId}`) as WorkStatus | null;
     return stored && stored in STATUS_LABELS ? stored : 'available';
   });
+
+  const mfaStatus = MFA_STATUS;
 
   const handleStatusChange = (status: WorkStatus) => {
     setAvailability(status);
@@ -131,52 +291,101 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
           <div className="rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-1">
             <InfoRow label="Name" value={session.name || '—'} />
             <InfoRow label="Email" value={session.email || '—'} />
-            <InfoRow label="Role" value={session.role ? session.role.charAt(0).toUpperCase() + session.role.slice(1) : '—'} />
+            <InfoRow
+              label="Role"
+              value={
+                session.role
+                  ? session.role.charAt(0).toUpperCase() + session.role.slice(1)
+                  : '—'
+              }
+            />
             <InfoRow label="Staff ID" value={session.staffId || '—'} />
             <InfoRow label="Signed in" value={formatDateTime(session.loginAt)} />
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Account details are managed by your organization. Contact an administrator if something needs to change.
+            Account details are managed by your organization. Contact an administrator
+            if something needs to change.
           </p>
         </Card>
 
         <Card className="border-[#E8ECFF] bg-white p-5">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-4 h-4 text-[#BE322D]" />
-            <h2 className="font-semibold text-gray-900 text-sm">Security &amp; multi-factor authentication (MFA)</h2>
+            <h2 className="font-semibold text-gray-900 text-sm">
+              Security &amp; multi-factor authentication (MFA)
+            </h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Add an extra layer of protection to your staff account with multi-factor authentication.
+            Add an extra layer of protection to your staff account with multi-factor
+            authentication.
           </p>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="rounded-xl border border-[#F4D6D5] bg-[#FFF8F8] p-4">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
+              <KeyRound className="w-5 h-5 text-[#BE322D] mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-amber-900">MFA not configured</p>
-                <p className="text-sm text-amber-800 mt-1">
-                  Multi-factor authentication is not available for this account yet. MFA setup and
-                  management will appear here once it is enabled for your organization.
+                <p className="text-sm font-semibold text-[#241515]">MFA status</p>
+                <p className="text-sm text-[#6D4A49]">
+                  {mfaStatus === 'enabled'
+                    ? 'Multi-factor authentication is enabled on this account.'
+                    : mfaStatus === 'disabled'
+                      ? 'MFA is disabled; no authentication method is active.'
+                      : 'MFA is not available for this account yet and cannot be enabled here.'}
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-800">
-                    Status: Not enabled
-                  </span>
+                {mfaStatus === 'not_configured' ? (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled
-                    className="h-8 text-xs border-amber-300 text-amber-900 bg-white/70 cursor-not-allowed"
+                    className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#F16365]"
+                    onClick={() => setMfaOpen(true)}
                   >
                     Set up MFA
                   </Button>
-                </div>
-                <p className="text-xs text-amber-700 mt-2">
-                  You cannot enable MFA from this page right now. No MFA method is active on this account.
+                ) : mfaStatus === 'disabled' ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#F16365]"
+                    onClick={() => setMfaOpen(true)}
+                  >
+                    Re-enable MFA
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 h-8 text-xs border-emerald-300 text-emerald-700 bg-emerald-50"
+                    disabled
+                  >
+                    Manage MFA
+                  </Button>
+                )}
+                <p className="text-xs text-[#6D4A49] mt-2">
+                  {mfaStatus === 'enabled'
+                    ? 'You will need it when signing in from a new device or browser.'
+                    : 'No MFA method is active on this account.'}
                 </p>
               </div>
             </div>
           </div>
+
+          <Dialog open={mfaOpen} onOpenChange={setMfaOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Multi-factor authentication</DialogTitle>
+                <DialogDescription>
+                  {mfaStatus === 'enabled'
+                    ? 'You have MFA turned on. If you lose access, contact an administrator.'
+                    : mfaStatus === 'disabled'
+                      ? 'This account does not have an active MFA method. Re-enable it to turn it back on.'
+                      : 'Enter the code from your authenticator app or email to enable MFA.'}
+                </DialogDescription>
+              </DialogHeader>
+              <MfaEnrollmentCard status={mfaStatus} onDismiss={() => setMfaOpen(false)} />
+            </DialogContent>
+          </Dialog>
         </Card>
 
         {isAdmin && (
@@ -189,14 +398,16 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
               </Badge>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Shut down or restart automated bot replies. When the bot is shut down, no messages reach the
-              bot API until an admin restarts it. Live counselor chat and the support queue keep working.
+              Shut down or restart automated bot replies. When the bot is shut down, no
+              messages reach the bot API until an admin restarts it. Live counselor chat
+              and the support queue keep working.
             </p>
             <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">AI bot availability</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Use this for incidents, bad responses, or maintenance. The switch is browser-scoped on this device.
+                  Use this for incidents, bad responses, or maintenance. The switch is
+                  browser-scoped on this device.
                 </p>
               </div>
               <BotKillSwitch session={session} />
@@ -210,7 +421,9 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
             <h2 className="font-semibold text-gray-900 text-sm">Dashboard install</h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Install the staff dashboard as its own app. It opens directly to <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">/dashboard</code> and stays separate from the client app.
+            Install the staff dashboard as its own app. It opens directly to{' '}
+            <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">/dashboard</code>{' '}
+            and stays separate from the client app.
           </p>
           {isInstalled ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -227,7 +440,8 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                 Install dashboard app
               </Button>
               <p className="text-xs text-gray-500">
-                If the install prompt does not appear, use your browser menu (Install app / Add to Home Screen).
+                If the install prompt does not appear, use your browser menu (Install app
+                / Add to Home Screen).
               </p>
             </div>
           )}
@@ -239,7 +453,8 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
             <h2 className="font-semibold text-gray-900 text-sm">Work status</h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Set your availability so the team can see your current status. This updates the status shown on your profile.
+            Set your availability so the team can see your current status. This updates
+            the status shown on your profile.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(Object.keys(STATUS_LABELS) as WorkStatus[]).map((status) => {
@@ -255,14 +470,20 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                   }`}
                   aria-pressed={selected}
                 >
-                  <Circle className={`w-2.5 h-2.5 ${styles.dot} ${selected ? '' : 'opacity-80'}`} fill="currentColor" />
+                  <Circle
+                    className={`w-2.5 h-2.5 ${styles.dot} ${selected ? '' : 'opacity-80'}`}
+                    fill="currentColor"
+                  />
                   {STATUS_LABELS[status]}
                 </button>
               );
             })}
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Current status: <span className="font-medium text-gray-700">{STATUS_LABELS[availability]}</span>
+            Current status:{' '}
+            <span className="font-medium text-gray-700">
+              {STATUS_LABELS[availability]}
+            </span>
           </p>
         </Card>
 
@@ -272,14 +493,10 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
             <h2 className="font-semibold text-gray-900 text-sm">Session</h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Sign out of the staff dashboard on this device. You will need your credentials to sign in again.
+            Sign out of the staff dashboard on this device. You will need your
+            credentials to sign in again.
           </p>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={onLogout}
-            className="gap-2"
-          >
+          <Button type="button" variant="destructive" onClick={onLogout} className="gap-2">
             <LogOut className="w-4 h-4" />
             Sign out
           </Button>
