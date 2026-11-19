@@ -815,42 +815,42 @@ export function AdminUserManagement({ selectedLanguage, session }: AdminUserMana
                 </TableHeader>
                 <TableBody>
                   {staff.filter((member) => filterStaffStatus === 'all' || member.status === filterStaffStatus).map((member) => (
-                      <TableRow key={member.id} className="border-[#E8ECFF] hover:bg-gray-50 transition-colors">
-                        <TableCell className="text-gray-900 font-medium">{member.name}</TableCell>
-                        <TableCell className="text-gray-600 capitalize text-sm">{member.role}</TableCell>
-                        <TableCell className="text-gray-600 text-sm">{member.email}</TableCell>
-                        <TableCell>
-                          <Badge className={member.status === 'active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}>
-                            {member.status === 'active' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {member.trained ? (
-                            <Badge className="bg-green-50 text-green-600 border-green-200"><Check className="w-3 h-3 mr-1" />Yes</Badge>
-                          ) : (
-                            <Badge className="bg-yellow-50 text-yellow-600 border-yellow-200"><X className="w-3 h-3 mr-1" />Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {member.status === 'active' ? (
-                              <>
-                                <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => handleEditStaff(member)}>
-                                  Edit
-                                </Button>
-                                <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleRequestDeleteStaff(member)}>
-                                  Deactivate
-                                </Button>
-                              </>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleRequestDeleteStaff(member)}>
-                                Delete Permanently
+                    <TableRow key={member.id} className="border-[#E8ECFF] hover:bg-gray-50 transition-colors">
+                      <TableCell className="text-gray-900 font-medium">{member.name}</TableCell>
+                      <TableCell className="text-gray-600 capitalize text-sm">{member.role}</TableCell>
+                      <TableCell className="text-gray-600 text-sm">{member.email}</TableCell>
+                      <TableCell>
+                        <Badge className={member.status === 'active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}>
+                          {member.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {member.trained ? (
+                          <Badge className="bg-green-50 text-green-600 border-green-200"><Check className="w-3 h-3 mr-1" />Yes</Badge>
+                        ) : (
+                          <Badge className="bg-yellow-50 text-yellow-600 border-yellow-200"><X className="w-3 h-3 mr-1" />Pending</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {member.status === 'active' ? (
+                            <>
+                              <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => handleEditStaff(member)}>
+                                Edit
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleRequestDeleteStaff(member)}>
+                                Deactivate
+                              </Button>
+                            </>
+                          ) : (
+                            <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleRequestDeleteStaff(member)}>
+                              Delete Permanently
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -890,7 +890,6 @@ export function AdminUserManagement({ selectedLanguage, session }: AdminUserMana
                   <option value="consultant">Consultant</option>
                   <option value="admin">Admin</option>
                   <option value="supervisor">Supervisor</option>
-                  <option value="coordinator">Coordinator</option>
                 </select>
               </div>
 
@@ -1104,7 +1103,7 @@ export function AdminUserManagement({ selectedLanguage, session }: AdminUserMana
           <AlertDialogHeader>
             <AlertDialogTitle>{isDeactivatingStaff() ? 'Deactivate staff member?' : 'Permanently delete staff member?'}</AlertDialogTitle>
             <AlertDialogDescription>
-              {isDeactivatingStaff() 
+              {isDeactivatingStaff()
                 ? `This will keep ${deleteStaffName || 'this staff member'} in the system but make the account inactive. Enter the admin password to confirm.`
                 : `This will permanently remove ${deleteStaffName || 'this staff member'} from the system. This cannot be undone. Enter the admin password to confirm.`
               }

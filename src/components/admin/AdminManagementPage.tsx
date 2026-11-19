@@ -20,14 +20,12 @@ import {
 } from '@/services/staffAccessService';
 import { logger } from '@/utils/logger';
 
-const ROLES: StaffRole[] = ['viewer', 'consultant', 'supervisor', 'coordinator', 'admin'];
+const ROLES: StaffRole[] = ['consultant', 'supervisor', 'admin'];
 
 const ROLE_COLORS: Record<string, string> = {
-  admin:       'bg-red-100 text-red-700 border-red-200',
-  supervisor:  'bg-violet-100 text-violet-700 border-violet-200',
-  coordinator: 'bg-blue-100 text-blue-700 border-blue-200',
-  consultant:  'bg-teal-100 text-teal-700 border-teal-200',
-  viewer:      'bg-gray-100 text-gray-600 border-gray-200',
+  admin: 'bg-red-100 text-red-700 border-red-200',
+  supervisor: 'bg-violet-100 text-violet-700 border-violet-200',
+  consultant: 'bg-teal-100 text-teal-700 border-teal-200',
 };
 
 function Skeleton({ className = '' }: { className?: string }) {
@@ -212,9 +210,9 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge className={`text-[10px] capitalize ${ROLE_COLORS[s.role] ?? ROLE_COLORS.viewer}`}>
-                        {s.role.replace(/_/g, ' ')}
-                      </Badge>
+                        <Badge className={`text-[10px] capitalize ${ROLE_COLORS[s.role] ?? ROLE_COLORS.consultant}`}>
+                          {s.role.replace(/_/g, ' ')}
+                        </Badge>
                     </td>
                     <td className="px-4 py-3">
                       {s.is_active ? (

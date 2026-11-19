@@ -48,18 +48,6 @@ export const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     'VIEW_SAFETY',
     'RESOLVE_SAFETY',
   ],
-  coordinator: [
-    'VIEW_OVERVIEW',
-    'VIEW_SUPPORT_QUEUE',
-    'VIEW_CONVERSATIONS',
-    'VIEW_SAFETY',
-    'EXPORT_REPORTS',
-  ],
-  viewer: [
-    'VIEW_OVERVIEW',
-    'VIEW_CONVERSATIONS',
-    'VIEW_SAFETY',
-  ],
 };
 
 const SECTION_REQUIRED_PERMISSIONS: Record<AdminSection, Permission> = {
@@ -76,36 +64,34 @@ export function normalizeRole(role?: string): StaffRole {
   if (!role) return 'admin';
   const clean = role.trim().toLowerCase();
   if (clean === 'counselor') return 'consultant';
-  if (clean === 'admin' || clean === 'supervisor' || clean === 'consultant' || clean === 'coordinator' || clean === 'viewer') {
-    return clean as StaffRole;
+    if (clean === 'admin' || clean === 'supervisor' || clean === 'consultant') {
+      return clean as StaffRole;
+    }
+    return 'admin';
   }
-  return 'admin';
-}
 
-export function hasPermission(role?: StaffRole | string, permission?: Permission): boolean {
-  if (!permission) return true;
-  const normalized = normalizeRole(role);
-  const permissions = ROLE_PERMISSIONS[normalized] || ROLE_PERMISSIONS.admin;
-  return permissions.includes(permission);
-}
-
-export function canAccessSection(role?: StaffRole | string, section?: AdminSection): boolean {
-  if (!section) return true;
-  const required = SECTION_REQUIRED_PERMISSIONS[section];
-  if (!required) return true;
-  return hasPermission(role, required);
-}
-
-export function getDefaultSectionForRole(role?: StaffRole | string): AdminSection {
-  const normalized = normalizeRole(role);
-  switch (normalized) {
-    case 'consultant':
-      return 'counselor-queue';
-    case 'supervisor':
-    case 'admin':
-    case 'coordinator':
-    case 'viewer':
-    default:
-      return 'overview';
+  export function hasPermission(role?: StaffRole | string, permission?: Permission): boolean {
+    if (!permission) return true;
+    const normalized = normalizeRole(role);
+    const permissions = ROLE_PERMISSIONS[normalized] || ROLE_PERMISSIONS.admin;
+    return permissions.includes(permission);
   }
-}
+
+  export function canAccessSection(role?: StaffRole | string, section?: AdminSection): boolean {
+    if (!section) return true;
+    const required = SECTION_REQUIRED_PERMISSIONS[section];
+    if (!required) return true;
+    return hasPermission(role, required);
+  }
+
+  export function getDefaultSectionForRole(role?: StaffRole | string): AdminSection {
+    const normalized = normalizeRole(role);
+    switch (normalized) {
+      case 'consultant':
+        return 'counselor-queue';
+      case 'supervisor':
+      case 'admin':
+      default:
+        return 'overview';
+    }
+  }

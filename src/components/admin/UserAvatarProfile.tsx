@@ -51,8 +51,6 @@ function getRoleBadgeColor(role?: string): { bg: string; text: string; border: s
       return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
     case 'consultant':
       return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
-    case 'coordinator':
-      return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' };
     default:
       return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' };
   }
@@ -172,11 +170,10 @@ export const UserAvatarProfile: React.FC<UserAvatarProfileProps> = ({
                 key={s}
                 type="button"
                 onClick={() => handleStatusChange(s)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
-                  availability === s
+                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${availability === s
                     ? 'bg-white shadow-xs font-semibold text-gray-900 border border-gray-200'
                     : 'text-gray-600 hover:bg-white/60 hover:text-gray-800'
-                }`}
+                  }`}
               >
                 <span className={`w-2 h-2 rounded-full ${statusColors[s]}`} />
                 <span className="truncate">{statusLabels[s]}</span>
