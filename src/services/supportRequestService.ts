@@ -65,9 +65,13 @@ export interface SupportRequestListItem {
   assigned_staff?: AssignedStaff;
   /** Flat staff ID returned directly by GET /support-requests (no nested object). */
   assigned_staff_id?: string;
+  assigned_staff_name?: string;
   estimated_wait_time_minutes?: number;
   /** Present once a consultant has been connected to the request. */
   duration_minutes?: number;
+  notes?: string;
+  resolved_at?: string;
+  conversation_id?: string;
   safety_flags: string[];
 }
 
@@ -240,6 +244,9 @@ export class SupportRequestService {
       status?: SupportRequestStatus;
       urgency?: RequestUrgency;
       assigned_to?: string;
+      staff_id?: string;
+      start_date?: string;
+      end_date?: string;
       sort_by?: 'created_at' | 'urgency' | 'status';
     },
     accessToken?: string,
@@ -251,6 +258,9 @@ export class SupportRequestService {
     if (options?.status) params.append('status', options.status);
     if (options?.urgency) params.append('urgency', options.urgency);
     if (options?.assigned_to) params.append('assigned_to', options.assigned_to);
+    if (options?.staff_id) params.append('staff_id', options.staff_id);
+    if (options?.start_date) params.append('start_date', options.start_date);
+    if (options?.end_date) params.append('end_date', options.end_date);
     if (options?.sort_by) params.append('sort_by', options.sort_by);
 
     const url = `${buildUrl(SUPPORT_REQUESTS_BASE_PATH)}${params.toString() ? `?${params.toString()}` : ''}`;
