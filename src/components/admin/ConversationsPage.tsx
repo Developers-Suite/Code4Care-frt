@@ -70,6 +70,7 @@ function formatSessionDisplay(sessionId: string): string {
 interface ConversationDetailPanelProps {
   conv: AdminConversationListItem;
   accessToken?: string;
+  staffId?: string;
   onClose: () => void;
   onTakeoverSuccess?: (convId: string) => void;
   onReleaseSuccess?: (convId: string) => void;
@@ -122,6 +123,7 @@ function ChatBubble({ msg }: { msg: AdminConversationMessage }) {
 function ConversationDetailPanel({
   conv,
   accessToken,
+  staffId,
   onClose,
   onTakeoverSuccess,
   onReleaseSuccess,
@@ -393,27 +395,40 @@ function ConversationDetailPanel({
         </div>
 
         {/* Counselor Reply Box */}
-        {Boolean(detail?.is_human_takeover ?? conv.is_human_takeover) ? (
-          <form onSubmit={handleSendReply} className="p-3 border-t border-gray-200 bg-gray-50 flex gap-2">
-            <input
-              type="text"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder={`Send message to ${conv.platform === 'whatsapp' ? 'WhatsApp user' : 'client'} as counselor...`}
-              className="flex-1 text-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006d77] bg-white"
-              disabled={isSendingReply}
-            />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={isSendingReply || !replyText.trim()}
-              className="bg-[#006d77] hover:bg-[#005a63] text-white text-xs px-3 h-8 flex items-center gap-1"
-            >
-              <Send className="w-3.5 h-3.5" />
-              {isSendingReply ? 'Sending' : 'Send'}
-            </Button>
-          </form>
-        ) : (
+        {Boolean(detail?.is_human_takeover ?? conv.is_human_takeover) ? (() => {
+          // Exclusive reply lock: only the counselor who took over can send messages
+          const takeoverStaffId = detail?.takeover_staff_id;
+          const isLockedByOther = takeoverStaffId && staffId && takeoverStaffId !== staffId;
+          if (isLockedByOther) {
+            return (
+              <div className="p-3 border-t border-amber-200 bg-amber-50 text-center text-xs text-amber-700">
+                🔒 <strong>Locked</strong> — This conversation is currently handled by another counselor.
+                Only the assigned counselor can send messages until they hand it back to the bot.
+              </div>
+            );
+          }
+          return (
+            <form onSubmit={handleSendReply} className="p-3 border-t border-gray-200 bg-gray-50 flex gap-2">
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder={`Send message to ${conv.platform === 'whatsapp' ? 'WhatsApp user' : 'client'} as counselor...`}
+                className="flex-1 text-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006d77] bg-white"
+                disabled={isSendingReply}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSendingReply || !replyText.trim()}
+                className="bg-[#006d77] hover:bg-[#005a63] text-white text-xs px-3 h-8 flex items-center gap-1"
+              >
+                <Send className="w-3.5 h-3.5" />
+                {isSendingReply ? 'Sending' : 'Send'}
+              </Button>
+            </form>
+          );
+        })() : (
           <div className="p-3 border-t border-gray-100 bg-slate-50 text-center text-xs text-gray-500">
             Click <strong className="text-[#006d77] cursor-pointer" onClick={handleTakeover}>Take Over Chat</strong> above to message this client directly.
           </div>
@@ -930,6 +945,7 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
             key={selectedConv.id}
             conv={selectedConv}
             accessToken={session.accessToken}
+            staffId={session.staffId}
             onClose={() => {
               setSelectedConv(null);
               onClearTarget?.();

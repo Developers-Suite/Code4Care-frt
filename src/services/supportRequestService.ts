@@ -63,6 +63,8 @@ export interface SupportRequestListItem {
   reason: RequestReason;
   created_at: string;
   assigned_staff?: AssignedStaff;
+  /** Flat staff ID returned directly by GET /support-requests (no nested object). */
+  assigned_staff_id?: string;
   estimated_wait_time_minutes?: number;
   /** Present once a consultant has been connected to the request. */
   duration_minutes?: number;

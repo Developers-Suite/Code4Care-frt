@@ -60,13 +60,19 @@ export function SupportCounselorDashboard({
     },
   });
 
+  const isMyRequest = (request: SupportRequestListItem) =>
+    request.assigned_staff?.id === session.staffId ||
+    request.assigned_staff_id === session.staffId;
+
   const myAssignedRequests = useMemo(
-    () => supportRequests.filter((request) => request.assigned_staff?.id === session.staffId && request.status === 'assigned'),
+    () => supportRequests.filter((request) => isMyRequest(request) && request.status === 'assigned'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [supportRequests, session.staffId]
   );
 
   const myActiveRequests = useMemo(
-    () => supportRequests.filter((request) => request.assigned_staff?.id === session.staffId && request.status === 'active'),
+    () => supportRequests.filter((request) => isMyRequest(request) && request.status === 'active'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [supportRequests, session.staffId]
   );
 
@@ -112,11 +118,12 @@ export function SupportCounselorDashboard({
       ).catch(() => { });
 
       // 3. Resolve the real conversation id from the conversations API using session_id
+      // After takeover: is_human_takeover=true, is_escalated=false — search ALL recent convs
       let resolvedConvId: string | undefined;
       if (request.session_id && onOpenConversation) {
         try {
           const convResponse = await StaffAccessService.listConversations(
-            { is_escalated: true, is_human_takeover: false, page_size: 100 },
+            { page_size: 200 },
             session.accessToken,
           );
           const matched = (convResponse.conversations ?? []).find(
@@ -128,12 +135,18 @@ export function SupportCounselorDashboard({
         }
       }
 
-      // 4. Update local state optimistically
+      // 4. Update local state optimistically — include both assigned_staff AND assigned_staff_id
+      //    so both filter paths in myAssignedRequests / myActiveRequests keep the card visible.
       setSupportRequests((prev) =>
         prev.map((r) =>
           r.id !== request.id
             ? r
-            : { ...r, status: 'active' as const, assigned_staff: { id: session.staffId, name: session.name } }
+            : {
+                ...r,
+                status: 'active' as const,
+                assigned_staff: { id: session.staffId, name: session.name },
+                assigned_staff_id: session.staffId,
+              }
         )
       );
 

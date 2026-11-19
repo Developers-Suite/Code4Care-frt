@@ -43,7 +43,7 @@ const navigationItems: {
   roles?: string[];
 }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, desc: 'Executive summary & KPIs' },
-    // { id: 'counselor-queue', label: 'Support Queue',     icon: Headphones,      desc: 'Live takeover queue' },
+    { id: 'counselor-queue', label: 'Support Counselor', icon: Headphones, desc: 'Live takeover queue', roles: ['admin', 'supervisor', 'consultant'] },
     { id: 'users', label: 'Users & Sessions', icon: Users, desc: 'Demographics & retention', roles: ['admin', 'supervisor'] },
     { id: 'conversations', label: 'Conversations', icon: MessageSquare, desc: 'Chat volume & topics' },
     { id: 'safety', label: 'Safety & Crisis', icon: AlertTriangle, desc: 'Crisis & escalations' },
@@ -63,7 +63,9 @@ export function AdminSidebar({
 }: AdminSidebarProps) {
   const userRole = role || 'admin';
   const visibleItems = navigationItems.filter(
-    (item) => canAccessSection(userRole, item.id),
+    (item) =>
+      canAccessSection(userRole, item.id) &&
+      (!item.roles || item.roles.includes(userRole)),
   );
   return (
     <div className="flex flex-col h-full bg-white text-gray-900 select-none">

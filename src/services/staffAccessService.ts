@@ -185,6 +185,8 @@ export interface AdminConversationDetail {
   auto_delete_period: string;
   auto_delete_at: string;
   messages: AdminConversationMessage[];
+  /** ID of the staff member who currently owns this takeover (exclusive reply lock). */
+  takeover_staff_id?: string | null;
 }
 
 export interface AdminListConversationsOptions {
