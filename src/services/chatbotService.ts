@@ -1,5 +1,8 @@
 // Clean, Natural Conversational AI Chatbot for SRH - Ghana
 import { logger } from "@/utils/logger";
+import { assertBotApiEnabled } from "@/services/botKillSwitch";
+
+export { BotKilledError } from "@/services/botKillSwitch";
 
 export interface ChatMessage {
   id: string;
@@ -156,6 +159,9 @@ export async function requestChatCompletion(
   payload: ChatApiRequest,
   _demographics?: UserDemographics
 ): Promise<ChatApiResponse> {
+  // Kill switch: never reach the bot API while the bot is shut down.
+  assertBotApiEnabled();
+
   try {
     logger.info('Sending chat request to backend...');
     const response = await postChatCompletion(payload, CHAT_ENDPOINT);

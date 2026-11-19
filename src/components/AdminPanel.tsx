@@ -4,6 +4,7 @@ import { Menu, ShieldAlert, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { NotificationPopover } from './NotificationPopover';
 import { DashboardInstallButton } from './DashboardInstallButton';
+import { BotKillSwitch } from './admin/BotKillSwitch';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
 import { UsersSessionsPage } from './admin/UsersSessionsPage';
@@ -242,6 +243,8 @@ interface AdminPanelProps {
                   ⌘K
                 </kbd>
               </Button>
+
+              {session.role === 'admin' && <BotKillSwitch session={session} />}
 
               <DashboardInstallButton />
 

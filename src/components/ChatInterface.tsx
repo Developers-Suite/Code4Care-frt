@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Mic, Clock, User, ShieldCheck, Volume2, Pause, ThumbsUp, ThumbsDown, Flag, Headphones, Radio } from "lucide-react";
+import { Send, Mic, Clock, User, ShieldCheck, Volume2, Pause, ThumbsUp, ThumbsDown, Flag, Headphones, Radio, Power } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import ReactMarkdown from 'react-markdown';
@@ -16,7 +16,8 @@ import {
   DialogFooter,
 } from "./ui/dialog";
 import { useApp } from "@/providers/AppProvider";
-import { ChatCitation, requestChatCompletion } from "@/services/chatbotService";
+import { BotKilledError, ChatCitation, requestChatCompletion } from "@/services/chatbotService";
+import { useBotKillSwitch } from "@/hooks/useBotKillSwitch";
 import { FeedbackService } from "@/services/feedbackService";
 import { ReportService } from "@/services/reportService";
 import { SuggestionsService } from "@/services/suggestionsService";
@@ -71,6 +72,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const { t, i18n } = useTranslation();
   const { nickname, botName, sessionId, setSessionId, consultantMode, sessionDuration, ageRange, genderIdentity, region, analyticsOptIn } = useApp();
+  const { botKilled } = useBotKillSwitch();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -421,9 +423,30 @@ export function ChatInterface({
     }
   }, [i18n.language]);
 
+  const addBotPausedResponse = (text: string) => {
+    setMessages(prev => [...prev, {
+      id: `bot-paused-${Date.now()}`,
+      text,
+      sender: 'bot',
+      timestamp: new Date(),
+      mode: consultantMode ? 'consultant' : 'chatbot',
+    }]);
+  };
+
   const handleSend = async (presetMessage?: string) => {
     const outgoingMessage = (presetMessage ?? inputValue).trim();
     if (!outgoingMessage) return;
+
+    // Kill switch engaged: keep the bot API untouched and hand the user to a human.
+    if (botKilled) {
+      setInputValue("");
+      setIsLiveCounselorRequested(true);
+      setTakeoverStatus((current) => current === "live" ? current : "queued");
+      addBotPausedResponse(
+        "The AI assistant is paused right now. Tap the headset button to reach a live counselor, or call 1221 if this is an emergency."
+      );
+      return;
+    }
 
     const normalizeSafetyFlag = (flag: unknown) => {
       if (typeof flag === 'string') {
@@ -556,8 +579,15 @@ export function ChatInterface({
         addServiceUnavailableResponse('Chat API returned an empty answer.');
       }
     } catch (error) {
-      logger.error('Chat API failed:', error);
-      addServiceUnavailableResponse(error);
+      if (error instanceof BotKilledError) {
+        logger.warn('Bot API call blocked by the kill switch');
+        addBotPausedResponse(
+          "The AI assistant was just paused by the care team. Tap the headset button to reach a live counselor."
+        );
+      } else {
+        logger.error('Chat API failed:', error);
+        addServiceUnavailableResponse(error);
+      }
     } finally {
       setIsTyping(false);
       // Post an incremental analytics snapshot so messages are recorded instantly
@@ -721,6 +751,18 @@ export function ChatInterface({
               <span className="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm">
                 Live Active
               </span>
+            </div>
+          ) : null}
+
+          {botKilled ? (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 shadow-sm flex items-start gap-2.5 text-amber-900">
+              <Power className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold">AI assistant paused</p>
+                <p className="text-[11px] text-amber-800">
+                  Automated replies are temporarily off. Tap the headset button to talk to a live counselor.
+                </p>
+              </div>
             </div>
           ) : null}
 
@@ -970,7 +1012,11 @@ export function ChatInterface({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder={isHumanTakeover ? t('chat.counselorPlaceholder', 'Message your live counselor...') : t('chat.placeholder')}
+              placeholder={isHumanTakeover
+                ? t('chat.counselorPlaceholder', 'Message your live counselor...')
+                : botKilled
+                  ? 'AI paused — tap the headset for a counselor'
+                  : t('chat.placeholder')}
               className="h-11 sm:h-12 w-full rounded-full pl-4 sm:pl-5 pr-4 bg-white border border-slate-300 shadow-sm focus:bg-white focus:border-blue-500 transition-all text-sm font-medium placeholder:text-slate-500 placeholder:opacity-100 focus:placeholder:text-slate-400"
             />
           </div>
