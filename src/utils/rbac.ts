@@ -12,7 +12,8 @@ export type Permission =
   | 'RESOLVE_SAFETY'
   | 'VIEW_AUDIT'
   | 'EXPORT_REPORTS'
-  | 'MANAGE_STAFF';
+  | 'MANAGE_STAFF'
+  | 'VIEW_SETTINGS';
 
 export const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
   admin: [
@@ -27,6 +28,7 @@ export const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     'VIEW_AUDIT',
     'EXPORT_REPORTS',
     'MANAGE_STAFF',
+    'VIEW_SETTINGS',
   ],
   supervisor: [
     'VIEW_OVERVIEW',
@@ -39,6 +41,7 @@ export const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     'RESOLVE_SAFETY',
     'VIEW_AUDIT',
     'EXPORT_REPORTS',
+    'VIEW_SETTINGS',
   ],
   consultant: [
     'VIEW_OVERVIEW',
@@ -47,6 +50,7 @@ export const ROLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
     'INTERVENE_CONVERSATION',
     'VIEW_SAFETY',
     'RESOLVE_SAFETY',
+    'VIEW_SETTINGS',
   ],
 };
 
@@ -58,6 +62,7 @@ const SECTION_REQUIRED_PERMISSIONS: Record<AdminSection, Permission> = {
   'safety': 'VIEW_SAFETY',
   'audit': 'VIEW_AUDIT',
   'admin-accounts': 'MANAGE_STAFF',
+  'settings': 'VIEW_SETTINGS',
 };
 
 export function normalizeRole(role?: string): StaffRole {

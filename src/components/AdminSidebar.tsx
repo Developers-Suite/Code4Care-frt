@@ -8,6 +8,7 @@ import {
   X,
   UserCog,
   Headphones,
+  Settings,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -22,7 +23,8 @@ export type AdminSection =
   | 'conversations'
   | 'safety'
   | 'audit'
-  | 'admin-accounts';
+  | 'admin-accounts'
+  | 'settings';
 
 interface AdminSidebarProps {
   currentSection: AdminSection;
@@ -48,6 +50,7 @@ const navigationItems: {
     { id: 'conversations', label: 'Conversations', icon: MessageSquare, desc: 'Chat volume & topics' },
     { id: 'safety', label: 'Safety & Crisis', icon: AlertTriangle, desc: 'Crisis & escalations' },
     { id: 'audit', label: 'Admin & Audit', icon: Shield, desc: 'Reports & audit log', roles: ['admin', 'supervisor'] },
+    { id: 'settings', label: 'Settings', icon: Settings, desc: 'Account, security & preferences' },
     { id: 'admin-accounts', label: 'Admin Accounts', icon: UserCog, desc: 'Manage staff access', roles: ['admin'] },
   ];
 

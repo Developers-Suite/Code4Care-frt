@@ -11,6 +11,7 @@ import {
   UserCog,
   LogOut,
   Command,
+  Settings,
 } from 'lucide-react';
 import { AdminSection } from '../AdminSidebar';
 import { canAccessSection } from '@/utils/rbac';
@@ -54,6 +55,7 @@ export function CommandPalette({
     { id: 'users',           label: 'Users & Sessions',  desc: 'User demographics & engagement',       icon: Users },
     { id: 'safety',          label: 'Safety & Crisis',   desc: 'Crisis triggers & intervention flags', icon: AlertTriangle },
     { id: 'audit',           label: 'Admin & Audit',     desc: 'System activity & report exports',     icon: Shield },
+    { id: 'settings',        label: 'Settings',          desc: 'Account, security & preferences',      icon: Settings },
     { id: 'admin-accounts',  label: 'Admin Accounts',    desc: 'Staff permissions & access control',   icon: UserCog },
   ];
 

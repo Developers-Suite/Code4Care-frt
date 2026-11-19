@@ -4,7 +4,6 @@ import { Menu, ShieldAlert, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { NotificationPopover } from './NotificationPopover';
 import { DashboardInstallButton } from './DashboardInstallButton';
-import { BotKillSwitch } from './admin/BotKillSwitch';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
 import { UsersSessionsPage } from './admin/UsersSessionsPage';
@@ -12,6 +11,7 @@ import { ConversationsPage } from './admin/ConversationsPage';
 import { SafetyCrisisPage } from './admin/SafetyCrisisPage';
 import { AdminAuditPage } from './admin/AdminAuditPage';
 import { AdminManagementPage } from './admin/AdminManagementPage';
+import { SettingsPage } from './admin/SettingsPage';
 import { SupportCounselorDashboard } from './ConsultantDashboard';
 import { CommandPalette } from './admin/CommandPalette';
 import { canAccessSection, getDefaultSectionForRole } from '@/utils/rbac';
@@ -135,6 +135,7 @@ interface AdminPanelProps {
         case 'conversations': return <ConversationsPage session={session} targetConversationTarget={conversationTarget} onClearTarget={() => setConversationTarget(null)} />;
         case 'safety': return <SafetyCrisisPage session={session} />;
         case 'audit': return <AdminAuditPage session={session} />;
+        case 'settings': return <SettingsPage session={session} onLogout={onLogout} />;
         case 'admin-accounts': return <AdminManagementPage session={session} />;
         default: return session.role === 'consultant'
             ? <SupportCounselorDashboard session={session} onLogout={onLogout} embedded onOpenConversation={handleOpenConversation} />
@@ -243,8 +244,6 @@ interface AdminPanelProps {
                   ⌘K
                 </kbd>
               </Button>
-
-              {session.role === 'admin' && <BotKillSwitch session={session} />}
 
               <DashboardInstallButton />
 

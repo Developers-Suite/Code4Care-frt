@@ -10,7 +10,7 @@ This manual is written for three audiences. Read only the part that applies to y
 | --- | --- | --- |
 | **Part A** | Clients, young people using the app | Onboarding, chat, live counselor, story mode, myths, support, pharmacy, settings, install, privacy |
 | **Part B** | Support consultants / counselors | Signing in, queue, taking over chats, replying, resolving cases, handover notes |
-| **Part C** | Admins & supervisors | Analytics, users, conversations, safety, audit, staff accounts, bot kill switch, dashboard install |
+| **Part C** | Admins & supervisors | Analytics, users, conversations, safety, audit, staff accounts, dashboard settings (MFA, bot controls, install, work status, sign out) |
 
 ---
 
@@ -59,7 +59,7 @@ This manual is written for three audiences. Read only the part that applies to y
   - [C6. Safety & Crisis](#c6-safety--crisis)
   - [C7. Admin & Audit (reports and exports)](#c7-admin--audit-reports-and-exports)
   - [C8. Admin Accounts (staff management)](#c8-admin-accounts-staff-management)
-  - [C9. Bot kill switch (admins only)](#c9-bot-kill-switch-admins-only)
+  - [C9. Dashboard Settings](#c9-dashboard-settings)
   - [C10. Installing the dashboard as an app](#c10-installing-the-dashboard-as-an-app)
   - [C11. Using the dashboard on a phone or tablet](#c11-using-the-dashboard-on-a-phone-or-tablet)
 - [Part D — Reference](#part-d--reference)
@@ -432,7 +432,6 @@ Items you are not permitted to see are hidden for your role.
 - **☰ Menu** on phones to open the sidebar drawer; section name displayed next to it.
 - Amber **"N waiting in queue"** pill when live requests are waiting — tap it to jump to the queue.
 - **Search… ⌘K** — the command palette.
-- **Bot live / Bot shut down** pill — visible to admins only.
 - **Install** button — installs the dashboard as an app.
 - **Notifications** bell with a red count badge.
 - **Avatar menu** — profile, work status, sign out.
@@ -638,46 +637,78 @@ Items you are not permitted to see are hidden for your role.
 7. If loading fails, the error message from the API is shown at the top of the page.
 8. See [D2](#d2-roles-and-permissions) for what each role can do.
 
-## C9. Bot kill switch (admins only)
+## C9. Dashboard Settings
+
+Open **Settings** from the sidebar, from the **avatar menu** (top-right), or by pressing **Ctrl/⌘ + K** and choosing **Settings**. The page is available to all staff roles; some cards are role-specific.
+
+**Account (read-only)**
+
+1. The **Account** card shows your name, email, role, staff ID and sign-in time for the current session.
+2. These details are managed by your organization. Contact an administrator if something needs to change.
+
+**Security & multi-factor authentication (MFA)**
+
+1. The **Security & multi-factor authentication (MFA)** card is visible to all staff.
+2. It shows the current status. If MFA is not set up, it displays **MFA not configured** with a **Status: Not enabled** badge and a disabled **Set up MFA** button.
+3. MFA setup and management will appear here once it is enabled for your organization. You cannot enable MFA from this page right now, and no MFA method is active on the account when this message is shown.
+
+**Bot controls (admins only)**
 
 Use this when the AI must stop replying immediately — a safety incident, a bad answer wave, or maintenance — while counselors keep talking to clients.
 
-**Turning the bot off**
+*Turning the bot off*
 
-1. Sign in as an **admin**. The pill is only rendered for admins; supervisors and consultants never see it.
-2. In the dashboard header, find the grey pill labelled **Bot live** with a power icon.
-3. Click it.
+1. Sign in as an **admin**. The **Bot controls** card is only shown to admins; supervisors and consultants never see it.
+2. Open **Settings** and find **Bot controls**.
+3. Click the grey pill labelled **Bot live** with a power icon.
 4. Read the confirmation dialog: *"New messages stop reaching the bot API until an admin restarts it. Live counselor chat and the support queue keep working."*
 5. Click **Shut down bot** to confirm, or **Cancel** to go back.
 6. The pill turns red and reads **Bot shut down**, and a warning toast confirms the shutdown.
 7. On the client side, visitors immediately see the amber **"AI assistant paused"** banner, and sending produces the paused notice instead of a bot answer.
 
-**What still works while the bot is off**
+*What still works while the bot is off*
 
 - Clients can still request a live counselor with the headset button.
 - Counselor replies still reach clients, and the takeover/reply flow is unchanged.
 - Support queue, conversations, analytics and exports are unaffected.
 - No request is made to the bot API at all — the block happens before the network call.
 
-**Turning the bot back on**
+*Turning the bot back on*
 
-1. Click the red **Bot shut down** pill.
+1. In **Settings → Bot controls**, click the red **Bot shut down** pill.
 2. It switches back to **Bot live** immediately and a success toast confirms the restart.
 3. Clients' paused banners disappear and the AI answers again.
 
-**Important limits**
+*Important limits*
 
 - The switch is stored in the browser where it was set (local storage), and stays in sync across tabs of that browser.
 - It does **not** reach other people's devices: a client on another browser or phone is only blocked once the backend itself enforces the flag. If you need a global shutdown, the API must check the same switch server-side.
 - The switch records who flipped it and when, and survives page reloads in that browser.
 - Clearing browser data resets it to **Bot live**.
 
+**Dashboard install**
+
+1. The **Dashboard install** card lets you install the staff dashboard as its own app (it opens directly to `/dashboard`, separate from the client app).
+2. Click **Install dashboard app**. If the browser install prompt does not appear, follow the manual instructions shown in the toast.
+3. If the dashboard is already installed on the device, the card shows that it is installed. You can also use the **Install** button in the header — see [C10](#c10-installing-the-dashboard-as-an-app).
+
+**Work status**
+
+1. Choose **Available**, **In Consultation**, **On Break** or **Offline**.
+2. A toast confirms the change and the status shown on your profile updates.
+3. You can also change work status from the **avatar menu** in the header (see [B3](#b3-work-status-and-profile-menu)).
+
+**Session**
+
+1. Click **Sign out** to end the staff session on this device.
+2. You will need your credentials to sign in again.
+
 ## C10. Installing the dashboard as an app
 
 The dashboard installs as its **own** app, separate from the client app, and only opens `/dashboard`.
 
 1. Sign in to the dashboard.
-2. Click the **Install** (download icon) button in the header.
+2. Click the **Install** (download icon) button in the header, or open **Settings → Dashboard install** and click **Install dashboard app**.
 3. The browser's install prompt appears.
 
 **If the prompt does not appear (not supported, or already installed):**
@@ -701,7 +732,7 @@ The dashboard installs as its **own** app, separate from the client app, and onl
 2. On phones, the sidebar becomes a drawer: tap **☰ Menu** in the header to open it, and the **✕** or any item to close it.
 3. The header stays compact: search collapses to an icon-free button, notification text hides, badges stay visible.
 4. Tables scroll horizontally; use the conversation filter pills and export buttons as on desktop.
-5. All actions — takeover, reply, resolve, kill switch, install — are available on mobile.
+5. All actions — takeover, reply, resolve, the admin bot kill switch (in Settings), and install — are available on mobile.
 
 ---
 
@@ -720,7 +751,7 @@ The dashboard installs as its **own** app, separate from the client app, and onl
 | **Locked** | Another counselor owns this chat; you cannot send messages. |
 | **Live Consultant Chat / Live Active** | What the client sees while a counselor is chatting with them. |
 | **AI assistant paused** | An admin switched the bot off; the client should use the headset or 1221. |
-| **Bot live / Bot shut down** | The admin header pill showing the current kill-switch state. |
+| **Bot live / Bot shut down** | The admin control in **Settings → Bot controls** showing the current kill-switch state. |
 
 ## D2. Roles and permissions
 
@@ -732,8 +763,9 @@ The dashboard installs as its **own** app, separate from the client app, and onl
 | Users & Sessions | ✅ | ✅ | — |
 | Safety & Crisis | ✅ | ✅ | ✅ |
 | Admin & Audit | ✅ | ✅ | — |
+| Settings | ✅ | ✅ | ✅ |
 | Admin Accounts | ✅ | — | — |
-| Bot kill switch | ✅ | — | — |
+| Bot kill switch (in Settings) | ✅ | — | — |
 
 Additional notes:
 
@@ -765,7 +797,7 @@ The age of consent in Ghana is **16**. Any sexual activity with someone under 16
 | Takeover button fails | The conversation may already be owned by another counselor, or the API rejected it. Reload the panel and check the "Locked" notice. |
 | Resolved cases missing | Clear the date filter and, for admins/supervisors, reset the counselor filter. |
 | Export downloads nothing | The current view has no rows — the export button is disabled when the table is empty. |
-| Kill switch not visible | You are not signed in as an admin. |
+| Kill switch not visible in Settings | The **Bot controls** card is only shown to admins. |
 | Kill switch does not affect other devices | Expected: it is browser-scoped until the backend enforces the same flag. |
 | Install button does nothing | The browser does not support installation or the site is not on HTTPS. Follow the manual instructions in the toast. |
 | Phone layout shows no sidebar | Tap **☰ Menu** in the header; the sidebar is a drawer below 768 px. |

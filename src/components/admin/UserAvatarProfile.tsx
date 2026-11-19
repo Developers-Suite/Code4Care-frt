@@ -6,9 +6,9 @@ import {
   UserCog,
   Shield,
   ChevronDown,
-  CheckCircle2,
   Mail,
   User,
+  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -186,6 +186,16 @@ export const UserAvatarProfile: React.FC<UserAvatarProfileProps> = ({
 
         {/* Quick actions */}
         <div className="px-1 py-1 space-y-0.5">
+          {onNavigate && (
+            <DropdownMenuItem
+              onClick={() => onNavigate('settings')}
+              className="cursor-pointer text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100/80 rounded-md py-2 px-2.5 gap-2"
+            >
+              <Settings className="w-3.5 h-3.5 text-gray-500" />
+              Settings
+            </DropdownMenuItem>
+          )}
+
           {isAdmin && onNavigate && (
             <DropdownMenuItem
               onClick={() => onNavigate('admin-accounts')}
