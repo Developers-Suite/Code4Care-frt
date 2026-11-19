@@ -145,7 +145,6 @@ export function AdminSafetyManagement({ selectedLanguage, accessToken }: AdminSa
       totalSafetyEvents,
       severityDistribution: severityStats,
       analytics: safetyAnalytics,
-      safetyData,
     });
   };
 

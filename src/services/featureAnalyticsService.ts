@@ -32,9 +32,13 @@ export interface StoryEventResponse {
 
 export interface MythBusterEventRequest {
   session_id: string;
-  myth_id: string;
-  myth_title: string;
-  action: 'viewed' | 'shared' | 'feedback_helpful' | 'feedback_not_helpful';
+  conversation_id?: string;
+  myth_id?: string;
+  myth_title?: string;
+  action: string;
+  rating?: number;
+  helpful_flag?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MythBusterEventResponse {

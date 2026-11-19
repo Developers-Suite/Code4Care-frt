@@ -44,7 +44,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,json}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/code4care-backend-production\.up\.railway\.app\/(?:health|v1\/suggestions)/,
+            urlPattern: /^https:\/\/api\.lydiacallcenter\.org\/(?:health|v1\/suggestions|v1\/bot\/status)/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-runtime-cache',
@@ -82,35 +82,35 @@ export default defineConfig({
     },
     proxy: {
       '/v1': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/admin': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/support-requests': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/api/admin': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/api/chat': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: () => '/v1/chat',
       },
       '/admin/login': {
-        target: 'https://api.lydiacallcenter.org',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },

@@ -481,7 +481,8 @@ export class ReportOrchestrationService {
     const data: any = {};
 
     if (metrics.includes('analytics')) {
-      data.analytics = await RealAnalyticsService.getDashboardSummary({ period }, accessToken);
+      const analyticsPeriod = period === 'custom' ? 'month' : period;
+      data.analytics = await RealAnalyticsService.getDashboardSummary({ period: analyticsPeriod }, accessToken);
     }
 
     if (metrics.includes('users')) {

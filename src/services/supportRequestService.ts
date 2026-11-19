@@ -17,6 +17,7 @@ export interface ChatContext {
 }
 
 export interface CreateSupportRequestPayload {
+  session_id?: string;
   user_id: string;
   user_nickname: string;
   age_range: string;
@@ -220,7 +221,10 @@ export class SupportRequestService {
       const response = await fetch(buildUrl(SUPPORT_REQUESTS_BASE_PATH), {
         method: 'POST',
         headers: buildHeaders(),
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          session_id: payload.session_id || payload.user_id || payload.chat_context?.session_id,
+        }),
       });
 
       if (!response.ok) {

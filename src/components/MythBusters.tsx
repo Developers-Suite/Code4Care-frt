@@ -47,9 +47,9 @@ export function MythBusters() {
         await FeatureAnalyticsService.logMythBusterEvent({
           session_id: sessionId,
           myth_id: mythItem.id,
-          event_type: 'fact_copied',
-          category: mythItem.category,
-          myth_text: mythItem.myth,
+          myth_title: mythItem.myth,
+          action: 'fact_copied',
+          metadata: { category: mythItem.category },
         });
         logger.info(`Myth fact copied: ${mythItem.id}`);
       } catch (error) {
@@ -68,9 +68,9 @@ export function MythBusters() {
         await FeatureAnalyticsService.logMythBusterEvent({
           session_id: sessionId,
           myth_id: mythItem.id,
-          event_type: 'myth_viewed',
-          category: mythItem.category,
-          myth_text: mythItem.myth,
+          myth_title: mythItem.myth,
+          action: 'myth_viewed',
+          metadata: { category: mythItem.category },
         });
         logger.info(`Myth viewed: ${mythItem.id}`);
       } catch (error) {

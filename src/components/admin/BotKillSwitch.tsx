@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Power, PowerOff } from 'lucide-react';
+import { Loader2, Power, PowerOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,11 +18,11 @@ interface BotKillSwitchProps {
 }
 
 /**
- * Admin-only kill switch for the AI bot. Engaging it blocks every request to the
- * bot API; manual counselor chat keeps working.
+ * Admin-only global kill switch for the AI bot. Engaging it turns the bot off
+ * on the backend across all web and WhatsApp clients; live counselor chat keeps working.
  */
 export function BotKillSwitch({ session }: BotKillSwitchProps) {
-  const { botKilled, setBotKilled } = useBotKillSwitch();
+  const { botKilled, isUpdating, setBotKilled } = useBotKillSwitch(session.accessToken);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (session.role !== 'admin') {
@@ -31,15 +31,23 @@ export function BotKillSwitch({ session }: BotKillSwitchProps) {
 
   const actor = session.name || session.staffId;
 
-  const handleEngage = () => {
-    setBotKilled(true, actor);
-    setConfirmOpen(false);
-    toast.warning('Bot shut down. No messages will reach the bot API until it is restarted.');
+  const handleEngage = async () => {
+    try {
+      await setBotKilled(true, actor, session.accessToken);
+      setConfirmOpen(false);
+      toast.warning('Bot turned off globally. Automated replies are paused until an admin turns it back on.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to turn off the bot.');
+    }
   };
 
-  const handleRestart = () => {
-    setBotKilled(false, actor);
-    toast.success('Bot restarted. Automated replies are live again.');
+  const handleRestart = async () => {
+    try {
+      await setBotKilled(false, actor, session.accessToken);
+      toast.success('Bot turned back on. Automated replies are live again.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to turn on the bot.');
+    }
   };
 
   return (
@@ -47,34 +55,41 @@ export function BotKillSwitch({ session }: BotKillSwitchProps) {
       <Button
         variant="outline"
         size="sm"
-        onClick={() => (botKilled ? handleRestart() : setConfirmOpen(true))}
+        disabled={isUpdating}
+        onClick={() => (botKilled ? void handleRestart() : setConfirmOpen(true))}
         aria-pressed={botKilled}
-        title={botKilled ? 'Bot is shut down - click to restart' : 'Shut down the AI bot'}
+        title={botKilled ? 'Bot is turned off - click to turn back on' : 'Turn off the AI bot'}
         className={`h-9 gap-1.5 px-2.5 text-xs cursor-pointer ${botKilled
           ? 'border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800'
           : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}
       >
-        {botKilled ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+        {isUpdating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : botKilled ? (
+          <PowerOff className="w-4 h-4" />
+        ) : (
+          <Power className="w-4 h-4" />
+        )}
         <span className="hidden sm:inline font-semibold">
-          {botKilled ? 'Bot shut down' : 'Bot live'}
+          {botKilled ? 'Bot off' : 'Bot on'}
         </span>
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Shut down the AI bot?</DialogTitle>
+            <DialogTitle>Turn off the AI bot?</DialogTitle>
             <DialogDescription>
-              New messages stop reaching the bot API until an admin restarts it. Live counselor
-              chat and the support queue keep working.
+              Automated AI replies will stop globally across web and WhatsApp until an admin
+              turns the bot back on. Live counselor chat and the support queue keep working.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button variant="outline" disabled={isUpdating} onClick={() => setConfirmOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleEngage}>
-              Shut down bot
+            <Button variant="destructive" disabled={isUpdating} onClick={() => void handleEngage()}>
+              {isUpdating ? 'Turning off…' : 'Turn off bot'}
             </Button>
           </DialogFooter>
         </DialogContent>

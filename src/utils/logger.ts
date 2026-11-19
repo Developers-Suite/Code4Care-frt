@@ -11,6 +11,11 @@ export const logger = {
       console.log('DEBUG:', ...args);
     }
   },
+  debug: (...args: any[]) => {
+    if (!isProd) {
+      console.debug('🔍 DEBUG:', ...args);
+    }
+  },
   info: (...args: any[]) => {
     if (!isProd) {
       console.info('ℹ️ INFO:', ...args);

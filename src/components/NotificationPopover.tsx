@@ -89,7 +89,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <p className="font-semibold text-gray-900 truncate">
-                        {item.user_nickname || item.userNickname || 'User Request'}
+                        {item.user_nickname || 'User Request'}
                       </p>
                       {isUrgent && (
                         <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 flex-shrink-0">

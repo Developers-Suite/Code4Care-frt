@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
-import { Activity, UserCheck, CheckCircle2, PhoneCall, Headphones, MessageSquare, Calendar, User, X } from 'lucide-react';
+import { Activity, UserCheck, CheckCircle2, Headphones, MessageSquare, Calendar, User, X } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -165,8 +165,8 @@ const claimAndTakeover = async (request: SupportRequestListItem) => {
       session.accessToken || session.user?.id
     );
 
-    // 2. Mark the request as active (best-effort)
-    void SupportRequestService.updateSupportRequest(
+    // 2. Ensure the request is marked active before refreshing state
+    await SupportRequestService.updateSupportRequest(
       request.id,
       { status: 'active' },
       session.accessToken || session.user?.id
@@ -196,6 +196,17 @@ const claimAndTakeover = async (request: SupportRequestListItem) => {
 };
 
 const openChatForRequest = async (request: SupportRequestListItem) => {
+  if (request.status === 'assigned') {
+    await SupportRequestService.updateSupportRequest(
+      request.id,
+      { status: 'active' },
+      session.accessToken || session.user?.id
+    ).catch(() => { });
+    setSupportRequests((prev) =>
+      prev.map((r) => (r.id === request.id ? { ...r, status: 'active' as const } : r))
+    );
+  }
+
   if (!onOpenConversation) return;
 
   // Resolve the actual conversation id from the conversations API
@@ -216,24 +227,6 @@ const openChatForRequest = async (request: SupportRequestListItem) => {
   }
 
   onOpenConversation({ sessionId: request.session_id, convId: resolvedConvId });
-};
-
-const connectRequest = async (requestId: string) => {
-  try {
-    await SupportRequestService.updateSupportRequest(
-      requestId,
-      { status: 'active' },
-      session.accessToken || session.user?.id
-    );
-    const updated = supportRequests.map((r) => {
-      if (r.id !== requestId) return r;
-      return { ...r, status: 'active' as const };
-    });
-    setSupportRequests(updated);
-    void refreshRequests();
-  } catch (error) {
-    logger.error('Failed to connect to request', error);
-  }
 };
 
 const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null);
@@ -426,9 +419,14 @@ return (
                     <MessageSquare className="w-3.5 h-3.5" />
                     Chat
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-2 border-green-200 text-green-700 hover:bg-green-50 cursor-pointer" onClick={() => connectRequest(request.id)}>
-                    <PhoneCall className="w-4 h-4" />
-                    Connect
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    onClick={() => openResolveModal(request.id)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Resolve
                   </Button>
                 </div>
               </div>

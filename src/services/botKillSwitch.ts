@@ -1,25 +1,53 @@
-// Global kill switch for the AI bot. While engaged, no request is allowed to reach
-// the bot API (/v1/chat); the rest of the app (counselor chat, support queue) keeps working.
+// Global kill switch for the AI bot. Synced with the backend (/v1/bot/status & /admin/bot/status)
+// so turning the bot off or on takes effect globally across all web and WhatsApp clients,
+// while live counselor chat and the support queue keep working.
 import { safeStorage } from '@/utils/safeStorage';
 import { logger } from '@/utils/logger';
 
 const STORAGE_KEY = 'lydiacontactcenter_bot_kill_switch';
 const CHANGE_EVENT = 'code4care:bot-kill-switch';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
 
 export interface BotKillSwitchState {
-  enabled: boolean;
+  enabled: boolean; // true = bot is shut down (killed)
   updatedAt?: string;
   updatedBy?: string;
+  reason?: string;
+}
+
+interface BackendBotStatusResponse {
+  enabled: boolean; // true = bot is live
+  killed: boolean; // true = bot is shut down
+  reason?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
 }
 
 const DISABLED_STATE: BotKillSwitchState = { enabled: false };
 
-/** Thrown before any network call so the bot API is never reached while shut down. */
+/** Thrown before or on a 503 bot_killed response so the chat UI knows the bot is paused. */
 export class BotKilledError extends Error {
-  constructor() {
-    super('The AI assistant is currently paused by the care team.');
+  constructor(message?: string) {
+    super(message || 'The AI assistant is currently paused by the care team.');
     this.name = 'BotKilledError';
   }
+}
+
+function buildApiUrl(path: string): string | null {
+  if (!API_BASE_URL) {
+    return null;
+  }
+  return new URL(path, API_BASE_URL).toString();
+}
+
+function persistAndNotify(state: BotKillSwitchState): BotKillSwitchState {
+  safeStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent<BotKillSwitchState>(CHANGE_EVENT, { detail: state }));
+  }
+
+  return state;
 }
 
 export function getBotKillSwitchState(): BotKillSwitchState {
@@ -34,6 +62,7 @@ export function getBotKillSwitchState(): BotKillSwitchState {
       enabled: parsed?.enabled === true,
       updatedAt: typeof parsed?.updatedAt === 'string' ? parsed.updatedAt : undefined,
       updatedBy: typeof parsed?.updatedBy === 'string' ? parsed.updatedBy : undefined,
+      reason: typeof parsed?.reason === 'string' ? parsed.reason : undefined,
     };
   } catch (error) {
     logger.warn('Ignoring malformed bot kill switch state', error);
@@ -45,20 +74,94 @@ export function isBotKilled(): boolean {
   return getBotKillSwitchState().enabled;
 }
 
-export function setBotKilled(enabled: boolean, updatedBy?: string): BotKillSwitchState {
-  const state: BotKillSwitchState = {
+export function setBotKilled(enabled: boolean, updatedBy?: string, reason?: string): BotKillSwitchState {
+  return persistAndNotify({
     enabled,
     updatedAt: new Date().toISOString(),
     updatedBy: updatedBy?.trim() || undefined,
-  };
+    reason: reason?.trim() || undefined,
+  });
+}
 
-  safeStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent<BotKillSwitchState>(CHANGE_EVENT, { detail: state }));
+/** Fetch the authoritative global bot status from the backend and update local cache. */
+export async function syncBotKillSwitchFromBackend(accessToken?: string): Promise<BotKillSwitchState> {
+  const path = accessToken ? '/admin/bot/status' : '/v1/bot/status';
+  const url = buildApiUrl(path);
+  if (!url) {
+    return getBotKillSwitchState();
   }
 
-  return state;
+  try {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(url, { method: 'GET', headers });
+    if (!response.ok) {
+      return getBotKillSwitchState();
+    }
+
+    const data = (await response.json()) as BackendBotStatusResponse;
+    return persistAndNotify({
+      enabled: Boolean(data.killed),
+      updatedAt: data.updated_at || undefined,
+      updatedBy: data.updated_by || undefined,
+      reason: data.reason || undefined,
+    });
+  } catch (error) {
+    logger.warn('Could not sync bot kill switch state from backend', error);
+    return getBotKillSwitchState();
+  }
+}
+
+/** Admin-only: toggle the global bot kill switch on the backend. */
+export async function updateBotKillSwitchOnBackend(
+  killed: boolean,
+  accessToken?: string,
+  reason?: string,
+): Promise<BotKillSwitchState> {
+  const url = buildApiUrl('/admin/bot/status');
+  if (!url) {
+    throw new Error('VITE_API_BASE_URL is required to update bot status.');
+  }
+  if (!accessToken) {
+    throw new Error('Admin session expired. Please sign in again.');
+  }
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      killed,
+      reason: reason?.trim() || null,
+    }),
+  });
+
+  if (!response.ok) {
+    let detail = response.statusText || 'Failed to update bot status';
+    try {
+      const parsed = (await response.json()) as Record<string, unknown>;
+      if (typeof parsed.detail === 'string') {
+        detail = parsed.detail;
+      }
+    } catch {
+      // keep default message
+    }
+    throw new Error(detail);
+  }
+
+  const data = (await response.json()) as BackendBotStatusResponse;
+  return persistAndNotify({
+    enabled: Boolean(data.killed),
+    updatedAt: data.updated_at || new Date().toISOString(),
+    updatedBy: data.updated_by || undefined,
+    reason: data.reason || undefined,
+  });
 }
 
 /** Subscribe to kill switch changes from this tab and from other tabs of the same browser. */

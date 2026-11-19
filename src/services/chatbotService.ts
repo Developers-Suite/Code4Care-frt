@@ -1,6 +1,6 @@
 // Clean, Natural Conversational AI Chatbot for SRH - Ghana
 import { logger } from "@/utils/logger";
-import { assertBotApiEnabled } from "@/services/botKillSwitch";
+import { assertBotApiEnabled, BotKilledError, setBotKilled } from "@/services/botKillSwitch";
 
 export { BotKilledError } from "@/services/botKillSwitch";
 
@@ -167,6 +167,18 @@ export async function requestChatCompletion(
     const response = await postChatCompletion(payload, CHAT_ENDPOINT);
 
     if (!response.ok) {
+      if (response.status === 503) {
+        const bodyText = await response.text();
+        const parsed = safeParseJson(bodyText);
+        if (parsed && typeof parsed === 'object' && (parsed as Record<string, unknown>).code === 'bot_killed') {
+          const detail = typeof (parsed as Record<string, unknown>).detail === 'string'
+            ? ((parsed as Record<string, unknown>).detail as string)
+            : undefined;
+          setBotKilled(true);
+          throw new BotKilledError(detail);
+        }
+        throw new Error(`Backend Chat API failed (503): ${bodyText || response.statusText}`);
+      }
       const errorMessage = await readErrorMessage(response);
       throw new Error(`Backend Chat API failed (${response.status}): ${errorMessage}`);
     }

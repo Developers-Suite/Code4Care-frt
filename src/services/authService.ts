@@ -201,7 +201,7 @@ export class AuthService {
    */
   static isTokenExpired(): boolean {
     const accessToken = this.getAccessToken();
-    return isTokenExpired(accessToken);
+    return isTokenExpired(accessToken ?? undefined);
   }
 
   /**
@@ -293,12 +293,14 @@ export class AuthService {
     const token = accessToken || this.getAccessToken();
 
     if (token) {
+      const refreshToken = this.getRefreshToken();
       try {
         await fetch(buildUrl(ADMIN_LOGOUT_PATH), {
           method: 'POST',
           headers: buildHeaders(token),
           body: JSON.stringify({
             access_token: token,
+            ...(refreshToken ? { refresh_token: refreshToken } : {}),
           }),
         });
       } catch (error) {

@@ -52,16 +52,58 @@ export interface AdminLoginUser {
   email: string;
   role: string;
   is_active: boolean;
+  mfa_enabled?: boolean;
   created_at: string;
   last_login_at: string;
 }
 
 export interface AdminLoginResponse {
-  access_token: string;
-  refresh_token: string;
+  access_token?: string | null;
+  refresh_token?: string | null;
   token_type: string;
   expires_in: number;
-  user: AdminLoginUser;
+  user?: AdminLoginUser | null;
+  mfa_required?: boolean;
+  mfa_token?: string | null;
+}
+
+export interface MfaStatusResponse {
+  status: 'enabled' | 'not_configured';
+  mfa_enabled: boolean;
+  enabled_at?: string | null;
+  backup_codes_remaining: number;
+}
+
+export interface MfaSetupResponse {
+  secret: string;
+  otpauth_uri: string;
+  issuer: string;
+  account_name: string;
+}
+
+export interface MfaEnableResponse {
+  status: 'enabled';
+  mfa_enabled: boolean;
+  enabled_at: string;
+  backup_codes: string[];
+}
+
+export interface MfaResetResponse {
+  id: string;
+  mfa_enabled: boolean;
+  reset_at: string;
+}
+
+export class MfaChallengeRequiredError extends Error {
+  mfaToken: string;
+  expiresIn: number;
+
+  constructor(mfaToken: string, expiresIn: number) {
+    super('Multi-factor authentication code required.');
+    this.name = 'MfaChallengeRequiredError';
+    this.mfaToken = mfaToken;
+    this.expiresIn = expiresIn;
+  }
 }
 
 export interface AdminCreateStaffRequest {
@@ -813,9 +855,10 @@ function normalizeRole(role: string): StaffRole {
       this.saveSupportRequests(requests);
     }
 
-    static async adminListStaff(accessToken: string): Promise<AdminStaffRecord[]> {
+    static async adminListStaff(accessToken?: string): Promise<AdminStaffRecord[]> {
+      const token = requireAdminAccessToken(accessToken);
       const response = await fetch(buildAdminUrl('/admin/staff'), {
-        headers: buildAdminHeaders(accessToken),
+        headers: buildAdminHeaders(token),
       });
       if (!response.ok) throw new Error(await readApiError(response));
       const data = await readJsonResponse<AdminStaffListResponse>(response);
@@ -824,11 +867,12 @@ function normalizeRole(role: string): StaffRole {
 
     static async adminCreateStaff(
       payload: AdminCreateStaffRequest,
-      accessToken: string,
+      accessToken?: string,
     ): Promise<AdminStaffRecord> {
+      const token = requireAdminAccessToken(accessToken);
       const response = await fetch(buildAdminUrl('/admin/staff'), {
         method: 'POST',
-        headers: buildAdminHeaders(accessToken),
+        headers: buildAdminHeaders(token),
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error(await readApiError(response));
@@ -838,8 +882,9 @@ function normalizeRole(role: string): StaffRole {
     static async adminUpdateStaff(
       staffId: string,
       payload: AdminUpdateStaffRequest,
-      accessToken: string,
+      accessToken?: string,
     ): Promise<AdminStaffRecord> {
+      const token = requireAdminAccessToken(accessToken);
       const body: Record<string, unknown> = {};
       if (payload.username) body.username = payload.username;
       if (payload.email) body.email = payload.email;
@@ -849,17 +894,18 @@ function normalizeRole(role: string): StaffRole {
 
       const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
         method: 'PATCH',
-        headers: buildAdminHeaders(accessToken),
+        headers: buildAdminHeaders(token),
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(await readApiError(response));
       return readJsonResponse<AdminStaffRecord>(response);
     }
 
-    static async adminDeleteStaff(staffId: string, accessToken: string): Promise<void> {
+    static async adminDeleteStaff(staffId: string, accessToken?: string): Promise<void> {
+      const token = requireAdminAccessToken(accessToken);
       const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
         method: 'DELETE',
-        headers: buildAdminHeaders(accessToken),
+        headers: buildAdminHeaders(token),
       });
       if (!response.ok) throw new Error(await readApiError(response));
     }
@@ -1091,6 +1137,15 @@ function normalizeRole(role: string): StaffRole {
       }
 
       const data = (await response.json()) as AdminLoginResponse;
+
+      if (data.mfa_required && data.mfa_token) {
+        throw new MfaChallengeRequiredError(data.mfa_token, data.expires_in);
+      }
+
+      if (!data.user || !data.access_token || !data.refresh_token) {
+        throw new Error('Unexpected login response from server.');
+      }
+
       const role = normalizeRole(data.user.role);
 
       if (!canAccessDashboard(role)) {
@@ -1101,7 +1156,12 @@ function normalizeRole(role: string): StaffRole {
         throw new Error('Account is inactive.');
       }
 
-      AuthService.storeToken(data);
+      AuthService.storeToken({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        token_type: data.token_type,
+        expires_in: data.expires_in,
+      });
 
       return {
         staffId: data.user.id,
@@ -1115,6 +1175,125 @@ function normalizeRole(role: string): StaffRole {
         expiresIn: data.expires_in,
         user: data.user,
       };
+    }
+
+    static async verifyMfaLogin(mfaToken: string, code: string): Promise<StaffSession> {
+      const cleanedCode = code.trim();
+      if (!mfaToken || !cleanedCode) {
+        throw new Error('Enter your 6-digit authentication code or a backup code.');
+      }
+
+      const response = await fetch(buildAdminUrl('/admin/login/mfa'), {
+        method: 'POST',
+        headers: buildAdminHeaders(),
+        body: JSON.stringify({
+          mfa_token: mfaToken,
+          code: cleanedCode,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      const data = (await response.json()) as AdminLoginResponse;
+      if (!data.user || !data.access_token || !data.refresh_token) {
+        throw new Error('Unexpected MFA login response from server.');
+      }
+
+      const role = normalizeRole(data.user.role);
+      if (!canAccessDashboard(role)) {
+        throw new Error('Role not permitted for dashboard access.');
+      }
+      if (!data.user.is_active) {
+        throw new Error('Account is inactive.');
+      }
+
+      AuthService.storeToken({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        token_type: data.token_type,
+        expires_in: data.expires_in,
+      });
+
+      return {
+        staffId: data.user.id,
+        name: data.user.username || data.user.email,
+        role,
+        email: data.user.email,
+        loginAt: new Date().toISOString(),
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        tokenType: data.token_type,
+        expiresIn: data.expires_in,
+        user: data.user,
+      };
+    }
+
+    static async getMfaStatus(accessToken?: string): Promise<MfaStatusResponse> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await fetch(buildAdminUrl('/admin/mfa/status'), {
+        method: 'GET',
+        headers: buildAdminHeaders(token),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<MfaStatusResponse>(response);
+    }
+
+    static async setupMfa(accessToken?: string): Promise<MfaSetupResponse> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await fetch(buildAdminUrl('/admin/mfa/setup'), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<MfaSetupResponse>(response);
+    }
+
+    static async enableMfa(code: string, accessToken?: string): Promise<MfaEnableResponse> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await fetch(buildAdminUrl('/admin/mfa/enable'), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<MfaEnableResponse>(response);
+    }
+
+    static async disableMfa(
+      password: string,
+      code: string,
+      accessToken?: string,
+    ): Promise<MfaResetResponse> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await fetch(buildAdminUrl('/admin/mfa/disable'), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+        body: JSON.stringify({ password, code: code.trim() }),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<MfaResetResponse>(response);
+    }
+
+    static async resetStaffMfa(staffId: string, accessToken?: string): Promise<MfaResetResponse> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-mfa`), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<MfaResetResponse>(response);
     }
 
     static async getCurrentUser(accessToken?: string): Promise<AdminLoginUser> {

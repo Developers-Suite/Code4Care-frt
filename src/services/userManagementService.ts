@@ -6,6 +6,7 @@
 import { logger } from '@/utils/logger';
 
 export type UserStatus = 'active' | 'inactive' | 'suspended';
+export type UserStatusFilter = UserStatus | 'active_suspended';
 export type AgeRange = '10-14' | '15-19' | '20-24' | '25+';
 export type GenderIdentity = 'male' | 'female' | 'non-binary' | 'prefer-not-say';
 
@@ -274,7 +275,7 @@ export class UserManagementService {
     options?: {
       page?: number;
       limit?: number;
-      status?: UserStatus;
+      status?: UserStatusFilter;
       age_range?: AgeRange;
       gender?: GenderIdentity;
       region?: string;

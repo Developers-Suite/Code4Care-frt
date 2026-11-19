@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import QRCode from 'qrcode';
 import { toast } from 'sonner';
 import {
   User,
@@ -13,6 +14,7 @@ import {
   KeyRound,
   CheckCircle2,
   Loader2,
+  Copy,
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,7 +30,11 @@ import { Input } from '@/components/ui/input';
 import { BotKillSwitch } from './BotKillSwitch';
 import { useDashboardPwaInstall } from '@/hooks/useDashboardPwaInstall';
 import { safeStorage } from '@/utils/safeStorage';
-import { StaffSession } from '@/services/staffAccessService';
+import {
+  MfaSetupResponse,
+  StaffAccessService,
+  StaffSession,
+} from '@/services/staffAccessService';
 
 interface SettingsPageProps {
   session: StaffSession;
@@ -37,146 +43,7 @@ interface SettingsPageProps {
 
 type WorkStatus = 'available' | 'busy' | 'away' | 'offline';
 
-/** UI state for the MFA enrollment dialog. No MFA backend exists; this is the
- *  interactive placeholder that shows when the user opens the card. */
-export interface MfaEnrollmentState {
-  status: 'not_configured' | 'enrolling' | 'enabled' | 'disabled';
-  code?: string;
-  error?: string;
-}
-
-export function MfaEnrollmentCard({
-  status,
-  onDismiss,
-}: {
-  status: MfaEnrollmentState['status'];
-  onDismiss: () => void;
-}) {
-  const [code, setCode] = useState('');
-  const [progress, setProgress] = useState(false);
-
-  const handleSubmit = async () => {
-    const raw = code.trim();
-    if (!raw || !/^\d{6}$/.test(raw)) {
-      toast.error('Enter the 6-digit authentication code.');
-      return;
-    }
-
-    setProgress(true);
-    // Stand-in for the MFA endpoint the backend will own once enabled.
-    // No MFA method is active on this account, so the only dialog you can
-    // reach right now is the setup step shown earlier.
-    setProgress(false);
-    toast.success('Multi-factor authentication has been enabled.');
-    onDismiss();
-  };
-
-  if (status === 'enabled') {
-    return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-700 mt-0.5 flex-shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-emerald-900">
-              Multi-factor authentication is enabled
-            </p>
-            <p className="text-sm text-emerald-800 mt-1">
-              A code is sent to your authenticator app or via email when you sign in.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 h-8 text-xs border-emerald-300 text-emerald-700"
-              onClick={() => onDismiss()}
-            >
-              Manage MFA
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'disabled') {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <div className="flex items-start gap-3">
-          <ShieldAlert className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-amber-900">
-              MFA is disabled for this account
-            </p>
-            <p className="text-sm text-amber-800 mt-1">
-              No authentication method is active. Turn it back on from the login screen
-              or let an administrator re-enable it.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 h-8 text-xs border-amber-300 text-amber-700"
-              onClick={() => onDismiss()}
-            >
-              Re-enable MFA
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <div className="flex items-start gap-3">
-        <KeyRound className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-amber-900">
-            Set up multi-factor authentication
-          </p>
-          <p className="text-sm text-amber-800 mt-1">
-            Enter the 6-digit code from your authenticator app or the email we sent you.
-          </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="000000"
-              maxLength={6}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className="h-10 rounded-xl border-[#F4D6D5]"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 whitespace-nowrap"
-              onClick={handleSubmit}
-              disabled={progress}
-            >
-              {progress ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <KeyRound className="w-4 h-4 mr-2" />
-              )}
-              {progress ? 'Saving…' : 'Enable MFA'}
-            </Button>
-          </div>
-          <p className="text-xs text-amber-700 mt-2">
-            We cannot enable MFA until the backend supports the enrollment endpoint.
-            Use the login screen for now.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Mapped backend MFA status. Only values the UI owns today are exported; real
- *  backend statuses will be converted here when the API exists. */
 export type MfaStatus = 'not_configured' | 'enabled' | 'disabled' | 'enrolling';
-
-// The backend is not present, so this is the live status for this deployment.
-export const MFA_STATUS: MfaStatus = 'not_configured';
 
 const STATUS_LABELS: Record<WorkStatus, string> = {
   available: 'Available',
@@ -211,7 +78,7 @@ const STATUS_STYLES: Record<
   },
 };
 
-function formatDateTime(value?: string) {
+function formatDateTime(value?: string | null) {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -234,17 +101,139 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
   const { isInstalled, promptInstall } = useDashboardPwaInstall();
 
   const [mfaOpen, setMfaOpen] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<MfaStatus>(
+    session.user?.mfa_enabled ? 'enabled' : 'not_configured',
+  );
+  const [mfaEnabledAt, setMfaEnabledAt] = useState<string | null>(null);
+  const [backupCodesRemaining, setBackupCodesRemaining] = useState<number>(0);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaSetup, setMfaSetup] = useState<MfaSetupResponse | null>(null);
+  const [mfaQrDataUrl, setMfaQrDataUrl] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [disablePassword, setDisablePassword] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+
   const [availability, setAvailability] = useState<WorkStatus>(() => {
     const stored = safeStorage.getItem(`staff_avail_${session.staffId}`) as WorkStatus | null;
     return stored && stored in STATUS_LABELS ? stored : 'available';
   });
 
-  const mfaStatus = MFA_STATUS;
+  useEffect(() => {
+    if (!session.accessToken) return;
+    let active = true;
+    StaffAccessService.getMfaStatus(session.accessToken)
+      .then((res) => {
+        if (!active) return;
+        setMfaStatus(res.mfa_enabled ? 'enabled' : 'not_configured');
+        setMfaEnabledAt(res.enabled_at ?? null);
+        setBackupCodesRemaining(res.backup_codes_remaining ?? 0);
+      })
+      .catch(() => {
+        // Keep initial status if endpoint is temporarily unreachable
+      });
+    return () => {
+      active = false;
+    };
+  }, [session.accessToken]);
 
-  const handleStatusChange = (status: WorkStatus) => {
+  const handleOpenMfaDialog = async () => {
+    setMfaCode('');
+    setDisablePassword('');
+    setBackupCodes(null);
+    setMfaQrDataUrl(null);
+    setMfaOpen(true);
+
+    if (mfaStatus !== 'enabled') {
+      setMfaLoading(true);
+      try {
+        const setup = await StaffAccessService.setupMfa(session.accessToken);
+        setMfaSetup(setup);
+        const qrUrl = await QRCode.toDataURL(setup.otpauth_uri, {
+          width: 200,
+          margin: 1,
+        });
+        setMfaQrDataUrl(qrUrl);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Could not start MFA setup.');
+        setMfaOpen(false);
+      } finally {
+        setMfaLoading(false);
+      }
+    }
+  };
+
+  const handleEnableMfa = async () => {
+    const raw = mfaCode.trim();
+    if (!/^\d{6}$/.test(raw)) {
+      toast.error('Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+
+    setMfaLoading(true);
+    try {
+      const result = await StaffAccessService.enableMfa(raw, session.accessToken);
+      setMfaStatus('enabled');
+      setMfaEnabledAt(result.enabled_at);
+      setBackupCodesRemaining(result.backup_codes.length);
+      setBackupCodes(result.backup_codes);
+      setMfaSetup(null);
+      setMfaQrDataUrl(null);
+      setMfaCode('');
+      toast.success('Multi-factor authentication has been enabled.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Invalid authentication code.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    if (!disablePassword || !mfaCode.trim()) {
+      toast.error('Enter your password and a valid 6-digit code or backup code.');
+      return;
+    }
+
+    setMfaLoading(true);
+    try {
+      await StaffAccessService.disableMfa(disablePassword, mfaCode.trim(), session.accessToken);
+      setMfaStatus('not_configured');
+      setMfaEnabledAt(null);
+      setBackupCodesRemaining(0);
+      setDisablePassword('');
+      setMfaCode('');
+      setMfaOpen(false);
+      toast.success('Multi-factor authentication has been disabled.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not disable MFA.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard.`);
+    } catch {
+      toast.error(`Could not copy ${label.toLowerCase()}.`);
+    }
+  };
+
+  const handleStatusChange = async (status: WorkStatus) => {
     setAvailability(status);
     safeStorage.setItem(`staff_avail_${session.staffId}`, status);
-    toast.success(`Work status set to: ${STATUS_LABELS[status]}`);
+    try {
+      if (session.accessToken) {
+        await StaffAccessService.changeStaffAvailability(
+          session.staffId,
+          { availability: status === 'away' ? 'busy' : status },
+          session.accessToken,
+        );
+      }
+      toast.success(`Work status set to: ${STATUS_LABELS[status]}`);
+    } catch {
+      toast.success(`Work status set locally to: ${STATUS_LABELS[status]}`);
+    }
   };
 
   const handleInstall = async () => {
@@ -316,56 +305,54 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
             </h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Add an extra layer of protection to your staff account with multi-factor
-            authentication.
+            Add an extra layer of protection to your staff account using an authenticator app
+            (Google Authenticator, Authy, 1Password, etc.).
           </p>
-          <div className="rounded-xl border border-[#F4D6D5] bg-[#FFF8F8] p-4">
+          <div
+            className={`rounded-xl border p-4 ${
+              mfaStatus === 'enabled'
+                ? 'border-emerald-200 bg-emerald-50/70'
+                : 'border-[#F4D6D5] bg-[#FFF8F8]'
+            }`}
+          >
             <div className="flex items-start gap-3">
-              <KeyRound className="w-5 h-5 text-[#BE322D] mt-0.5 flex-shrink-0" />
+              {mfaStatus === 'enabled' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-700 mt-0.5 flex-shrink-0" />
+              ) : (
+                <KeyRound className="w-5 h-5 text-[#BE322D] mt-0.5 flex-shrink-0" />
+              )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#241515]">MFA status</p>
-                <p className="text-sm text-[#6D4A49]">
+                <p className="text-sm font-semibold text-gray-900">MFA status</p>
+                <p className="text-sm text-gray-700 mt-0.5">
                   {mfaStatus === 'enabled'
                     ? 'Multi-factor authentication is enabled on this account.'
-                    : mfaStatus === 'disabled'
-                      ? 'MFA is disabled; no authentication method is active.'
-                      : 'MFA is not available for this account yet and cannot be enabled here.'}
+                    : 'MFA is not enabled on this account yet.'}
                 </p>
-                {mfaStatus === 'not_configured' ? (
+                {mfaStatus === 'enabled' ? (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#F16365]"
-                    onClick={() => setMfaOpen(true)}
+                    className="mt-3 h-8 text-xs border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-100"
+                    onClick={() => void handleOpenMfaDialog()}
                   >
-                    Set up MFA
-                  </Button>
-                ) : mfaStatus === 'disabled' ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#F16365]"
-                    onClick={() => setMfaOpen(true)}
-                  >
-                    Re-enable MFA
+                    Manage / Disable MFA
                   </Button>
                 ) : (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-3 h-8 text-xs border-emerald-300 text-emerald-700 bg-emerald-50"
-                    disabled
+                    className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#BE322D] hover:text-white"
+                    onClick={() => void handleOpenMfaDialog()}
                   >
-                    Manage MFA
+                    Set up MFA
                   </Button>
                 )}
-                <p className="text-xs text-[#6D4A49] mt-2">
+                <p className="text-xs text-gray-500 mt-2">
                   {mfaStatus === 'enabled'
-                    ? 'You will need it when signing in from a new device or browser.'
-                    : 'No MFA method is active on this account.'}
+                    ? `Enabled ${mfaEnabledAt ? `on ${formatDateTime(mfaEnabledAt)}` : ''} · ${backupCodesRemaining} backup code${backupCodesRemaining === 1 ? '' : 's'} remaining.`
+                    : 'Protect your staff login with a 6-digit authenticator code.'}
                 </p>
               </div>
             </div>
@@ -376,14 +363,154 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
               <DialogHeader>
                 <DialogTitle>Multi-factor authentication</DialogTitle>
                 <DialogDescription>
-                  {mfaStatus === 'enabled'
-                    ? 'You have MFA turned on. If you lose access, contact an administrator.'
-                    : mfaStatus === 'disabled'
-                      ? 'This account does not have an active MFA method. Re-enable it to turn it back on.'
-                      : 'Enter the code from your authenticator app or email to enable MFA.'}
+                  {backupCodes
+                    ? 'Save these one-time backup codes in a secure place. Each code can only be used once.'
+                    : mfaStatus === 'enabled'
+                      ? 'Confirm your password and a 6-digit authenticator code (or backup code) to disable MFA.'
+                      : 'Scan the QR code (or enter the setup key manually) in your authenticator app, then verify with a 6-digit code.'}
                 </DialogDescription>
               </DialogHeader>
-              <MfaEnrollmentCard status={mfaStatus} onDismiss={() => setMfaOpen(false)} />
+
+              {backupCodes ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 font-mono text-xs text-emerald-950">
+                    {backupCodes.map((code) => (
+                      <div key={code} className="rounded bg-white px-2 py-1 text-center border border-emerald-100">
+                        {code}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyText(backupCodes.join('\n'), 'Backup codes')}
+                    >
+                      <Copy className="w-4 h-4 mr-1.5" />
+                      Copy codes
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        setBackupCodes(null);
+                        setMfaOpen(false);
+                      }}
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              ) : mfaStatus === 'enabled' ? (
+                <div className="space-y-3">
+                  <Input
+                    type="password"
+                    value={disablePassword}
+                    onChange={(e) => setDisablePassword(e.target.value)}
+                    placeholder="Current password"
+                    disabled={mfaLoading}
+                  />
+                  <Input
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="6-digit code or backup code"
+                    maxLength={12}
+                    autoComplete="one-time-code"
+                    disabled={mfaLoading}
+                  />
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" variant="outline" onClick={() => setMfaOpen(false)} disabled={mfaLoading}>
+                      Cancel
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={() => void handleDisableMfa()} disabled={mfaLoading}>
+                      {mfaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Disable MFA
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {mfaLoading && !mfaSetup ? (
+                    <div className="flex items-center justify-center py-6 text-sm text-gray-500">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Generating setup key…
+                    </div>
+                  ) : mfaSetup ? (
+                    <>
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 flex flex-col items-center text-center gap-2">
+                        <p className="text-xs font-semibold text-gray-800">
+                          Step 1: Scan QR code
+                        </p>
+                        {mfaQrDataUrl && (
+                          <img
+                            src={mfaQrDataUrl}
+                            alt="Authenticator QR code"
+                            className="w-44 h-44 rounded-lg border border-gray-200 bg-white p-2"
+                          />
+                        )}
+                        <p className="text-xs text-gray-500">
+                          Scan with Google Authenticator, Authy, Microsoft Authenticator, or Apple Passwords.
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
+                        <p className="text-xs font-medium text-gray-600">Manual setup key</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <code className="text-xs font-mono break-all text-gray-900 select-all">
+                            {mfaSetup.secret}
+                          </code>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs flex-shrink-0"
+                            onClick={() => void copyText(mfaSetup.secret, 'Setup key')}
+                          >
+                            <Copy className="w-3.5 h-3.5 mr-1" />
+                            Copy
+                          </Button>
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                          Account: {mfaSetup.account_name} · Issuer: {mfaSetup.issuer}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-800">
+                          Step 2: Enter the 6-digit code
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Input
+                            value={mfaCode}
+                            onChange={(e) => setMfaCode(e.target.value)}
+                            placeholder="000000"
+                            maxLength={6}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            className="h-10 rounded-xl border-[#F4D6D5]"
+                            disabled={mfaLoading}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-10 whitespace-nowrap bg-[#BE322D] hover:bg-[#9F2622] text-white"
+                            onClick={() => void handleEnableMfa()}
+                            disabled={mfaLoading}
+                          >
+                            {mfaLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <KeyRound className="w-4 h-4 mr-2" />
+                            )}
+                            {mfaLoading ? 'Verifying…' : 'Enable MFA'}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </Card>
@@ -398,16 +525,16 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
               </Badge>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Shut down or restart automated bot replies. When the bot is shut down, no
-              messages reach the bot API until an admin restarts it. Live counselor chat
-              and the support queue keep working.
+              Turn automated AI bot replies off or back on globally. When turned off,
+              automated replies stop across web and WhatsApp until an admin turns the bot
+              back on. Live counselor chat and the support queue keep working.
             </p>
             <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
               <div>
                 <p className="text-sm font-medium text-gray-900">AI bot availability</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Use this for incidents, bad responses, or maintenance. The switch is
-                  browser-scoped on this device.
+                  Use this for incidents, bad responses, or maintenance. Applies globally
+                  for all users.
                 </p>
               </div>
               <BotKillSwitch session={session} />

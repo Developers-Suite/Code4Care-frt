@@ -1,7 +1,11 @@
 export interface ClinicContact {
   no?: string;
   name: string;
-  location: string;  tel: string;}
+  location: string;
+  tel: string;
+  owner?: string;
+  rcr?: string;
+}
 
 export interface RegionClinics {
   region: string;

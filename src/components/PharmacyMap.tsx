@@ -32,7 +32,7 @@ export function PharmacyMap({ locations, onMarkerClick }: PharmacyMapProps) {
         document.head.appendChild(link);
 
         // Load Leaflet JS
-        const L = await import("leaflet@1.9.4");
+        const L = await import("leaflet");
         setLeaflet(L.default);
       } catch (error) {
         console.error("Error loading Leaflet:", error);
