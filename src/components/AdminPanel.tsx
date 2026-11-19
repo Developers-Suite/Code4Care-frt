@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, ShieldAlert, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { NotificationPopover } from './NotificationPopover';
+import { DashboardInstallButton } from './DashboardInstallButton';
 import { AdminSidebar, AdminSection } from './AdminSidebar';
 import { OverviewPage } from './admin/OverviewPage';
 import { UsersSessionsPage } from './admin/UsersSessionsPage';
@@ -241,6 +242,8 @@ interface AdminPanelProps {
                   ⌘K
                 </kbd>
               </Button>
+
+              <DashboardInstallButton />
 
               <NotificationPopover
                 notifications={liveWaitingRequests}

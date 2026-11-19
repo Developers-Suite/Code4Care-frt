@@ -1,6 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
 
 // Same photo as the desktop landing hero, resized for the mobile PWA
 const heroImg = "/introscreen/medium-shot-woman-holding-phone-mobile.jpg";
@@ -16,7 +14,6 @@ type LayoutProps = {
   buttonText: string;
   onNext: () => void;
   onSkip: () => void;
-  onLogin: () => void;
 };
 
 function MobileIntroLayout({
@@ -27,19 +24,11 @@ function MobileIntroLayout({
   buttonText,
   onNext,
   onSkip,
-  onLogin,
 }: LayoutProps) {
   return (
     <>
       {/* MOBILE - unchanged vertical layout */}
       <div className="md:hidden relative h-dvh w-full bg-white flex flex-col overflow-hidden">
-        <button
-          onClick={onLogin}
-          className="absolute left-5 top-[calc(env(safe-area-inset-top)+1rem)] z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur text-[#6D4A49] px-3.5 py-2 rounded-2xl text-xs font-semibold shadow-sm active:scale-[0.98]"
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-          Login
-        </button>
         <button
           onClick={onSkip}
           className="absolute right-5 top-[calc(env(safe-area-inset-top)+1rem)] z-20 bg-[#BE322D] text-white px-5 py-3 rounded-2xl font-semibold shadow-md"
@@ -86,9 +75,9 @@ function MobileIntroLayout({
 }
 
 // Screens and Carousel (unchanged)
-type ScreenProps = { onNext: () => void; onSkip: () => void; onLogin: () => void };
+type ScreenProps = { onNext: () => void; onSkip: () => void };
 
-function Screen1({ onNext, onSkip, onLogin }: ScreenProps) {
+function Screen1({ onNext, onSkip }: ScreenProps) {
   return (
     <MobileIntroLayout
       image={screen1Img}
@@ -103,12 +92,11 @@ function Screen1({ onNext, onSkip, onLogin }: ScreenProps) {
       buttonText="Next"
       onNext={onNext}
       onSkip={onSkip}
-      onLogin={onLogin}
     />
   );
 }
 
-function Screen2({ onNext, onSkip, onLogin }: ScreenProps) {
+function Screen2({ onNext, onSkip }: ScreenProps) {
   return (
     <MobileIntroLayout
       image={screen2Img}
@@ -123,12 +111,11 @@ function Screen2({ onNext, onSkip, onLogin }: ScreenProps) {
       buttonText="Next"
       onNext={onNext}
       onSkip={onSkip}
-      onLogin={onLogin}
     />
   );
 }
 
-function Screen3({ onNext, onSkip, onLogin }: ScreenProps) {
+function Screen3({ onNext, onSkip }: ScreenProps) {
   return (
     <MobileIntroLayout
       image={screen3Img}
@@ -143,7 +130,6 @@ function Screen3({ onNext, onSkip, onLogin }: ScreenProps) {
       buttonText="Get Started"
       onNext={onNext}
       onSkip={onSkip}
-      onLogin={onLogin}
     />
   );
 }
@@ -151,7 +137,6 @@ function Screen3({ onNext, onSkip, onLogin }: ScreenProps) {
 type Props = { onComplete?: () => void; onSkip?: () => void };
 
 export default function OnboardingCarousel({ onComplete, onSkip }: Props) {
-  const navigate = useNavigate();
   const [current, setCurrent] = React.useState<number>(0);
   const screens = [Screen1, Screen2, Screen3];
   const CurrentScreen = screens[current];
@@ -172,7 +157,6 @@ export default function OnboardingCarousel({ onComplete, onSkip }: Props) {
     <CurrentScreen
       onNext={handleNext}
       onSkip={handleSkip}
-      onLogin={() => navigate('/dashboard')}
     />
   );
 }

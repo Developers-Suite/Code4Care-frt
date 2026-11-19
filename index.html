@@ -9,7 +9,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Lydia Contact Center" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.json" id="app-manifest" />
+    <script>
+      // /dashboard installs as its own app, so point the manifest at the dashboard build early.
+      if (window.location.pathname.indexOf('/dashboard') === 0) {
+        document.getElementById('app-manifest').setAttribute('href', '/manifest-dashboard.json');
+      }
+    </script>
     <meta
       name="description"
       content="Lydia Contact Center — A safe, private space for Ghanaian youth to get answers about sexual and reproductive health. Available in English, Twi, Ewe, and Ga."
