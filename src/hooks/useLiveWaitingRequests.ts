@@ -5,12 +5,20 @@ import { logger } from '@/utils/logger';
 
 const POLL_INTERVAL_MS = 6000;
 
+interface LiveTakeoverTargets {
+  convIds: Set<string>;
+  sessions: Set<string>;
+}
+
 /**
- * Session ids of conversations that are escalated and still waiting for a human.
+ * Conversation and session ids of conversations that are escalated and still waiting for a human.
  * Fails closed: if the poll fails, nothing is considered live.
  */
-function useLiveTakeoverSessions(accessToken?: string): Set<string> {
-  const [sessions, setSessions] = useState<Set<string>>(new Set());
+function useLiveTakeoverTargets(accessToken?: string): LiveTakeoverTargets {
+  const [targets, setTargets] = useState<LiveTakeoverTargets>({
+    convIds: new Set(),
+    sessions: new Set(),
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -23,16 +31,16 @@ function useLiveTakeoverSessions(accessToken?: string): Set<string> {
         );
         if (!isMounted) return;
 
-        setSessions(
-          new Set(
-            (response.conversations ?? [])
-              .filter((conversation) => conversation.is_escalated && !conversation.is_human_takeover)
-              .map((conversation) => conversation.session_id),
-          ),
+        const waitingConvs = (response.conversations ?? []).filter(
+          (conversation) => conversation.is_escalated && !conversation.is_human_takeover,
         );
+        setTargets({
+          convIds: new Set(waitingConvs.map((conversation) => conversation.id).filter(Boolean)),
+          sessions: new Set(waitingConvs.map((conversation) => conversation.session_id).filter(Boolean)),
+        });
       } catch (error) {
         if (!isMounted) return;
-        setSessions(new Set());
+        setTargets({ convIds: new Set(), sessions: new Set() });
         logger.error('Failed to poll conversations awaiting takeover', error);
       }
     };
@@ -48,11 +56,11 @@ function useLiveTakeoverSessions(accessToken?: string): Set<string> {
     };
   }, [accessToken]);
 
-  return sessions;
+  return targets;
 }
 
 /**
- * Waiting support requests that still have a live escalated conversation, once per session.
+ * Waiting support requests that still have a live escalated conversation, once per session/conversation.
  *
  * Support-request rows can stay in `waiting` after their conversation ended, so the raw queue
  * drifts away from the conversation log. Callers should keep feeding the raw queue to
@@ -62,17 +70,21 @@ export function useLiveWaitingRequests(
   requests: SupportRequestListItem[],
   accessToken?: string,
 ): SupportRequestListItem[] {
-  const liveTakeoverSessions = useLiveTakeoverSessions(accessToken);
+  const liveTargets = useLiveTakeoverTargets(accessToken);
 
   return useMemo(() => {
-    const seenSessions = new Set<string>();
+    const seenKeys = new Set<string>();
 
     return requests.filter((request) => {
-      const sessionId = request.session_id;
-      if (request.status !== 'waiting' || !sessionId) return false;
-      if (!liveTakeoverSessions.has(sessionId) || seenSessions.has(sessionId)) return false;
-      seenSessions.add(sessionId);
+      if (request.status !== 'waiting') return false;
+      const hasLiveConversation =
+        (Boolean(request.conversation_id) && liveTargets.convIds.has(request.conversation_id!)) ||
+        (Boolean(request.session_id) && liveTargets.sessions.has(request.session_id!));
+      if (!hasLiveConversation) return false;
+      const dedupeKey = request.conversation_id || request.session_id;
+      if (!dedupeKey || seenKeys.has(dedupeKey)) return false;
+      seenKeys.add(dedupeKey);
       return true;
     });
-  }, [requests, liveTakeoverSessions]);
+  }, [requests, liveTargets]);
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -188,6 +189,8 @@ function ConversationDetailPanel({
       onTakeoverSuccess?.(conv.id);
     } catch (err) {
       logger.error('Failed to take over conversation', err);
+      const msg = err instanceof Error ? err.message : 'Failed to take over conversation';
+      toast.error(msg || 'Failed to take over conversation');
     } finally {
       setIsTakingOver(false);
     }
@@ -198,9 +201,12 @@ function ConversationDetailPanel({
     try {
       await StaffAccessService.releaseConversation(conv.id, accessToken);
       setDetail((prev) => prev ? { ...prev, is_human_takeover: false, is_escalated: false } : prev);
+      toast.success('Conversation released back to AI bot');
       onReleaseSuccess?.(conv.id);
     } catch (err) {
       logger.error('Failed to release conversation', err);
+      const msg = err instanceof Error ? err.message : 'Failed to release conversation back to bot';
+      toast.error(msg || 'Failed to release conversation back to bot');
     } finally {
       setIsReleasing(false);
     }
@@ -217,6 +223,8 @@ function ConversationDetailPanel({
       setReplyText('');
     } catch (err) {
       logger.error('Failed to send counselor reply', err);
+      const msg = err instanceof Error ? err.message : 'Failed to send reply';
+      toast.error(msg || 'Failed to send reply');
     } finally {
       setIsSendingReply(false);
     }
@@ -532,7 +540,10 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
         // Check already-loaded list first (fast path)
         const inList = convs.find((c) => c.id === convId);
         if (inList) {
-          if (isMounted) setSelectedConv(inList);
+          if (isMounted) {
+            setSelectedConv(inList);
+            onClearTarget?.();
+          }
           return;
         }
 
@@ -553,6 +564,7 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
             is_human_takeover: detail.is_human_takeover,
             has_safety_flags: false,
           });
+          onClearTarget?.();
           return;
         } catch {
           // Fall through to session-based search below
@@ -565,7 +577,10 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
           (c) => c.session_id === sessionId || c.id === sessionId
         );
         if (inList) {
-          if (isMounted) setSelectedConv(inList);
+          if (isMounted) {
+            setSelectedConv(inList);
+            onClearTarget?.();
+          }
           return;
         }
       }
@@ -587,6 +602,7 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
 
         if (matched) {
           setSelectedConv(matched);
+          onClearTarget?.();
           return;
         }
 
@@ -605,6 +621,7 @@ export function ConversationsPage({ session, targetConversationTarget, onClearTa
 
         if (matchedRecent) {
           setSelectedConv(matchedRecent);
+          onClearTarget?.();
         }
       } catch (err) {
         logger.error('Failed to auto-open target conversation', err);

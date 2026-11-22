@@ -82,7 +82,7 @@ interface AdminPanelProps {
       waitingRequests,
       onSelectRequest: (requestId) => {
         const match = waitingRequests.find((r) => r.id === requestId);
-        handleOpenConversation({ sessionId: match?.session_id, convId: requestId });
+        handleOpenConversation({ sessionId: match?.session_id, convId: match?.conversation_id });
       },
     });
 
@@ -251,7 +251,7 @@ interface AdminPanelProps {
                 notifications={liveWaitingRequests}
                 onSelectNotification={(requestId) => {
                   const match = liveWaitingRequests.find((r) => r.id === requestId);
-                  handleOpenConversation({ sessionId: match?.session_id, convId: requestId });
+                  handleOpenConversation({ sessionId: match?.session_id, convId: match?.conversation_id });
                 }}
                 onRequestPermission={requestPermission}
                 permissionGranted={permission === 'granted'}

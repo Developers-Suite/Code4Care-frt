@@ -55,7 +55,7 @@ export function SupportCounselorDashboard({
     onSelectRequest: (requestId) => {
       const match = rawWaitingRequests.find((r) => r.id === requestId);
       if (onOpenConversation) {
-        onOpenConversation({ sessionId: match?.session_id, convId: requestId });
+        onOpenConversation({ sessionId: match?.session_id, convId: match?.conversation_id });
       }
     },
   });
@@ -209,9 +209,9 @@ const openChatForRequest = async (request: SupportRequestListItem) => {
 
   if (!onOpenConversation) return;
 
-  // Resolve the actual conversation id from the conversations API
-  let resolvedConvId: string | undefined;
-  if (request.session_id) {
+  // Prefer direct conversation_id; fall back to searching by session_id only if missing
+  let resolvedConvId: string | undefined = request.conversation_id || undefined;
+  if (!resolvedConvId && request.session_id) {
     try {
       const convResponse = await StaffAccessService.listConversations(
         { page_size: 100 },
