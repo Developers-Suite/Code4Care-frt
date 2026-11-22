@@ -191,7 +191,9 @@ const claimAndTakeover = async (request: SupportRequestListItem) => {
     void refreshRequests();
   } catch (error) {
     logger.error('Failed to claim and takeover request', error);
-    toast.error('Failed to claim request. Please try again.');
+    const msg = error instanceof Error && error.message ? error.message : 'Failed to claim request. Please try again.';
+    toast.error(msg);
+    void refreshRequests();
   }
 };
 
@@ -306,7 +308,7 @@ return (
               onSelectNotification={(requestId) => {
                 const req = rawWaitingRequests.find((r) => r.id === requestId);
                 if (req) {
-                  void claimAndTakeover(req);
+                  void openChatForRequest(req);
                 }
               }}
               onRequestPermission={requestPermission}

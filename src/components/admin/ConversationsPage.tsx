@@ -159,7 +159,8 @@ function ConversationDetailPanel({
           if (
             prev.messages.length !== d.messages.length ||
             prev.is_human_takeover !== d.is_human_takeover ||
-            prev.is_escalated !== d.is_escalated
+            prev.is_escalated !== d.is_escalated ||
+            prev.takeover_staff_id !== d.takeover_staff_id
           ) {
             return d;
           }
@@ -181,16 +182,36 @@ function ConversationDetailPanel({
     if (detail) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [detail]);
 
+  const syncLatestDetail = async () => {
+    try {
+      const latest = await StaffAccessService.getConversationDetail(conv.id, accessToken);
+      setDetail(latest);
+    } catch {
+      // ignore refresh errors
+    }
+  };
+
   const handleTakeover = async () => {
     setIsTakingOver(true);
     try {
       await StaffAccessService.takeoverConversation(conv.id, accessToken);
-      setDetail((prev) => prev ? { ...prev, is_human_takeover: true, is_escalated: false, interim_ai_active: false } : prev);
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              is_human_takeover: true,
+              is_escalated: false,
+              interim_ai_active: false,
+              takeover_staff_id: staffId ?? prev.takeover_staff_id,
+            }
+          : prev
+      );
       onTakeoverSuccess?.(conv.id);
     } catch (err) {
       logger.error('Failed to take over conversation', err);
       const msg = err instanceof Error ? err.message : 'Failed to take over conversation';
       toast.error(msg || 'Failed to take over conversation');
+      await syncLatestDetail();
     } finally {
       setIsTakingOver(false);
     }
@@ -200,13 +221,23 @@ function ConversationDetailPanel({
     setIsReleasing(true);
     try {
       await StaffAccessService.releaseConversation(conv.id, accessToken);
-      setDetail((prev) => prev ? { ...prev, is_human_takeover: false, is_escalated: false } : prev);
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              is_human_takeover: false,
+              is_escalated: false,
+              takeover_staff_id: undefined,
+            }
+          : prev
+      );
       toast.success('Conversation released back to AI bot');
       onReleaseSuccess?.(conv.id);
     } catch (err) {
       logger.error('Failed to release conversation', err);
       const msg = err instanceof Error ? err.message : 'Failed to release conversation back to bot';
       toast.error(msg || 'Failed to release conversation back to bot');
+      await syncLatestDetail();
     } finally {
       setIsReleasing(false);
     }
@@ -229,6 +260,10 @@ function ConversationDetailPanel({
       setIsSendingReply(false);
     }
   };
+
+  const isHumanTakeoverActive = Boolean(detail?.is_human_takeover ?? conv.is_human_takeover);
+  const takeoverStaffId = detail?.takeover_staff_id;
+  const isLockedByOther = Boolean(isHumanTakeoverActive && takeoverStaffId && staffId && takeoverStaffId !== staffId);
 
   return (
     <>
@@ -327,23 +362,35 @@ function ConversationDetailPanel({
 
           {/* Takeover Control Bar */}
           <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-            {Boolean(detail?.is_human_takeover ?? conv.is_human_takeover) ? (
-              <div className="flex items-center justify-between w-full">
-                <span className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
-                  <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-                  Live takeover in progress
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleRelease}
-                  disabled={isReleasing}
-                  className="text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-7"
-                >
-                  {isReleasing ? 'Releasing...' : 'Release to Bot'}
-                </Button>
-              </div>
-            ) : Boolean((detail?.is_escalated ?? conv.is_escalated) && !(detail?.is_human_takeover ?? conv.is_human_takeover)) ? (
+            {isHumanTakeoverActive ? (
+              isLockedByOther ? (
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-amber-600" />
+                    Live takeover in progress
+                  </span>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                    🔒 Locked — handled by another staff member
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                    <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                    Live takeover in progress
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRelease}
+                    disabled={isReleasing}
+                    className="text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-7"
+                  >
+                    {isReleasing ? 'Releasing...' : 'Release to Bot'}
+                  </Button>
+                </div>
+              )
+            ) : Boolean((detail?.is_escalated ?? conv.is_escalated) && !isHumanTakeoverActive) ? (
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs text-rose-700 font-semibold flex items-center gap-1.5">
                   <Headphones className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
@@ -403,19 +450,13 @@ function ConversationDetailPanel({
         </div>
 
         {/* Counselor Reply Box */}
-        {Boolean(detail?.is_human_takeover ?? conv.is_human_takeover) ? (() => {
-          // Exclusive reply lock: only the counselor who took over can send messages
-          const takeoverStaffId = detail?.takeover_staff_id;
-          const isLockedByOther = takeoverStaffId && staffId && takeoverStaffId !== staffId;
-          if (isLockedByOther) {
-            return (
-              <div className="p-3 border-t border-amber-200 bg-amber-50 text-center text-xs text-amber-700">
-                🔒 <strong>Locked</strong> — This conversation is currently handled by another counselor.
-                Only the assigned counselor can send messages until they hand it back to the bot.
-              </div>
-            );
-          }
-          return (
+        {isHumanTakeoverActive ? (
+          isLockedByOther ? (
+            <div className="p-3 border-t border-amber-200 bg-amber-50 text-center text-xs text-amber-700">
+              🔒 <strong>Locked</strong> — This conversation is currently handled by another counselor.
+              Only the assigned counselor can send messages until they hand it back to the bot.
+            </div>
+          ) : (
             <form onSubmit={handleSendReply} className="p-3 border-t border-gray-200 bg-gray-50 flex gap-2">
               <input
                 type="text"
@@ -435,8 +476,8 @@ function ConversationDetailPanel({
                 {isSendingReply ? 'Sending' : 'Send'}
               </Button>
             </form>
-          );
-        })() : (
+          )
+        ) : (
           <div className="p-3 border-t border-gray-100 bg-slate-50 text-center text-xs text-gray-500">
             Click <strong className="text-[#006d77] cursor-pointer" onClick={handleTakeover}>Take Over Chat</strong> above to message this client directly.
           </div>
