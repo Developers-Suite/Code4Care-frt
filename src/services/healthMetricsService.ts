@@ -4,6 +4,7 @@
  * Integrates with backend health monitoring endpoints
  */
 
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 const HEALTH_BASE_PATH = '/api/admin/health';
@@ -128,10 +129,14 @@ export class HealthMetricsService {
     const url = buildUrl(`${HEALTH_BASE_PATH}/metrics`);
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -157,10 +162,14 @@ export class HealthMetricsService {
     const url = `${buildUrl(`${HEALTH_BASE_PATH}/performance`)}?${params.toString()}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -182,10 +191,14 @@ export class HealthMetricsService {
     const url = buildUrl(`${HEALTH_BASE_PATH}/status`);
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -207,10 +220,14 @@ export class HealthMetricsService {
     const url = buildUrl(`${HEALTH_BASE_PATH}/services`);
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));

@@ -3,6 +3,7 @@
  * Connects to backend analytics endpoints per BACKEND_API_SPECIFICATION
  */
 
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 export type AnalyticsPeriod = 'today' | 'week' | 'month' | 'year' | 'all';
@@ -436,12 +437,16 @@ export class RealAnalyticsService {
     accessToken?: string,
   ): Promise<AnalyticsOverviewSummary> {
     try {
-      const response = await fetch(buildUrlWithParams('/v1/analytics/summary', {
-        period: resolveApiAnalyticsPeriod(options?.period),
-      }), {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrlWithParams('/v1/analytics/summary', {
+          period: resolveApiAnalyticsPeriod(options?.period),
+        }),
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -507,10 +512,14 @@ export class RealAnalyticsService {
     });
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -538,10 +547,14 @@ export class RealAnalyticsService {
     });
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -569,10 +582,14 @@ export class RealAnalyticsService {
     });
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -599,10 +616,14 @@ export class RealAnalyticsService {
     });
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));

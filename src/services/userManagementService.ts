@@ -3,6 +3,7 @@
  * Handles all user-related API calls per BACKEND_API_SPECIFICATION
  */
 
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 export type UserStatus = 'active' | 'inactive' | 'suspended';
@@ -300,10 +301,14 @@ export class UserManagementService {
     const url = `${buildUrl(USERS_BASE_PATH)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         const apiError = await readApiError(response);
@@ -326,10 +331,14 @@ export class UserManagementService {
     accessToken?: string,
   ): Promise<UserDetails> {
     try {
-      const response = await fetch(buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`), {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`),
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -368,10 +377,14 @@ export class UserManagementService {
     const url = `${buildUrl(safeUserPath)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -397,11 +410,15 @@ export class UserManagementService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`), {
-        method: 'PUT',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`),
+        {
+          method: 'PUT',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         const apiError = await readApiError(response);
@@ -438,11 +455,15 @@ export class UserManagementService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`), {
-        method: 'DELETE',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${USERS_BASE_PATH}/${encodePathSegment(userId)}`),
+        {
+          method: 'DELETE',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));

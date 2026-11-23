@@ -3,6 +3,7 @@
  * Handles all support request operations per BACKEND_API_SPECIFICATION
  */
 
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 export type SupportRequestStatus = 'waiting' | 'assigned' | 'active' | 'resolved' | 'closed';
@@ -270,10 +271,14 @@ export class SupportRequestService {
     const url = `${buildUrl(SUPPORT_REQUESTS_BASE_PATH)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -294,10 +299,14 @@ export class SupportRequestService {
     accessToken?: string,
   ): Promise<SupportRequestDetails> {
     try {
-      const response = await fetch(buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}`), {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}`),
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -323,11 +332,15 @@ export class SupportRequestService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}`), {
-        method: 'PUT',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}`),
+        {
+          method: 'PUT',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -353,11 +366,15 @@ export class SupportRequestService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/assign`), {
-        method: 'POST',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/assign`),
+        {
+          method: 'POST',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -383,11 +400,15 @@ export class SupportRequestService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/resolve`), {
-        method: 'POST',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/resolve`),
+        {
+          method: 'POST',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -413,11 +434,15 @@ export class SupportRequestService {
     }
 
     try {
-      const response = await fetch(buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/close`), {
-        method: 'POST',
-        headers: buildHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
+      const response = await AuthService.fetchWithAuth(
+        buildUrl(`${SUPPORT_REQUESTS_BASE_PATH}/${requestId}/close`),
+        {
+          method: 'POST',
+          headers: buildHeaders(accessToken),
+          body: JSON.stringify(payload),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));

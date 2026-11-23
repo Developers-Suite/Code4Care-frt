@@ -479,6 +479,10 @@ function normalizeRole(role: string): StaffRole {
     return headers;
   }
 
+  function adminFetch(url: string, init: RequestInit, accessToken?: string): Promise<Response> {
+    return AuthService.fetchWithAuth(url, init, accessToken);
+  }
+
   function mergeRemoteStaffIntoLocal(remoteStaff: AdminStaffRecord[]): StaffAccount[] {
     const existing = parseJson<StaffAccount[]>(safeStorage.getItem(STAFF_ACCOUNTS_KEY), []);
     const requests = StaffAccessService.getSupportRequests();
@@ -587,10 +591,10 @@ function normalizeRole(role: string): StaffRole {
       }
 
       try {
-        const response = await fetch(buildAdminUrl(ADMIN_CREATE_STAFF_PATH), {
+        const response = await adminFetch(buildAdminUrl(ADMIN_CREATE_STAFF_PATH), {
           method: 'GET',
           headers: buildAdminHeaders(accessToken),
-        });
+        }, accessToken);
 
         if (!response.ok) {
           throw new Error(await readApiError(response));
@@ -628,7 +632,7 @@ function normalizeRole(role: string): StaffRole {
         throw new Error('Name, email, and password are required.');
       }
 
-      const response = await fetch(buildAdminUrl(ADMIN_CREATE_STAFF_PATH), {
+      const response = await adminFetch(buildAdminUrl(ADMIN_CREATE_STAFF_PATH), {
         method: 'POST',
         headers: buildAdminHeaders(accessToken),
         body: JSON.stringify({
@@ -637,7 +641,7 @@ function normalizeRole(role: string): StaffRole {
           password,
           role: payload.role,
         } satisfies AdminCreateStaffRequest),
-      });
+      }, accessToken);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -679,7 +683,7 @@ function normalizeRole(role: string): StaffRole {
         throw new Error('Admin session expired. Please sign in again.');
       }
 
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
         method: 'PATCH',
         headers: buildAdminHeaders(accessToken),
         body: JSON.stringify({
@@ -688,7 +692,7 @@ function normalizeRole(role: string): StaffRole {
           role: payload.role,
           is_active: payload.isActive ?? true,
         } satisfies AdminUpdateStaffRequest),
-      });
+      }, accessToken);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -776,13 +780,13 @@ function normalizeRole(role: string): StaffRole {
         throw new Error('Temporary password is required.');
       }
 
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-password`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-password`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify({
           temporary_password: password,
         } satisfies AdminStaffPasswordResetRequest),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -798,11 +802,11 @@ function normalizeRole(role: string): StaffRole {
     ): Promise<AdminStaffAvailabilityResponse> {
       const token = requireAdminAccessToken(accessToken);
 
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/change-availability`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/change-availability`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify(payload),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -823,10 +827,10 @@ function normalizeRole(role: string): StaffRole {
       }
 
       try {
-        const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
+        const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
           method: 'DELETE',
           headers: buildAdminHeaders(accessToken),
-        });
+        }, accessToken);
 
         if (!response.ok) {
           throw new Error(await readApiError(response));
@@ -857,9 +861,9 @@ function normalizeRole(role: string): StaffRole {
 
     static async adminListStaff(accessToken?: string): Promise<AdminStaffRecord[]> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/staff'), {
+      const response = await adminFetch(buildAdminUrl('/admin/staff'), {
         headers: buildAdminHeaders(token),
-      });
+      }, token);
       if (!response.ok) throw new Error(await readApiError(response));
       const data = await readJsonResponse<AdminStaffListResponse>(response);
       return data.staff ?? [];
@@ -870,11 +874,11 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminStaffRecord> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/staff'), {
+      const response = await adminFetch(buildAdminUrl('/admin/staff'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify(payload),
-      });
+      }, token);
       if (!response.ok) throw new Error(await readApiError(response));
       return readJsonResponse<AdminStaffRecord>(response);
     }
@@ -892,21 +896,21 @@ function normalizeRole(role: string): StaffRole {
       if (payload.role) body.role = payload.role;
       if (payload.is_active !== undefined) body.is_active = payload.is_active;
 
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
         method: 'PATCH',
         headers: buildAdminHeaders(token),
         body: JSON.stringify(body),
-      });
+      }, token);
       if (!response.ok) throw new Error(await readApiError(response));
       return readJsonResponse<AdminStaffRecord>(response);
     }
 
     static async adminDeleteStaff(staffId: string, accessToken?: string): Promise<void> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}`), {
         method: 'DELETE',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
       if (!response.ok) throw new Error(await readApiError(response));
     }
 
@@ -916,10 +920,10 @@ function normalizeRole(role: string): StaffRole {
       }
 
       try {
-        const response = await fetch(buildAdminUrl('/admin/dashboard'), {
+        const response = await adminFetch(buildAdminUrl('/admin/dashboard'), {
           method: 'GET',
           headers: buildAdminHeaders(accessToken),
-        });
+        }, accessToken);
 
         if (!response.ok) {
           throw new Error(await readApiError(response));
@@ -937,7 +941,7 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminConversationListResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrlWithParams('/admin/conversations', {
+      const response = await adminFetch(buildAdminUrlWithParams('/admin/conversations', {
         page: options.page ?? 1,
         page_size: options.page_size ?? 20,
         is_escalated: options.is_escalated,
@@ -946,7 +950,7 @@ function normalizeRole(role: string): StaffRole {
       }), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -960,10 +964,10 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminConversationDetail> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}`), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -977,10 +981,10 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<{ status: string; is_human_takeover: boolean; conversation_id: string }> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/takeover`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/takeover`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -994,10 +998,10 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<{ status: string; is_human_takeover: boolean; conversation_id: string }> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/release`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/release`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1012,11 +1016,11 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminConversationMessage> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/reply`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/conversations/${encodePathSegment(conversationId)}/reply`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify({ content }),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1030,14 +1034,14 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminFeedbackListResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrlWithParams('/admin/feedback', {
+      const response = await adminFetch(buildAdminUrlWithParams('/admin/feedback', {
         page: options.page ?? 1,
         page_size: options.page_size ?? 20,
         rating: options.rating,
       }), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1051,14 +1055,14 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<AdminReportListResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrlWithParams('/admin/reports', {
+      const response = await adminFetch(buildAdminUrlWithParams('/admin/reports', {
         page: options.page ?? 1,
         page_size: options.page_size ?? 20,
         status_filter: options.status_filter,
       }), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1073,11 +1077,11 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<string> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/reports/${encodePathSegment(reportId)}`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/reports/${encodePathSegment(reportId)}`), {
         method: 'PATCH',
         headers: buildAdminHeaders(token),
         body: JSON.stringify(payload),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1232,10 +1236,10 @@ function normalizeRole(role: string): StaffRole {
 
     static async getMfaStatus(accessToken?: string): Promise<MfaStatusResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/mfa/status'), {
+      const response = await adminFetch(buildAdminUrl('/admin/mfa/status'), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -1244,10 +1248,10 @@ function normalizeRole(role: string): StaffRole {
 
     static async setupMfa(accessToken?: string): Promise<MfaSetupResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/mfa/setup'), {
+      const response = await adminFetch(buildAdminUrl('/admin/mfa/setup'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -1256,11 +1260,11 @@ function normalizeRole(role: string): StaffRole {
 
     static async enableMfa(code: string, accessToken?: string): Promise<MfaEnableResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/mfa/enable'), {
+      const response = await adminFetch(buildAdminUrl('/admin/mfa/enable'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify({ code: code.trim() }),
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -1273,11 +1277,11 @@ function normalizeRole(role: string): StaffRole {
       accessToken?: string,
     ): Promise<MfaResetResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl('/admin/mfa/disable'), {
+      const response = await adminFetch(buildAdminUrl('/admin/mfa/disable'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
         body: JSON.stringify({ password, code: code.trim() }),
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -1286,10 +1290,10 @@ function normalizeRole(role: string): StaffRole {
 
     static async resetStaffMfa(staffId: string, accessToken?: string): Promise<MfaResetResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const response = await fetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-mfa`), {
+      const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-mfa`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -1298,10 +1302,10 @@ function normalizeRole(role: string): StaffRole {
 
     static async getCurrentUser(accessToken?: string): Promise<AdminLoginUser> {
       const token = accessToken || await AuthService.getValidAccessToken();
-      const response = await fetch(buildAdminUrl(ADMIN_ME_PATH), {
+      const response = await adminFetch(buildAdminUrl(ADMIN_ME_PATH), {
         method: 'GET',
         headers: buildAdminHeaders(token),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1333,6 +1337,7 @@ function normalizeRole(role: string): StaffRole {
           name: user.username || user.email,
           role,
           email: user.email,
+          accessToken: AuthService.getAccessToken() || session.accessToken,
           user,
         };
 

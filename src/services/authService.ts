@@ -36,6 +36,32 @@ export interface RefreshTokenResponse {
   expires_in: number;
 }
 
+export interface AuthSessionEventHandlers {
+  onTokenRefreshed?: (accessToken: string) => void;
+  onSessionExpired?: () => void;
+}
+
+const sessionListeners = new Set<AuthSessionEventHandlers>();
+let inflightRefresh: Promise<RefreshTokenResponse> | null = null;
+let sessionExpiredEmitted = false;
+
+function emitTokenRefreshed(accessToken: string): void {
+  sessionExpiredEmitted = false;
+  sessionListeners.forEach((listener) => {
+    listener.onTokenRefreshed?.(accessToken);
+  });
+}
+
+function emitSessionExpired(): void {
+  if (sessionExpiredEmitted) {
+    return;
+  }
+  sessionExpiredEmitted = true;
+  sessionListeners.forEach((listener) => {
+    listener.onSessionExpired?.();
+  });
+}
+
 const DEFAULT_TOKEN_EXPIRY_SECONDS = 30 * 60;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
 
@@ -173,6 +199,7 @@ export class AuthService {
    */
   static storeToken(payload: TokenPayload): void {
     try {
+      sessionExpiredEmitted = false;
       safeStorage.setItem(TOKEN_KEY, payload.access_token);
       safeStorage.setItem(REFRESH_TOKEN_KEY, payload.refresh_token);
       safeStorage.setItem(TOKEN_EXPIRY_KEY, calculateTokenExpiry(payload.expires_in));
@@ -180,6 +207,16 @@ export class AuthService {
     } catch (error) {
       logger.error('Failed to store token', error);
     }
+  }
+
+  /**
+   * Subscribe to token refresh and session expiry lifecycle events.
+   */
+  static subscribeSessionEvents(handlers: AuthSessionEventHandlers): () => void {
+    sessionListeners.add(handlers);
+    return () => {
+      sessionListeners.delete(handlers);
+    };
   }
 
   /**
@@ -208,40 +245,95 @@ export class AuthService {
    * POST /admin/refresh-token - Refresh access token using refresh token
    */
   static async refreshAccessToken(): Promise<RefreshTokenResponse> {
-    const refreshToken = this.getRefreshToken();
-
-    if (!refreshToken) {
-      throw new Error('No refresh token available. Please log in again.');
+    if (inflightRefresh) {
+      return inflightRefresh;
     }
 
-    try {
-      const response = await fetch(buildUrl(ADMIN_REFRESH_TOKEN_PATH), {
-        method: 'POST',
-        headers: buildHeaders(),
-        body: JSON.stringify({
-          refresh_token: refreshToken,
-        } satisfies RefreshTokenPayload),
-      });
+    inflightRefresh = (async () => {
+      const refreshToken = this.getRefreshToken();
 
-      if (!response.ok) {
-        // If refresh fails, clear tokens
+      if (!refreshToken) {
         this.clearTokens();
-        throw new Error(await readApiError(response));
+        emitSessionExpired();
+        throw new Error('No refresh token available. Please log in again.');
       }
 
-      const data = await readRefreshTokenResponse(response);
+      try {
+        const response = await fetch(buildUrl(ADMIN_REFRESH_TOKEN_PATH), {
+          method: 'POST',
+          headers: buildHeaders(),
+          body: JSON.stringify({
+            refresh_token: refreshToken,
+          } satisfies RefreshTokenPayload),
+        });
 
-      // Update stored access token and expiry
-      safeStorage.setItem(TOKEN_KEY, data.access_token);
-      safeStorage.setItem(TOKEN_EXPIRY_KEY, calculateTokenExpiry(data.expires_in));
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            this.clearTokens();
+            emitSessionExpired();
+          }
+          throw new Error(await readApiError(response));
+        }
 
-      logger.debug('Token refreshed successfully');
-      return data;
-    } catch (error) {
-      logger.error('Failed to refresh token', error);
-      this.clearTokens();
-      throw error;
+        const data = await readRefreshTokenResponse(response);
+
+        // Update stored access token and expiry
+        safeStorage.setItem(TOKEN_KEY, data.access_token);
+        safeStorage.setItem(TOKEN_EXPIRY_KEY, calculateTokenExpiry(data.expires_in));
+        emitTokenRefreshed(data.access_token);
+
+        logger.debug('Token refreshed successfully');
+        return data;
+      } catch (error) {
+        logger.error('Failed to refresh token', error);
+        throw error;
+      }
+    })();
+
+    try {
+      return await inflightRefresh;
+    } finally {
+      inflightRefresh = null;
     }
+  }
+
+  /**
+   * Authenticated fetch helper: prefers newest stored token and transparently
+   * refreshes + retries once on HTTP 401 before letting callers handle failure.
+   */
+  static async fetchWithAuth(
+    url: string,
+    init: RequestInit = {},
+    explicitToken?: string,
+  ): Promise<Response> {
+    const initialToken = this.getAccessToken() || explicitToken;
+    const headers = new Headers(init.headers);
+    if (initialToken) {
+      headers.set('Authorization', `Bearer ${initialToken}`);
+    }
+
+    const response = await fetch(url, { ...init, headers });
+    if (response.status !== 401 || !initialToken) {
+      return response;
+    }
+
+    const latestStored = this.getAccessToken();
+    let nextToken: string;
+
+    if (latestStored && latestStored !== initialToken) {
+      nextToken = latestStored;
+    } else {
+      try {
+        const refreshed = await this.refreshAccessToken();
+        nextToken = refreshed.access_token;
+      } catch {
+        return response;
+      }
+    }
+
+    const retryHeaders = new Headers(init.headers);
+    retryHeaders.set('Authorization', `Bearer ${nextToken}`);
+    return fetch(url, { ...init, headers: retryHeaders });
   }
 
   /**
@@ -260,7 +352,6 @@ export class AuthService {
         return refreshed.access_token;
       } catch (error) {
         logger.error('Token refresh failed', error);
-        this.clearTokens();
         throw new Error('Session expired. Please log in again.');
       }
     }
@@ -274,10 +365,14 @@ export class AuthService {
   static async getCurrentUser(accessToken?: string): Promise<AdminCurrentUser> {
     const token = accessToken || await this.getValidAccessToken();
 
-    const response = await fetch(buildUrl(ADMIN_ME_PATH), {
-      method: 'GET',
-      headers: buildHeaders(token),
-    });
+    const response = await this.fetchWithAuth(
+      buildUrl(ADMIN_ME_PATH),
+      {
+        method: 'GET',
+        headers: buildHeaders(token),
+      },
+      token,
+    );
 
     if (!response.ok) {
       throw new Error(await readApiError(response));

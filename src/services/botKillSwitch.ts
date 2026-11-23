@@ -2,6 +2,7 @@
 // so turning the bot off or on takes effect globally across all web and WhatsApp clients,
 // while live counselor chat and the support queue keep working.
 import { safeStorage } from '@/utils/safeStorage';
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 const STORAGE_KEY = 'lydiacontactcenter_bot_kill_switch';
@@ -97,7 +98,9 @@ export async function syncBotKillSwitchFromBackend(accessToken?: string): Promis
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = accessToken
+      ? await AuthService.fetchWithAuth(url, { method: 'GET', headers }, accessToken)
+      : await fetch(url, { method: 'GET', headers });
     if (!response.ok) {
       return getBotKillSwitchState();
     }
@@ -129,18 +132,22 @@ export async function updateBotKillSwitchOnBackend(
     throw new Error('Admin session expired. Please sign in again.');
   }
 
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${accessToken}`,
+  const response = await AuthService.fetchWithAuth(
+    url,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        killed,
+        reason: reason?.trim() || null,
+      }),
     },
-    body: JSON.stringify({
-      killed,
-      reason: reason?.trim() || null,
-    }),
-  });
+    accessToken,
+  );
 
   if (!response.ok) {
     let detail = response.statusText || 'Failed to update bot status';

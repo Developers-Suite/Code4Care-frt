@@ -4,6 +4,7 @@
  * Integrates with backend audit logging endpoints
  */
 
+import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 const AUDIT_BASE_PATH = '/api/admin/audit';
@@ -131,10 +132,14 @@ export class AuditLogService {
     const url = `${buildUrl(`${AUDIT_BASE_PATH}/logs`)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -157,10 +162,14 @@ export class AuditLogService {
     const url = buildUrl(`${AUDIT_BASE_PATH}/logs/${logId}`);
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -191,10 +200,14 @@ export class AuditLogService {
     const url = `${buildUrl(`${AUDIT_BASE_PATH}/stats`)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -230,10 +243,14 @@ export class AuditLogService {
     const url = `${buildUrl(`${AUDIT_BASE_PATH}/export`)}${params.toString() ? `?${params.toString()}` : ''}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: buildHeaders(accessToken),
-      });
+      const response = await AuthService.fetchWithAuth(
+        url,
+        {
+          method: 'GET',
+          headers: buildHeaders(accessToken),
+        },
+        accessToken,
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
