@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,13 +12,17 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { UserPlus, Pencil, Trash2, ShieldCheck, RefreshCw } from 'lucide-react';
+import {
+  UserPlus, Pencil, Trash2, ShieldCheck, RefreshCw, Eye, EyeOff, KeyRound, Copy,
+} from 'lucide-react';
 import {
   StaffAccessService,
   StaffSession,
   AdminStaffRecord,
   StaffRole,
 } from '@/services/staffAccessService';
+import { PasswordPolicyChecklist } from '@/components/PasswordPolicyChecklist';
+import { getPasswordPolicyError } from '@/utils/passwordPolicy';
 import { logger } from '@/utils/logger';
 
 const ROLES: StaffRole[] = ['consultant', 'supervisor', 'admin'];
@@ -37,9 +42,22 @@ interface FormState {
   email: string;
   password: string;
   role: StaffRole;
+  autoGeneratePassword: boolean;
 }
 
-const BLANK: FormState = { username: '', email: '', password: '', role: 'consultant' };
+const BLANK: FormState = {
+  username: '',
+  email: '',
+  password: '',
+  role: 'consultant',
+  autoGeneratePassword: true,
+};
+
+interface FallbackCredentials {
+  email: string;
+  password: string;
+  title: string;
+}
 
 interface AdminManagementPageProps {
   session: StaffSession;
@@ -53,8 +71,11 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AdminStaffRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminStaffRecord | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminStaffRecord | null>(null);
+  const [fallbackCredentials, setFallbackCredentials] = useState<FallbackCredentials | null>(null);
 
   const [form, setForm] = useState<FormState>(BLANK);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -76,25 +97,67 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
 
   const openAdd = () => { setForm(BLANK); setFormError(null); setAddOpen(true); };
   const openEdit = (s: AdminStaffRecord) => {
-    setForm({ username: s.username, email: s.email, password: '', role: s.role as StaffRole });
+    setForm({
+      username: s.username,
+      email: s.email,
+      password: '',
+      role: s.role as StaffRole,
+      autoGeneratePassword: false,
+    });
+    setShowEditPassword(false);
     setFormError(null);
     setEditTarget(s);
   };
 
   const handleSaveAdd = async () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password.trim()) {
-      setFormError('Username, email and password are required.');
+    const username = form.username.trim();
+    const email = form.email.trim();
+    if (!username || !email) {
+      setFormError('Username and email are required.');
       return;
     }
+
+    if (!form.autoGeneratePassword) {
+      if (!form.password) {
+        setFormError('Password is required when auto-generation is unchecked.');
+        return;
+      }
+      const policyErr = getPasswordPolicyError(form.password);
+      if (policyErr) {
+        setFormError(policyErr);
+        return;
+      }
+    }
+
     setSaving(true);
     setFormError(null);
     try {
       const created = await StaffAccessService.adminCreateStaff(
-        { username: form.username.trim(), email: form.email.trim(), password: form.password, role: form.role },
+        {
+          username,
+          email,
+          role: form.role,
+          send_email: true,
+          require_password_change: true,
+          ...(form.autoGeneratePassword ? {} : { password: form.password }),
+        },
         session.accessToken,
       );
       setStaff((prev) => [created, ...prev]);
       setAddOpen(false);
+
+      if (created.email_sent) {
+        toast.success(`Account created — login credentials emailed to ${created.email}.`);
+      } else if (created.temporary_password) {
+        toast.warning('Account created, but email delivery failed. Copy the temporary password now.');
+        setFallbackCredentials({
+          title: 'Temporary Password (Email Unavailable)',
+          email: created.email,
+          password: created.temporary_password,
+        });
+      } else {
+        toast.success(`Account created for ${created.email}.`);
+      }
     } catch (e: any) {
       setFormError(e?.message ?? 'Failed to create account');
     } finally {
@@ -108,6 +171,13 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
       setFormError('Username and email are required.');
       return;
     }
+    if (form.password) {
+      const policyErr = getPasswordPolicyError(form.password);
+      if (policyErr) {
+        setFormError(policyErr);
+        return;
+      }
+    }
     setSaving(true);
     setFormError(null);
     try {
@@ -116,10 +186,11 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
         email: form.email.trim(),
         role: form.role,
       };
-      if (form.password.trim()) payload.password = form.password.trim();
+      if (form.password) payload.password = form.password;
       const updated = await StaffAccessService.adminUpdateStaff(editTarget.id, payload, session.accessToken);
-      setStaff((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+      setStaff((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       setEditTarget(null);
+      toast.success(`Updated ${updated.username}.`);
     } catch (e: any) {
       setFormError(e?.message ?? 'Failed to update account');
     } finally {
@@ -133,12 +204,53 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
     try {
       await StaffAccessService.adminDeleteStaff(deleteTarget.id, session.accessToken);
       setStaff((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      toast.success(`Deactivated ${deleteTarget.username}.`);
       setDeleteTarget(null);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to delete account');
       setDeleteTarget(null);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    setSaving(true);
+    try {
+      const res = await StaffAccessService.resetStaffPassword(
+        resetTarget.id,
+        undefined,
+        session.accessToken,
+        true,
+      );
+      const targetEmail = resetTarget.email;
+      setResetTarget(null);
+      if (res.notification_sent) {
+        toast.success(`New random password generated and emailed to ${targetEmail}.`);
+      } else if (res.temporary_password) {
+        toast.warning('Password reset, but email delivery failed. Copy the temporary password now.');
+        setFallbackCredentials({
+          title: 'Reset Temporary Password (Email Unavailable)',
+          email: targetEmail,
+          password: res.temporary_password,
+        });
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to reset password');
+      setResetTarget(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyFallbackPassword = async () => {
+    if (!fallbackCredentials) return;
+    try {
+      await navigator.clipboard.writeText(fallbackCredentials.password);
+      toast.success('Temporary password copied to clipboard.');
+    } catch {
+      toast.error('Copy failed. Please copy the password manually.');
     }
   };
 
@@ -210,9 +322,9 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                        <Badge className={`text-[10px] capitalize ${ROLE_COLORS[s.role] ?? ROLE_COLORS.consultant}`}>
-                          {s.role.replace(/_/g, ' ')}
-                        </Badge>
+                      <Badge className={`text-[10px] capitalize ${ROLE_COLORS[s.role] ?? ROLE_COLORS.consultant}`}>
+                        {s.role.replace(/_/g, ' ')}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       {s.is_active ? (
@@ -229,11 +341,30 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Edit account"
+                          onClick={() => openEdit(s)}
+                        >
                           <Pencil className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
-                          variant="ghost" size="icon" className="h-7 w-7"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Reset & email temporary password"
+                          disabled={isSelf(s)}
+                          onClick={() => !isSelf(s) && setResetTarget(s)}
+                        >
+                          <KeyRound className={`w-3.5 h-3.5 ${isSelf(s) ? 'text-gray-300' : 'text-amber-600'}`} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Deactivate account"
                           disabled={isSelf(s)}
                           onClick={() => !isSelf(s) && setDeleteTarget(s)}
                         >
@@ -260,11 +391,11 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
           <DialogHeader>
             <DialogTitle>Add Admin Account</DialogTitle>
           </DialogHeader>
-          <StaffForm form={form} setForm={setForm} showPassword requiredPassword formError={formError} />
+          <StaffForm form={form} setForm={setForm} isCreate formError={formError} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>Cancel</Button>
             <Button onClick={handleSaveAdd} disabled={saving} className="bg-[#BE322D] hover:bg-[#a02a25] text-white">
-              {saving ? 'Creating…' : 'Create Account'}
+              {saving ? 'Creating…' : 'Create & Email Credentials'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -276,22 +407,79 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
           <DialogHeader>
             <DialogTitle>Edit Account — {editTarget?.username}</DialogTitle>
           </DialogHeader>
-          <StaffForm form={form} setForm={setForm} showPassword={false} requiredPassword={false} formError={formError} />
-          <div className="px-1">
-            <label className="block text-xs font-medium text-gray-700 mb-1">New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span></label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              placeholder="••••••••"
-              className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#BE322D]/30"
-            />
+          <StaffForm form={form} setForm={setForm} isCreate={false} formError={formError} />
+          <div className="px-1 space-y-2">
+            <label className="block text-xs font-medium text-gray-700">
+              New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showEditPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+                className="w-full border border-gray-200 rounded-md px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#BE322D]/30"
+              />
+              <button
+                type="button"
+                onClick={() => setShowEditPassword((v) => !v)}
+                aria-label={showEditPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                tabIndex={-1}
+              >
+                {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {form.password.length > 0 && <PasswordPolicyChecklist password={form.password} />}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTarget(null)} disabled={saving}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={saving} className="bg-[#BE322D] hover:bg-[#a02a25] text-white">
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Confirm */}
+      <AlertDialog open={!!resetTarget} onOpenChange={(o) => { if (!saving && !o) setResetTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset password for {resetTarget?.username}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A new random strong temporary password will be generated and emailed to <strong>{resetTarget?.email}</strong>. They will be required to change it on their next login.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetPassword} disabled={saving} className="bg-[#BE322D] hover:bg-[#a02a25]">
+              {saving ? 'Resetting…' : 'Reset & Email Password'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Fallback One-Time Password Dialog (if SMTP fails) */}
+      <Dialog open={!!fallbackCredentials} onOpenChange={(o) => { if (!o) setFallbackCredentials(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{fallbackCredentials?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>
+              SMTP delivery was not completed for <strong>{fallbackCredentials?.email}</strong>. Copy this one-time temporary password and share it securely — it will not be shown again:
+            </p>
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+              <code className="font-mono text-sm text-gray-900 break-all">
+                {fallbackCredentials?.password}
+              </code>
+              <Button type="button" variant="outline" size="sm" onClick={() => void copyFallbackPassword()}>
+                <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setFallbackCredentials(null)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -318,14 +506,15 @@ export function AdminManagementPage({ session }: AdminManagementPageProps) {
 }
 
 function StaffForm({
-  form, setForm, showPassword, requiredPassword, formError,
+  form, setForm, isCreate, formError,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
-  showPassword: boolean;
-  requiredPassword: boolean;
+  isCreate: boolean;
   formError: string | null;
 }) {
+  const [showManualPassword, setShowManualPassword] = useState(false);
+
   return (
     <div className="space-y-3 py-1">
       {formError && (
@@ -351,18 +540,49 @@ function StaffForm({
           className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#BE322D]/30"
         />
       </div>
-      {showPassword && (
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Password {requiredPassword && <span className="text-red-500">*</span>}
+      {isCreate && (
+        <div className="space-y-2.5">
+          <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.autoGeneratePassword}
+              onChange={(e) => setForm((f) => ({ ...f, autoGeneratePassword: e.target.checked, password: '' }))}
+              className="mt-0.5 accent-[#BE322D]"
+            />
+            <span className="text-xs text-gray-700 leading-snug">
+              <strong>Auto-generate random password &amp; email via SMTP</strong>
+              <span className="block text-gray-500 mt-0.5">
+                Staff will receive a temporary password by email and must change it on first login.
+              </span>
+            </span>
           </label>
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            placeholder="Min. 8 characters"
-            className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#BE322D]/30"
-          />
+
+          {!form.autoGeneratePassword && (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Initial Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showManualPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="Strong password (min. 8 chars)"
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#BE322D]/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowManualPassword((v) => !v)}
+                  aria-label={showManualPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showManualPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <PasswordPolicyChecklist password={form.password} />
+            </div>
+          )}
         </div>
       )}
       <div>

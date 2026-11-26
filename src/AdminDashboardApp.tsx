@@ -4,6 +4,7 @@ import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPanel } from "./components/AdminPanel";
 import { AdminDashboardLogin } from "./components/AdminDashboardLogin";
+import { ForcePasswordChangeScreen } from "./components/ForcePasswordChangeScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthService } from "./services/authService";
 import { StaffAccessService, StaffSession } from "./services/staffAccessService";
@@ -102,6 +103,19 @@ function AdminDashboardAppContent() {
     toast.success('Admin session ended');
   };
 
+  const handlePasswordChanged = () => {
+    setSession((prev) => {
+      if (!prev) return prev;
+      const updated: StaffSession = {
+        ...prev,
+        user: prev.user ? { ...prev.user, must_change_password: false } : prev.user,
+      };
+      StaffAccessService.setSession(updated);
+      return updated;
+    });
+    toast.success('Password updated. Welcome to the dashboard!');
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-slate-900">
@@ -115,6 +129,12 @@ function AdminDashboardAppContent() {
       <Toaster position="top-center" toastOptions={{ className: 'rounded-2xl' }} />
       {!session ? (
         <AdminDashboardLogin onAdminLogin={handleAdminLogin} />
+      ) : session.user?.must_change_password ? (
+        <ForcePasswordChangeScreen
+          session={session}
+          onPasswordChanged={handlePasswordChanged}
+          onLogout={handleAdminLogout}
+        />
       ) : (
         <AdminPanel
           selectedLanguage={i18n.resolvedLanguage?.split('-')[0] || 'en'}

@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   Loader2,
   Copy,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   Dialog,
@@ -111,6 +113,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
   const [mfaQrDataUrl, setMfaQrDataUrl] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
   const [disablePassword, setDisablePassword] = useState('');
+  const [showDisablePassword, setShowDisablePassword] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
 
   const [availability, setAvailability] = useState<WorkStatus>(() => {
@@ -404,13 +407,25 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                 </div>
               ) : mfaStatus === 'enabled' ? (
                 <div className="space-y-3">
-                  <Input
-                    type="password"
-                    value={disablePassword}
-                    onChange={(e) => setDisablePassword(e.target.value)}
-                    placeholder="Current password"
-                    disabled={mfaLoading}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showDisablePassword ? 'text' : 'password'}
+                      value={disablePassword}
+                      onChange={(e) => setDisablePassword(e.target.value)}
+                      placeholder="Current password"
+                      disabled={mfaLoading}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDisablePassword((v) => !v)}
+                      aria-label={showDisablePassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      tabIndex={-1}
+                    >
+                      {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   <Input
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value)}

@@ -53,6 +53,7 @@ export interface AdminLoginUser {
   role: string;
   is_active: boolean;
   mfa_enabled?: boolean;
+  must_change_password?: boolean;
   created_at: string;
   last_login_at: string;
 }
@@ -109,8 +110,10 @@ export class MfaChallengeRequiredError extends Error {
 export interface AdminCreateStaffRequest {
   username: string;
   email: string;
-  password: string;
+  password?: string;
   role: StaffRole;
+  send_email?: boolean;
+  require_password_change?: boolean;
 }
 
 export interface AdminUpdateStaffRequest {
@@ -127,6 +130,10 @@ export interface AdminStaffRecord {
   email: string;
   role: string;
   is_active: boolean;
+  mfa_enabled?: boolean;
+  must_change_password?: boolean;
+  email_sent?: boolean | null;
+  temporary_password?: string | null;
   created_at: string;
   last_login_at: string;
 }
@@ -151,7 +158,8 @@ export interface AdminDashboardStats {
 
 
 export interface AdminStaffPasswordResetRequest {
-  temporary_password: string;
+  temporary_password?: string;
+  send_email?: boolean;
 }
 
 export interface AdminStaffPasswordResetResponse {
@@ -160,6 +168,8 @@ export interface AdminStaffPasswordResetResponse {
   reset_at: string;
   notification_sent: boolean;
   notification_method: string;
+  temporary_password?: string | null;
+  must_change_password?: boolean;
 }
 
 export interface AdminStaffAvailabilityRequest {
@@ -770,22 +780,21 @@ function normalizeRole(role: string): StaffRole {
 
     static async resetStaffPassword(
       staffId: string,
-      temporaryPassword: string,
+      temporaryPassword?: string,
       accessToken?: string,
+      sendEmail = true,
     ): Promise<AdminStaffPasswordResetResponse> {
       const token = requireAdminAccessToken(accessToken);
-      const password = temporaryPassword.trim();
-
-      if (!password) {
-        throw new Error('Temporary password is required.');
-      }
+      const trimmed = temporaryPassword?.trim();
+      const body: AdminStaffPasswordResetRequest = {
+        send_email: sendEmail,
+        ...(trimmed ? { temporary_password: trimmed } : {}),
+      };
 
       const response = await adminFetch(buildAdminUrl(`/admin/staff/${encodePathSegment(staffId)}/reset-password`), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-        body: JSON.stringify({
-          temporary_password: password,
-        } satisfies AdminStaffPasswordResetRequest),
+        body: JSON.stringify(body),
       }, token);
 
       if (!response.ok) {
@@ -1298,6 +1307,66 @@ function normalizeRole(role: string): StaffRole {
         throw new Error(await readApiError(response));
       }
       return readJsonResponse<MfaResetResponse>(response);
+    }
+
+    static async changePassword(
+      currentPassword: string,
+      newPassword: string,
+      accessToken?: string,
+    ): Promise<{ status: string; message: string }> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await adminFetch(buildAdminUrl('/admin/change-password'), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      }, token);
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<{ status: string; message: string }>(response);
+    }
+
+    static async requestPasswordReset(
+      email: string,
+    ): Promise<{ status: string; message: string }> {
+      const cleaned = email.trim().toLowerCase();
+      if (!cleaned) {
+        throw new Error('Please enter your work email address.');
+      }
+      const response = await fetch(buildAdminUrl('/admin/forgot-password'), {
+        method: 'POST',
+        headers: buildAdminHeaders(),
+        body: JSON.stringify({ email: cleaned }),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<{ status: string; message: string }>(response);
+    }
+
+    static async completePasswordReset(
+      token: string,
+      newPassword: string,
+    ): Promise<{ status: string; message: string }> {
+      const cleanedToken = token.trim();
+      if (!cleanedToken) {
+        throw new Error('Password reset link token is missing or invalid.');
+      }
+      const response = await fetch(buildAdminUrl('/admin/reset-password'), {
+        method: 'POST',
+        headers: buildAdminHeaders(),
+        body: JSON.stringify({
+          token: cleanedToken,
+          new_password: newPassword,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<{ status: string; message: string }>(response);
     }
 
     static async getCurrentUser(accessToken?: string): Promise<AdminLoginUser> {
