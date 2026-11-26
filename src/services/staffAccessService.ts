@@ -3,6 +3,7 @@ import { AuthService } from '@/services/authService';
 import { logger } from '@/utils/logger';
 
 export type StaffRole = 'admin' | 'consultant' | 'supervisor';
+export type MfaMethod = 'totp' | 'email';
 export type StaffStatus = 'active' | 'inactive';
 export type StaffAvailability = 'available' | 'busy' | 'offline';
 export type SupportRequestStatus = 'waiting' | 'assigned' | 'active' | 'resolved';
@@ -53,6 +54,7 @@ export interface AdminLoginUser {
   role: string;
   is_active: boolean;
   mfa_enabled?: boolean;
+  mfa_method?: MfaMethod | null;
   must_change_password?: boolean;
   created_at: string;
   last_login_at: string;
@@ -66,25 +68,31 @@ export interface AdminLoginResponse {
   user?: AdminLoginUser | null;
   mfa_required?: boolean;
   mfa_token?: string | null;
+  mfa_method?: MfaMethod | null;
 }
 
 export interface MfaStatusResponse {
   status: 'enabled' | 'not_configured';
   mfa_enabled: boolean;
+  mfa_method?: MfaMethod | null;
   enabled_at?: string | null;
   backup_codes_remaining: number;
 }
 
 export interface MfaSetupResponse {
-  secret: string;
-  otpauth_uri: string;
+  method?: MfaMethod;
+  secret?: string | null;
+  otpauth_uri?: string | null;
   issuer: string;
   account_name: string;
+  email_sent?: boolean;
+  expires_in?: number | null;
 }
 
 export interface MfaEnableResponse {
   status: 'enabled';
   mfa_enabled: boolean;
+  mfa_method?: MfaMethod;
   enabled_at: string;
   backup_codes: string[];
 }
@@ -98,12 +106,14 @@ export interface MfaResetResponse {
 export class MfaChallengeRequiredError extends Error {
   mfaToken: string;
   expiresIn: number;
+  mfaMethod: MfaMethod;
 
-  constructor(mfaToken: string, expiresIn: number) {
+  constructor(mfaToken: string, expiresIn: number, mfaMethod: MfaMethod = 'totp') {
     super('Multi-factor authentication code required.');
     this.name = 'MfaChallengeRequiredError';
     this.mfaToken = mfaToken;
     this.expiresIn = expiresIn;
+    this.mfaMethod = mfaMethod;
   }
 }
 
@@ -131,6 +141,7 @@ export interface AdminStaffRecord {
   role: string;
   is_active: boolean;
   mfa_enabled?: boolean;
+  mfa_method?: MfaMethod | null;
   must_change_password?: boolean;
   email_sent?: boolean | null;
   temporary_password?: string | null;
@@ -1152,7 +1163,8 @@ function normalizeRole(role: string): StaffRole {
       const data = (await response.json()) as AdminLoginResponse;
 
       if (data.mfa_required && data.mfa_token) {
-        throw new MfaChallengeRequiredError(data.mfa_token, data.expires_in);
+        const method: MfaMethod = data.mfa_method === 'email' ? 'email' : 'totp';
+        throw new MfaChallengeRequiredError(data.mfa_token, data.expires_in, method);
       }
 
       if (!data.user || !data.access_token || !data.refresh_token) {
@@ -1255,11 +1267,12 @@ function normalizeRole(role: string): StaffRole {
       return readJsonResponse<MfaStatusResponse>(response);
     }
 
-    static async setupMfa(accessToken?: string): Promise<MfaSetupResponse> {
+    static async setupMfa(method: MfaMethod = 'totp', accessToken?: string): Promise<MfaSetupResponse> {
       const token = requireAdminAccessToken(accessToken);
       const response = await adminFetch(buildAdminUrl('/admin/mfa/setup'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
+        body: JSON.stringify({ method }),
       }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -1267,17 +1280,49 @@ function normalizeRole(role: string): StaffRole {
       return readJsonResponse<MfaSetupResponse>(response);
     }
 
-    static async enableMfa(code: string, accessToken?: string): Promise<MfaEnableResponse> {
+    static async enableMfa(
+      code: string,
+      method: MfaMethod = 'totp',
+      accessToken?: string,
+    ): Promise<MfaEnableResponse> {
       const token = requireAdminAccessToken(accessToken);
       const response = await adminFetch(buildAdminUrl('/admin/mfa/enable'), {
         method: 'POST',
         headers: buildAdminHeaders(token),
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({ code: code.trim(), method }),
       }, token);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
       return readJsonResponse<MfaEnableResponse>(response);
+    }
+
+    static async resendLoginMfaCode(
+      mfaToken: string,
+    ): Promise<{ status: string; message: string }> {
+      const response = await fetch(buildAdminUrl('/admin/login/mfa/resend'), {
+        method: 'POST',
+        headers: buildAdminHeaders(),
+        body: JSON.stringify({ mfa_token: mfaToken }),
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<{ status: string; message: string }>(response);
+    }
+
+    static async sendDisableMfaEmailCode(
+      accessToken?: string,
+    ): Promise<{ status: string; message: string }> {
+      const token = requireAdminAccessToken(accessToken);
+      const response = await adminFetch(buildAdminUrl('/admin/mfa/disable/send-code'), {
+        method: 'POST',
+        headers: buildAdminHeaders(token),
+      }, token);
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      return readJsonResponse<{ status: string; message: string }>(response);
     }
 
     static async disableMfa(

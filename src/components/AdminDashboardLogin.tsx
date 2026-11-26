@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {
   MfaChallengeRequiredError,
+  MfaMethod,
   StaffAccessService,
   StaffSession,
 } from '@/services/staffAccessService';
@@ -34,7 +35,9 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
   const [showPassword, setShowPassword] = useState(false);
 
   const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaMethod, setMfaMethod] = useState<MfaMethod>('totp');
   const [mfaCode, setMfaCode] = useState('');
+  const [resendingMfa, setResendingMfa] = useState(false);
 
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -118,10 +121,15 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
     } catch (loginError) {
       if (loginError instanceof MfaChallengeRequiredError) {
         setMfaToken(loginError.mfaToken);
+        setMfaMethod(loginError.mfaMethod);
         setMfaCode('');
         setMode('mfa');
         setError('');
-        setSuccessMessage('');
+        setSuccessMessage(
+          loginError.mfaMethod === 'email'
+            ? 'We sent a 6-digit verification code to your email.'
+            : '',
+        );
       } else {
         setError(
           loginError instanceof Error
@@ -137,13 +145,30 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
   const switchToLogin = () => {
     setMode('login');
     setMfaToken(null);
+    setMfaMethod('totp');
     setMfaCode('');
     setError('');
   };
 
+  const handleResendMfaEmail = async () => {
+    if (!mfaToken || resendingMfa) return;
+    setResendingMfa(true);
+    setError('');
+    try {
+      const res = await StaffAccessService.resendLoginMfaCode(mfaToken);
+      setSuccessMessage(res.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to resend verification code.');
+    } finally {
+      setResendingMfa(false);
+    }
+  };
+
   const headerTitle =
     mode === 'mfa'
-      ? 'Two-Factor Verification'
+      ? mfaMethod === 'email'
+        ? 'Email Verification'
+        : 'Two-Factor Verification'
       : mode === 'forgot'
         ? 'Forgot Password'
         : mode === 'reset'
@@ -152,7 +177,9 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
 
   const headerSubtitle =
     mode === 'mfa'
-      ? 'Enter the 6-digit code from your authenticator app or a one-time backup code.'
+      ? mfaMethod === 'email'
+        ? 'Enter the 6-digit verification code sent to your email or a one-time backup code.'
+        : 'Enter the 6-digit code from your authenticator app or a one-time backup code.'
       : mode === 'forgot'
         ? 'Enter your work email and we will send a password reset link.'
         : mode === 'reset'
@@ -193,22 +220,36 @@ export function AdminDashboardLogin({ onAdminLogin }: AdminDashboardLoginProps) 
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'mfa' && (
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                <Input
-                  type="text"
-                  placeholder="6-digit code or backup code"
-                  value={mfaCode}
-                  onChange={(e) => {
-                    setMfaCode(e.target.value);
-                    setError('');
-                  }}
-                  autoComplete="one-time-code"
-                  maxLength={12}
-                  className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[#BE322D] tracking-widest"
-                  disabled={isLoading}
-                  autoFocus
-                />
+              <div className="space-y-2">
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                  <Input
+                    type="text"
+                    placeholder="6-digit code or backup code"
+                    value={mfaCode}
+                    onChange={(e) => {
+                      setMfaCode(e.target.value);
+                      setError('');
+                    }}
+                    autoComplete="one-time-code"
+                    maxLength={12}
+                    className="h-12 pl-10 rounded-xl border-gray-200 focus:border-[#BE322D] tracking-widest"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+                {mfaMethod === 'email' && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleResendMfaEmail()}
+                      className="text-xs font-medium text-[#BE322D] hover:underline focus:outline-none disabled:opacity-50"
+                      disabled={resendingMfa || isLoading}
+                    >
+                      {resendingMfa ? 'Sending new code...' : 'Resend email code'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

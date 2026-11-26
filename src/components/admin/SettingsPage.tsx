@@ -17,6 +17,8 @@ import {
   Copy,
   Eye,
   EyeOff,
+  Mail,
+  Smartphone,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,6 +35,7 @@ import { BotKillSwitch } from './BotKillSwitch';
 import { useDashboardPwaInstall } from '@/hooks/useDashboardPwaInstall';
 import { safeStorage } from '@/utils/safeStorage';
 import {
+  MfaMethod,
   MfaSetupResponse,
   StaffAccessService,
   StaffSession,
@@ -106,6 +109,10 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
   const [mfaStatus, setMfaStatus] = useState<MfaStatus>(
     session.user?.mfa_enabled ? 'enabled' : 'not_configured',
   );
+  const [mfaMethod, setMfaMethod] = useState<MfaMethod | null>(
+    session.user?.mfa_enabled ? (session.user?.mfa_method ?? 'totp') : null,
+  );
+  const [selectedSetupMethod, setSelectedSetupMethod] = useState<MfaMethod | null>(null);
   const [mfaEnabledAt, setMfaEnabledAt] = useState<string | null>(null);
   const [backupCodesRemaining, setBackupCodesRemaining] = useState<number>(0);
   const [mfaLoading, setMfaLoading] = useState(false);
@@ -114,6 +121,8 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
   const [mfaCode, setMfaCode] = useState('');
   const [disablePassword, setDisablePassword] = useState('');
   const [showDisablePassword, setShowDisablePassword] = useState(false);
+  const [disableCodeSent, setDisableCodeSent] = useState(false);
+  const [sendingDisableCode, setSendingDisableCode] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
 
   const [availability, setAvailability] = useState<WorkStatus>(() => {
@@ -128,6 +137,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
       .then((res) => {
         if (!active) return;
         setMfaStatus(res.mfa_enabled ? 'enabled' : 'not_configured');
+        setMfaMethod(res.mfa_enabled ? (res.mfa_method ?? 'totp') : null);
         setMfaEnabledAt(res.enabled_at ?? null);
         setBackupCodesRemaining(res.backup_codes_remaining ?? 0);
       })
@@ -139,54 +149,86 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
     };
   }, [session.accessToken]);
 
-  const handleOpenMfaDialog = async () => {
+  const handleOpenMfaDialog = () => {
     setMfaCode('');
     setDisablePassword('');
+    setDisableCodeSent(false);
     setBackupCodes(null);
     setMfaQrDataUrl(null);
+    setMfaSetup(null);
+    setSelectedSetupMethod(null);
     setMfaOpen(true);
+  };
 
-    if (mfaStatus !== 'enabled') {
-      setMfaLoading(true);
-      try {
-        const setup = await StaffAccessService.setupMfa(session.accessToken);
-        setMfaSetup(setup);
+  const handleSelectSetupMethod = async (method: MfaMethod) => {
+    setSelectedSetupMethod(method);
+    setMfaCode('');
+    setMfaQrDataUrl(null);
+    setMfaSetup(null);
+    setMfaLoading(true);
+    try {
+      const setup = await StaffAccessService.setupMfa(method, session.accessToken);
+      setMfaSetup(setup);
+      if (method === 'totp' && setup.otpauth_uri) {
         const qrUrl = await QRCode.toDataURL(setup.otpauth_uri, {
           width: 200,
           margin: 1,
         });
         setMfaQrDataUrl(qrUrl);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Could not start MFA setup.');
-        setMfaOpen(false);
-      } finally {
-        setMfaLoading(false);
+      } else if (method === 'email') {
+        toast.success(`Verification code sent to ${setup.account_name}.`);
       }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not start MFA setup.');
+      setSelectedSetupMethod(null);
+    } finally {
+      setMfaLoading(false);
     }
   };
 
   const handleEnableMfa = async () => {
     const raw = mfaCode.trim();
     if (!/^\d{6}$/.test(raw)) {
-      toast.error('Enter the 6-digit code from your authenticator app.');
+      toast.error('Enter the 6-digit verification code.');
       return;
     }
 
+    const activeSetupMethod: MfaMethod = selectedSetupMethod ?? 'totp';
     setMfaLoading(true);
     try {
-      const result = await StaffAccessService.enableMfa(raw, session.accessToken);
+      const result = await StaffAccessService.enableMfa(raw, activeSetupMethod, session.accessToken);
+      const resolvedMethod: MfaMethod = result.mfa_method ?? activeSetupMethod;
       setMfaStatus('enabled');
+      setMfaMethod(resolvedMethod);
       setMfaEnabledAt(result.enabled_at);
       setBackupCodesRemaining(result.backup_codes.length);
       setBackupCodes(result.backup_codes);
       setMfaSetup(null);
       setMfaQrDataUrl(null);
+      setSelectedSetupMethod(null);
       setMfaCode('');
-      toast.success('Multi-factor authentication has been enabled.');
+      toast.success(
+        resolvedMethod === 'email'
+          ? 'Email multi-factor authentication has been enabled.'
+          : 'Authenticator app multi-factor authentication has been enabled.',
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Invalid authentication code.');
     } finally {
       setMfaLoading(false);
+    }
+  };
+
+  const handleSendDisableCode = async () => {
+    setSendingDisableCode(true);
+    try {
+      const res = await StaffAccessService.sendDisableMfaEmailCode(session.accessToken);
+      setDisableCodeSent(true);
+      toast.success(res.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not send email code.');
+    } finally {
+      setSendingDisableCode(false);
     }
   };
 
@@ -200,10 +242,12 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
     try {
       await StaffAccessService.disableMfa(disablePassword, mfaCode.trim(), session.accessToken);
       setMfaStatus('not_configured');
+      setMfaMethod(null);
       setMfaEnabledAt(null);
       setBackupCodesRemaining(0);
       setDisablePassword('');
       setMfaCode('');
+      setDisableCodeSent(false);
       setMfaOpen(false);
       toast.success('Multi-factor authentication has been disabled.');
     } catch (error) {
@@ -308,8 +352,8 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
             </h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Add an extra layer of protection to your staff account using an authenticator app
-            (Google Authenticator, Authy, 1Password, etc.).
+            Add an extra layer of protection to your staff account using either an authenticator app
+            (Google Authenticator, Authy, 1Password) or a 6-digit verification code sent to your email.
           </p>
           <div
             className={`rounded-xl border p-4 ${
@@ -328,7 +372,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                 <p className="text-sm font-semibold text-gray-900">MFA status</p>
                 <p className="text-sm text-gray-700 mt-0.5">
                   {mfaStatus === 'enabled'
-                    ? 'Multi-factor authentication is enabled on this account.'
+                    ? `Multi-factor authentication is enabled (${mfaMethod === 'email' ? 'Email verification code' : 'Authenticator app'}).`
                     : 'MFA is not enabled on this account yet.'}
                 </p>
                 {mfaStatus === 'enabled' ? (
@@ -337,7 +381,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                     variant="outline"
                     size="sm"
                     className="mt-3 h-8 text-xs border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-100"
-                    onClick={() => void handleOpenMfaDialog()}
+                    onClick={() => handleOpenMfaDialog()}
                   >
                     Manage / Disable MFA
                   </Button>
@@ -347,7 +391,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                     variant="outline"
                     size="sm"
                     className="mt-3 h-8 text-xs border-[#BE322D] text-[#BE322D] bg-white hover:bg-[#BE322D] hover:text-white"
-                    onClick={() => void handleOpenMfaDialog()}
+                    onClick={() => handleOpenMfaDialog()}
                   >
                     Set up MFA
                   </Button>
@@ -355,7 +399,7 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                 <p className="text-xs text-gray-500 mt-2">
                   {mfaStatus === 'enabled'
                     ? `Enabled ${mfaEnabledAt ? `on ${formatDateTime(mfaEnabledAt)}` : ''} · ${backupCodesRemaining} backup code${backupCodesRemaining === 1 ? '' : 's'} remaining.`
-                    : 'Protect your staff login with a 6-digit authenticator code.'}
+                    : 'Choose between an authenticator app or email verification codes.'}
                 </p>
               </div>
             </div>
@@ -369,8 +413,14 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                   {backupCodes
                     ? 'Save these one-time backup codes in a secure place. Each code can only be used once.'
                     : mfaStatus === 'enabled'
-                      ? 'Confirm your password and a 6-digit authenticator code (or backup code) to disable MFA.'
-                      : 'Scan the QR code (or enter the setup key manually) in your authenticator app, then verify with a 6-digit code.'}
+                      ? mfaMethod === 'email'
+                        ? 'Confirm your password and a 6-digit email verification code (or backup code) to disable MFA.'
+                        : 'Confirm your password and a 6-digit authenticator code (or backup code) to disable MFA.'
+                      : selectedSetupMethod === null
+                        ? 'Choose how you want to verify your identity when signing in.'
+                        : selectedSetupMethod === 'email'
+                          ? `Enter the 6-digit code sent to ${session.email} to enable Email MFA.`
+                          : 'Scan the QR code (or enter the setup key manually) in your authenticator app, then verify with a 6-digit code.'}
                 </DialogDescription>
               </DialogHeader>
 
@@ -426,6 +476,23 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                       {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {mfaMethod === 'email' && (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <span className="text-xs text-gray-600 truncate">
+                        {disableCodeSent ? `Code sent to ${session.email}` : `Send a code to ${session.email}`}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs shrink-0"
+                        onClick={() => void handleSendDisableCode()}
+                        disabled={sendingDisableCode || mfaLoading}
+                      >
+                        {sendingDisableCode ? 'Sending…' : disableCodeSent ? 'Resend code' : 'Send code'}
+                      </Button>
+                    </div>
+                  )}
                   <Input
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value)}
@@ -444,13 +511,115 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                     </Button>
                   </div>
                 </div>
+              ) : selectedSetupMethod === null ? (
+                <div className="space-y-3 py-1">
+                  <button
+                    type="button"
+                    onClick={() => void handleSelectSetupMethod('totp')}
+                    className="w-full text-left rounded-xl border border-gray-200 p-4 hover:border-[#BE322D] hover:bg-[#FFF8F8] transition-colors flex items-start gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-[#FFF1F1] flex items-center justify-center shrink-0">
+                      <Smartphone className="w-4 h-4 text-[#BE322D]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Authenticator App</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Use Google Authenticator, Authy, 1Password, or Microsoft Authenticator.
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleSelectSetupMethod('email')}
+                    className="w-full text-left rounded-xl border border-gray-200 p-4 hover:border-[#BE322D] hover:bg-[#FFF8F8] transition-colors flex items-start gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-[#FFF1F1] flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4 text-[#BE322D]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Email Verification Code</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Receive a 6-digit one-time code at <span className="font-medium text-gray-700">{session.email}</span> whenever you sign in.
+                      </p>
+                    </div>
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {mfaLoading && !mfaSetup ? (
                     <div className="flex items-center justify-center py-6 text-sm text-gray-500">
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Generating setup key…
+                      {selectedSetupMethod === 'email' ? 'Sending verification code…' : 'Generating setup key…'}
                     </div>
+                  ) : mfaSetup && selectedSetupMethod === 'email' ? (
+                    <>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900 space-y-1">
+                        <p className="font-semibold">Check your inbox</p>
+                        <p className="text-xs text-emerald-800">
+                          We sent a 6-digit verification code to <strong>{mfaSetup.account_name}</strong>. It expires in 5 minutes.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-800">
+                          Enter the 6-digit email code
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Input
+                            value={mfaCode}
+                            onChange={(e) => setMfaCode(e.target.value)}
+                            placeholder="000000"
+                            maxLength={6}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            className="h-10 rounded-xl border-[#F4D6D5]"
+                            disabled={mfaLoading}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-10 whitespace-nowrap bg-[#BE322D] hover:bg-[#9F2622] text-white"
+                            onClick={() => void handleEnableMfa()}
+                            disabled={mfaLoading}
+                          >
+                            {mfaLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Mail className="w-4 h-4 mr-2" />
+                            )}
+                            {mfaLoading ? 'Verifying…' : 'Enable Email MFA'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs text-gray-500"
+                          onClick={() => {
+                            setSelectedSetupMethod(null);
+                            setMfaSetup(null);
+                            setMfaCode('');
+                          }}
+                          disabled={mfaLoading}
+                        >
+                          Choose a different method
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => void handleSelectSetupMethod('email')}
+                          disabled={mfaLoading}
+                        >
+                          Resend code
+                        </Button>
+                      </div>
+                    </>
                   ) : mfaSetup ? (
                     <>
                       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 flex flex-col items-center text-center gap-2">
@@ -469,27 +638,29 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                         </p>
                       </div>
 
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
-                        <p className="text-xs font-medium text-gray-600">Manual setup key</p>
-                        <div className="flex items-center justify-between gap-2">
-                          <code className="text-xs font-mono break-all text-gray-900 select-all">
-                            {mfaSetup.secret}
-                          </code>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs flex-shrink-0"
-                            onClick={() => void copyText(mfaSetup.secret, 'Setup key')}
-                          >
-                            <Copy className="w-3.5 h-3.5 mr-1" />
-                            Copy
-                          </Button>
+                      {mfaSetup.secret && (
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
+                          <p className="text-xs font-medium text-gray-600">Manual setup key</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <code className="text-xs font-mono break-all text-gray-900 select-all">
+                              {mfaSetup.secret}
+                            </code>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs flex-shrink-0"
+                              onClick={() => void copyText(mfaSetup.secret || '', 'Setup key')}
+                            >
+                              <Copy className="w-3.5 h-3.5 mr-1" />
+                              Copy
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-gray-500">
+                            Account: {mfaSetup.account_name} · Issuer: {mfaSetup.issuer}
+                          </p>
                         </div>
-                        <p className="text-[11px] text-gray-500">
-                          Account: {mfaSetup.account_name} · Issuer: {mfaSetup.issuer}
-                        </p>
-                      </div>
+                      )}
 
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-gray-800">
@@ -522,6 +693,22 @@ export function SettingsPage({ session, onLogout }: SettingsPageProps) {
                           </Button>
                         </div>
                       </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-gray-500"
+                        onClick={() => {
+                          setSelectedSetupMethod(null);
+                          setMfaSetup(null);
+                          setMfaQrDataUrl(null);
+                          setMfaCode('');
+                        }}
+                        disabled={mfaLoading}
+                      >
+                        Choose a different method
+                      </Button>
                     </>
                   ) : null}
                 </div>
